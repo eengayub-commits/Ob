@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600" role="img" aria-label="صورة غير متوفرة">
+  <rect width="800" height="600" fill="#eef2f6"/>
+  <g fill="none" stroke="#c8d3dd" stroke-width="6">
+    <rect x="150" y="140" width="500" height="320" rx="14"/>
+    <path d="M150 380l130-120 110 100 90-70 170 150"/>
+  </g>
+  <circle cx="300" cy="225" r="34" fill="#c8d3dd"/>
+  <text x="400" y="520" font-family="Tajawal,Tahoma,sans-serif" font-size="34" fill="#8fa0b1" text-anchor="middle">صورة المنتج قريباً</text>
+</svg>

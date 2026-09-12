@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>إتمام الطلب وعرض السعر | مصنع برج القمة</title>
+<meta name="description" content="راجع منتجات طلبك، أدخل بياناتك، وأرسل الطلب عبر الواتساب أو البريد ليصلك عرض السعر خلال 24 ساعة.">
+<meta name="keywords" content="مصنع ألمنيوم, واجهات زجاجية, كيرتن وول, كلادنج, أبواب ألمنيوم, شبابيك ألمنيوم, مطابخ ألمنيوم, برج القمة">
+<meta name="author" content="مصنع برج القمة">
+<meta name="theme-color" content="#0d1b2a">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://example.com/order.html">
+
+<!-- مشاركة على وسائل التواصل -->
+<meta property="og:type" content="website">
+<meta property="og:locale" content="ar_SA">
+<meta property="og:site_name" content="مصنع برج القمة">
+<meta property="og:title" content="إتمام الطلب وعرض السعر | مصنع برج القمة">
+<meta property="og:description" content="راجع منتجات طلبك، أدخل بياناتك، وأرسل الطلب عبر الواتساب أو البريد ليصلك عرض السعر خلال 24 ساعة.">
+<meta property="og:image" content="assets/img/brand/og-image.jpg">
+<meta name="twitter:card" content="summary_large_image">
+
+<!-- الأيقونات -->
+<link rel="icon" href="assets/img/brand/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="assets/img/brand/apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+
+<!-- الخطوط -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="assets/css/styles.css">
+<script>document.documentElement.className += " js";</script>
+</head>
+<body>
+<a href="#main" class="skip-link">تخطي إلى المحتوى</a>
+<!-- ===== الشريط العلوي ===== -->
+<div class="topbar">
+  <div class="container">
+    <ul class="topbar__list">
+      <li>📞 <a data-href="tel" href="tel:"><span data-phone-text></span></a></li>
+      <li>✉️ <a data-href="mail" href="mailto:"><span data-site="email"></span></a></li>
+    </ul>
+    <ul class="topbar__list">
+      <li>🕗 السبت – الخميس: 8:00 ص – 6:00 م</li>
+      <li>📍 <span data-site="city"></span></li>
+    </ul>
+  </div>
+</div>
+
+<!-- ===== الهيدر ===== -->
+<header class="header">
+  <div class="container">
+    <a class="logo" href="index.html">
+      <img src="assets/img/brand/logo.svg" alt="شعار مصنع برج القمة" width="46" height="46">
+      <span>
+        <span data-site="name">مصنع برج القمة</span>
+        <small data-site="tagline">للألمنيوم والواجهات الزجاجية</small>
+      </span>
+    </a>
+
+    <nav class="nav" id="mainNav" aria-label="القائمة الرئيسية">
+      <a href="index.html">الرئيسية</a>
+      <a href="products.html">المنتجات</a>
+      <a href="services.html">خدماتنا</a>
+      <a href="projects.html">أعمالنا</a>
+      <a href="about.html">من نحن</a>
+      <a href="faq.html">الأسئلة الشائعة</a>
+      <a href="contact.html">تواصل معنا</a>
+    </nav>
+
+    <div class="header__actions">
+      <a class="btn btn--ghost btn--sm cart-btn" href="order.html" aria-label="سلة الطلب">
+        🧾 <span>طلبي</span><span class="cart-count" style="display:none">0</span>
+      </a>
+      <a class="btn btn--primary btn--sm btn--quote" href="order.html">اطلب عرض سعر</a>
+      <button class="burger" aria-label="فتح القائمة" aria-expanded="false" aria-controls="mainNav">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <path d="M3 6h18M3 12h18M3 18h18"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+</header>
+<main id="main">
+<section class="page-hero">
+  <div class="container">
+    <div class="breadcrumb"><a href="index.html">الرئيسية</a><span>›</span> إتمام الطلب</div>
+    <h1>طلبي / طلب عرض سعر</h1>
+    <p>راجع منتجاتك، أكمل بياناتك، وأرسل الطلب. سنتواصل معك خلال 24 ساعة عمل.</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="order-layout">
+
+      <!-- ===== العمود الأيمن: السلة + النموذج ===== -->
+      <div>
+        <div class="panel" style="margin-bottom:22px">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+            <h2 style="margin:0">منتجات الطلب</h2>
+            <button class="remove-btn" id="clearCart" type="button">🗑️ إفراغ الطلب</button>
+          </div>
+          <div id="cartList"></div>
+          <div id="cartEmpty" class="empty-state hidden">
+            <div class="ico">🧾</div>
+            <h3>طلبك فارغ حالياً</h3>
+            <p>أضف منتجات من صفحة المنتجات، أو أرسل طلباً مخصصاً من النموذج أدناه.</p>
+            <a class="btn btn--primary" href="products.html">تصفح المنتجات</a>
+          </div>
+        </div>
+
+        <!-- طلب منتج غير موجود -->
+        <details class="panel" style="margin-bottom:22px">
+          <summary style="cursor:pointer;font-weight:800;color:var(--navy)">➕ إضافة طلب مخصص (منتج غير موجود في القائمة)</summary>
+          <div style="margin-top:16px">
+            <div class="form-row">
+              <div class="field"><label>وصف العمل المطلوب</label>
+                <input type="text" id="customName" placeholder="مثال: تفصيل درج زجاجي بمقاس خاص"></div>
+              <div class="field"><label>الكمية</label>
+                <input type="number" id="customQty" min="1" value="1"></div>
+            </div>
+            <div class="field"><label>تفاصيل إضافية</label>
+              <textarea id="customNotes" rows="2" placeholder="المقاسات، اللون، الموقع…"></textarea></div>
+            <button class="btn btn--dark btn--sm" type="button" id="addCustom">أضف إلى الطلب</button>
+          </div>
+        </details>
+
+        <!-- ===== بيانات العميل ===== -->
+        <form class="panel" id="orderForm" novalidate>
+          <h2>بيانات التواصل</h2>
+
+          <div class="form-row">
+            <div class="field">
+              <label for="f-name">الاسم الكامل <span class="req">*</span></label>
+              <input type="text" id="f-name" name="name" required placeholder="الاسم الثلاثي أو اسم الشركة">
+              <div class="error-msg">الرجاء إدخال الاسم</div>
+            </div>
+            <div class="field">
+              <label for="f-phone">رقم الجوال <span class="req">*</span></label>
+              <input type="tel" id="f-phone" name="phone" required inputmode="tel" placeholder="05xxxxxxxx">
+              <div class="error-msg">الرجاء إدخال رقم جوال صحيح</div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="field">
+              <label for="f-email">البريد الإلكتروني</label>
+              <input type="email" id="f-email" name="email" placeholder="name@example.com">
+              <div class="error-msg">صيغة البريد غير صحيحة</div>
+            </div>
+            <div class="field">
+              <label for="f-city">المدينة <span class="req">*</span></label>
+              <select id="f-city" name="city" required></select>
+              <div class="error-msg">الرجاء اختيار المدينة</div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="f-address">الحي / العنوان التفصيلي</label>
+            <input type="text" id="f-address" name="address" placeholder="الحي، الشارع، أقرب معلم">
+          </div>
+
+          <h2 style="margin-top:26px">تفاصيل المشروع</h2>
+          <div class="form-row">
+            <div class="field">
+              <label for="f-ptype">نوع المشروع</label>
+              <select id="f-ptype" name="projectType"></select>
+            </div>
+            <div class="field">
+              <label for="f-service">الخدمة المطلوبة</label>
+              <select id="f-service" name="service"></select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="field">
+              <label for="f-date">الموعد المفضل للمعاينة</label>
+              <input type="date" id="f-date" name="visitDate">
+            </div>
+            <div class="field">
+              <label for="f-contact">طريقة التواصل المفضلة</label>
+              <select id="f-contact" name="contactWay">
+                <option>واتساب</option>
+                <option>اتصال هاتفي</option>
+                <option>بريد إلكتروني</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="f-notes">ملاحظات عامة على الطلب</label>
+            <textarea id="f-notes" name="notes" rows="4" placeholder="اكتب أي تفاصيل تساعدنا في تجهيز العرض بدقة…"></textarea>
+            <div class="hint">📎 لإرسال صور الموقع أو المخططات، أرسلها لنا عبر الواتساب بعد إرسال الطلب.</div>
+          </div>
+
+          <div class="field">
+            <label class="checkbox">
+              <input type="checkbox" id="f-agree" required>
+              <span>أوافق على <a href="terms.html" target="_blank">الشروط والأحكام</a> وعلى التواصل معي بخصوص طلبي.</span>
+            </label>
+            <div class="error-msg">يجب الموافقة للمتابعة</div>
+          </div>
+
+          <!-- حقل مخفي لمكافحة السبام -->
+          <input type="text" name="botcheck" tabindex="-1" autocomplete="off"
+                 style="position:absolute;inset-inline-start:-9999px;opacity:0;height:0" aria-hidden="true">
+
+          <div id="formAlert"></div>
+
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:10px">
+            <button type="button" class="btn btn--wa" id="sendWhatsapp" style="flex:1;min-width:200px">
+              📱 إرسال الطلب عبر واتساب
+            </button>
+            <button type="submit" class="btn btn--primary" id="sendForm" style="flex:1;min-width:200px">
+              ✉️ إرسال الطلب للمصنع
+            </button>
+          </div>
+          <p class="hint" style="text-align:center;margin-top:12px">
+            إرسال الطلب لا يُلزمك بشيء — سيصلك عرض السعر أولاً للمراجعة.
+          </p>
+        </form>
+      </div>
+
+      <!-- ===== العمود الأيسر: الملخص ===== -->
+      <aside>
+        <div class="panel panel--sticky">
+          <h3>ملخص الطلب</h3>
+          <div id="summary"></div>
+          <div class="alert alert--warn" style="margin-top:16px;font-size:.86rem">
+            ⓘ المبلغ الظاهر <b>تقدير مبدئي</b> بناءً على المقاسات التي أدخلتها، وليس عرض سعر نهائياً.
+            يصدر العرض الرسمي بعد المعاينة وتحديد المواصفات.
+          </div>
+          <ul style="margin-top:16px;font-size:.9rem;color:var(--muted);line-height:2">
+            <li>✔ معاينة وقياس مجاني داخل المدينة</li>
+            <li>✔ ضمان مكتوب حتى 5 سنوات</li>
+            <li>✔ فاتورة ضريبية معتمدة</li>
+            <li>✔ <span data-site="order.minOrderNote"></span></li>
+          </ul>
+        </div>
+      </aside>
+
+    </div>
+  </div>
+</section>
+</main>
+<!-- ===== الفوتر ===== -->
+<footer class="footer">
+  <div class="container">
+    <div class="footer__grid">
+      <div>
+        <a class="logo" href="index.html">
+          <img src="assets/img/brand/logo.svg" alt="شعار مصنع برج القمة" width="46" height="46">
+          <span><span data-site="name"></span><small data-site="tagline"></small></span>
+        </a>
+        <p style="margin-top:14px;font-size:.94rem" data-site="about"></p>
+        <div class="social">
+          <a data-social="instagram" href="#" aria-label="انستقرام" target="_blank" rel="noopener">📷</a>
+          <a data-social="twitter" href="#" aria-label="إكس" target="_blank" rel="noopener">𝕏</a>
+          <a data-social="facebook" href="#" aria-label="فيسبوك" target="_blank" rel="noopener">f</a>
+          <a data-social="tiktok" href="#" aria-label="تيك توك" target="_blank" rel="noopener">♪</a>
+          <a data-social="snapchat" href="#" aria-label="سناب شات" target="_blank" rel="noopener">👻</a>
+          <a data-social="linkedin" href="#" aria-label="لينكدإن" target="_blank" rel="noopener">in</a>
+          <a data-social="youtube" href="#" aria-label="يوتيوب" target="_blank" rel="noopener">▶</a>
+        </div>
+      </div>
+
+      <div>
+        <h4>روابط سريعة</h4>
+        <ul>
+          <li><a href="index.html">الرئيسية</a></li>
+          <li><a href="products.html">المنتجات</a></li>
+          <li><a href="services.html">خدماتنا</a></li>
+          <li><a href="projects.html">معرض الأعمال</a></li>
+          <li><a href="about.html">من نحن</a></li>
+          <li><a href="order.html">طلب عرض سعر</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <h4>أقسامنا</h4>
+        <ul id="footerCats"></ul>
+      </div>
+
+      <div>
+        <h4>تواصل معنا</h4>
+        <ul>
+          <li>📍 <span data-site="address"></span></li>
+          <li>📞 <a data-href="tel" href="tel:"><span data-phone-text></span></a></li>
+          <li>✉️ <a data-href="mail" href="mailto:"><span data-site="email"></span></a></li>
+          <li>🕗 السبت – الخميس: 8:00 ص – 6:00 م</li>
+          <li>🧾 س.ت: <span data-site="crNumber"></span></li>
+          <li>🧾 الرقم الضريبي: <span data-site="vatNumber"></span></li>
+        </ul>
+        <a class="btn btn--wa btn--sm" style="margin-top:10px" data-href="wa" href="#" target="_blank" rel="noopener">راسلنا واتساب</a>
+      </div>
+    </div>
+
+    <div class="footer__bottom">
+      <span>© <span data-year></span> <span data-site="name"></span> — جميع الحقوق محفوظة.</span>
+      <span>
+        <a href="privacy.html">سياسة الخصوصية</a> ·
+        <a href="terms.html">الشروط والأحكام</a> ·
+        <a href="sitemap.xml">خريطة الموقع</a>
+      </span>
+    </div>
+  </div>
+</footer>
+
+<!-- ===== أزرار عائمة ===== -->
+<div class="fab">
+  <a class="wa" data-href="wa" href="#" target="_blank" rel="noopener" aria-label="واتساب">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.2-1.7-.9-2-1-.3-.1-.5-.1-.7.2s-.7 1-.9 1.2c-.2.2-.3.2-.6.1-1.7-.9-2.9-1.6-4-3.6-.3-.5.3-.5.8-1.5.1-.2 0-.4 0-.5s-.7-1.6-.9-2.2c-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.5s1.1 2.9 1.2 3.1c.1.2 2.1 3.3 5.2 4.6 1.9.8 2.7.9 3.6.8.6-.1 1.7-.7 2-1.4.2-.7.2-1.2.2-1.4-.1-.2-.3-.2-.6-.3zM12 2a10 10 0 00-8.6 15L2 22l5.2-1.4A10 10 0 1012 2zm0 18.2c-1.6 0-3.1-.4-4.4-1.2l-.3-.2-3.1.8.8-3-.2-.3A8.2 8.2 0 1120.2 12 8.2 8.2 0 0112 20.2z"/></svg>
+  </a>
+  <a class="call" data-href="tel" href="tel:" aria-label="اتصال">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.6 10.8a15 15 0 006.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.2.4 2.4.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1A17 17 0 013 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.4 0 .8-.2 1l-2.3 2.2z"/></svg>
+  </a>
+  <button class="top" aria-label="العودة للأعلى">▲</button>
+</div>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/main.js"></script>
+<script>
+  /* تعبئة أقسام الفوتر */
+  document.addEventListener("DOMContentLoaded", function () {
+    var ul = document.getElementById("footerCats");
+    if (ul && window.CATEGORIES) {
+      ul.innerHTML = CATEGORIES.slice(0, 7).map(function (c) {
+        return '<li><a href="products.html?cat=' + c.id + '">' + c.name + '</a></li>';
+      }).join("");
+    }
+  });
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  var form = $("#orderForm");
+
+  /* ---------- تعبئة القوائم ---------- */
+  $("#f-city").innerHTML = '<option value="">اختر المدينة…</option>' +
+    SITE.cities.map(function (c) { return '<option>' + esc(c) + '</option>'; }).join("");
+  $("#f-ptype").innerHTML = OPTIONS.projectTypes.map(function (c) { return '<option>' + esc(c) + '</option>'; }).join("");
+  $("#f-service").innerHTML = OPTIONS.services.map(function (c) { return '<option>' + esc(c) + '</option>'; }).join("");
+  $("#f-date").min = new Date().toISOString().split("T")[0];
+
+  /* ---------- عرض السلة ---------- */
+  function renderCart() {
+    var items = Cart.items(), list = $("#cartList"), showPrice = (SITE.order && SITE.order.showPrices) !== false;
+    $("#cartEmpty").classList.toggle("hidden", items.length > 0);
+    $("#clearCart").style.display = items.length ? "" : "none";
+
+    list.innerHTML = items.map(function (i) {
+      var specs = [];
+      if (i.width && i.height) specs.push("المقاس: " + i.width + " × " + i.height + " سم");
+      if (i.length) specs.push("الطول: " + i.length + " سم");
+      if (i.color) specs.push("اللون: " + i.color);
+      if (i.glass) specs.push("الزجاج: " + i.glass);
+      if (i.notes) specs.push("ملاحظة: " + i.notes);
+      var lt = Cart.lineTotal(i);
+      return '<div class="cart-item">' +
+          '<img src="' + esc(i.img || "assets/img/placeholder.svg") + '" alt="' + esc(i.name) + '" onerror="this.src=\'assets/img/placeholder.svg\'">' +
+          '<div class="cart-item__info">' +
+            '<h4>' + esc(i.name) + '</h4>' +
+            '<div class="specs">' + specs.map(esc).join("<br>") + '</div>' +
+            '<div style="display:flex;align-items:center;gap:14px;margin-top:8px;flex-wrap:wrap">' +
+              '<div class="qty">' +
+                '<button type="button" data-dec="' + i.uid + '">−</button>' +
+                '<input type="number" min="1" value="' + (i.qty || 1) + '" data-qty="' + i.uid + '">' +
+                '<button type="button" data-inc="' + i.uid + '">+</button>' +
+              '</div>' +
+              (showPrice ? '<b class="price">' + (lt == null ? "حسب الطلب" : money(lt)) + '</b>' : '') +
+              '<button type="button" class="remove-btn" data-del="' + i.uid + '">حذف</button>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
+    }).join("");
+
+    /* الملخص */
+    var t = Cart.total();
+    var rows = '<div class="summary-row"><span>عدد الأصناف</span><b>' + items.length + '</b></div>' +
+               '<div class="summary-row"><span>إجمالي القطع</span><b>' + Cart.count() + '</b></div>';
+    if (showPrice) {
+      rows += '<div class="summary-row"><span>التقدير المبدئي</span><b>' + money(t.sum) + '</b></div>';
+      if (t.hasUnknown) rows += '<div class="summary-row muted"><span>أصناف بسعر حسب الطلب</span><b>تُسعّر لاحقاً</b></div>';
+      rows += '<div class="summary-row total"><span>الإجمالي التقديري</span><span>' + money(t.sum) + (t.hasUnknown ? " +" : "") + '</span></div>';
+    }
+    $("#summary").innerHTML = items.length ? rows : '<p class="muted">لم تُضف منتجات بعد — يمكنك أيضاً إرسال طلب مخصص.</p>';
+  }
+
+  $("#cartList").addEventListener("click", function (e) {
+    var b = e.target;
+    if (b.dataset.del) { Cart.remove(b.dataset.del); renderCart(); toast("تم حذف الصنف"); }
+    if (b.dataset.inc || b.dataset.dec) {
+      var uid = b.dataset.inc || b.dataset.dec;
+      var it = Cart.items().filter(function (i) { return i.uid === uid; })[0];
+      if (it) { Cart.setQty(uid, (it.qty || 1) + (b.dataset.inc ? 1 : -1)); renderCart(); }
+    }
+  });
+  $("#cartList").addEventListener("change", function (e) {
+    if (e.target.dataset.qty) { Cart.setQty(e.target.dataset.qty, e.target.value); renderCart(); }
+  });
+  $("#clearCart").addEventListener("click", function () {
+    if (confirm("سيتم حذف جميع المنتجات من طلبك. هل أنت متأكد؟")) { Cart.clear(); renderCart(); }
+  });
+
+  /* طلب مخصص */
+  $("#addCustom").addEventListener("click", function () {
+    var n = $("#customName").value.trim();
+    if (!n) { toast("اكتب وصف العمل المطلوب أولاً", "err"); return; }
+    Cart.add({
+      id: "custom", name: "طلب مخصص: " + n, img: "assets/img/placeholder.svg",
+      unit: "قطعة", price: null, qty: parseInt($("#customQty").value, 10) || 1,
+      notes: $("#customNotes").value.trim()
+    });
+    $("#customName").value = ""; $("#customNotes").value = ""; $("#customQty").value = 1;
+    renderCart(); toast("تمت إضافة الطلب المخصص ✅");
+  });
+
+  /* ---------- التحقق من النموذج ---------- */
+  function setErr(el, on) {
+    el.classList.toggle("invalid", on);
+    var msg = el.closest(".field").querySelector(".error-msg");
+    if (msg) msg.classList.toggle("show", on);
+  }
+  function validate() {
+    var ok = true;
+    var name = $("#f-name"), phone = $("#f-phone"), email = $("#f-email"), city = $("#f-city"), agree = $("#f-agree");
+    var nameOk = name.value.trim().length >= 3; setErr(name, !nameOk); ok = ok && nameOk;
+    var digits = phone.value.replace(/[^\d]/g, "");
+    var phoneOk = digits.length >= 9 && digits.length <= 15; setErr(phone, !phoneOk); ok = ok && phoneOk;
+    var mailOk = !email.value.trim() || /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.value.trim());
+    setErr(email, !mailOk); ok = ok && mailOk;
+    var cityOk = !!city.value; setErr(city, !cityOk); ok = ok && cityOk;
+    var agreeOk = agree.checked; setErr(agree, !agreeOk); ok = ok && agreeOk;
+    if (!Cart.items().length && !$("#f-notes").value.trim()) {
+      alert("طلبك فارغ. أضف منتجاً أو اكتب تفاصيل الطلب في خانة الملاحظات.");
+      ok = false;
+    }
+    return ok;
+  }
+  form.addEventListener("input", function (e) {
+    if (e.target.classList.contains("invalid")) validate();
+  });
+
+  /* ---------- بناء نص الطلب ---------- */
+  function orderNumber() {
+    var d = new Date();
+    return "BQ-" + d.getFullYear() + String(d.getMonth() + 1).padStart(2, "0") +
+           String(d.getDate()).padStart(2, "0") + "-" + String(Math.floor(Math.random() * 9000) + 1000);
+  }
+  function buildText(ref) {
+    var v = function (id) { return ($(id).value || "").trim(); };
+    var items = Cart.items(), t = Cart.total();
+    var L = [];
+    L.push("*طلب جديد من موقع " + SITE.name + "*");
+    L.push("رقم الطلب: " + ref);
+    L.push("التاريخ: " + new Date().toLocaleString("ar-EG"));
+    L.push("");
+    L.push("*بيانات العميل*");
+    L.push("الاسم: " + v("#f-name"));
+    L.push("الجوال: " + v("#f-phone"));
+    if (v("#f-email")) L.push("البريد: " + v("#f-email"));
+    L.push("المدينة: " + v("#f-city"));
+    if (v("#f-address")) L.push("العنوان: " + v("#f-address"));
+    L.push("نوع المشروع: " + v("#f-ptype"));
+    L.push("الخدمة: " + v("#f-service"));
+    if (v("#f-date")) L.push("موعد المعاينة المفضل: " + v("#f-date"));
+    L.push("طريقة التواصل: " + v("#f-contact"));
+    L.push("");
+    if (items.length) {
+      L.push("*تفاصيل الطلب*");
+      items.forEach(function (i, n) {
+        var line = (n + 1) + ") " + i.name + " — الكمية: " + (i.qty || 1);
+        if (i.width && i.height) line += " | المقاس: " + i.width + "×" + i.height + " سم";
+        if (i.length) line += " | الطول: " + i.length + " سم";
+        if (i.color) line += " | اللون: " + i.color;
+        if (i.glass) line += " | الزجاج: " + i.glass;
+        var lt = Cart.lineTotal(i);
+        if ((SITE.order.showPrices !== false) && lt != null) line += " | تقدير: " + money(lt);
+        L.push(line);
+        if (i.notes) L.push("   ↳ ملاحظة: " + i.notes);
+      });
+      L.push("");
+      if (SITE.order.showPrices !== false) {
+        L.push("الإجمالي التقديري: " + money(t.sum) + (t.hasUnknown ? " + أصناف تُسعّر لاحقاً" : ""));
+        L.push("");
+      }
+    }
+    if (v("#f-notes")) { L.push("*ملاحظات*"); L.push(v("#f-notes")); L.push(""); }
+    L.push("— أُرسل من الموقع الإلكتروني");
+    return L.join("\n");
+  }
+
+  function saveLast(ref, text) {
+    try { sessionStorage.setItem("bq_last_order", JSON.stringify({ ref: ref, text: text })); } catch (e) {}
+  }
+
+  /* ---------- إرسال عبر واتساب ---------- */
+  $("#sendWhatsapp").addEventListener("click", function () {
+    if (!validate()) { toast("أكمل الحقول المطلوبة", "err"); return; }
+    var ref = orderNumber(), text = buildText(ref);
+    saveLast(ref, text);
+    window.open(waLink(text), "_blank");
+    Cart.clear();
+    location.href = "thanks.html?ref=" + encodeURIComponent(ref) + "&via=wa";
+  });
+
+  /* ---------- إرسال عبر النموذج (بريد) ---------- */
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    if (form.botcheck.value) return;                      /* فخ السبام */
+    if (!validate()) { toast("أكمل الحقول المطلوبة", "err"); return; }
+
+    var ref = orderNumber(), text = buildText(ref);
+    var btn = $("#sendForm"), alertBox = $("#formAlert");
+    var key = SITE.order.web3formsKey, endpoint = SITE.order.formEndpoint;
+
+    if (!key && !endpoint) {
+      alertBox.innerHTML = '<div class="alert alert--warn">لم يتم ربط البريد بعد. استخدم زر <b>الإرسال عبر واتساب</b>، ' +
+        'أو اطلب من مطوّر الموقع إضافة مفتاح Web3Forms في ملف <code>assets/js/config.js</code>.</div>';
+      return;
+    }
+
+    btn.disabled = true; btn.textContent = "جارٍ الإرسال…";
+    var payload, url;
+    if (key) {
+      url = "https://api.web3forms.com/submit";
+      payload = {
+        access_key: key,
+        subject: "طلب جديد " + ref + " — " + SITE.name,
+        from_name: $("#f-name").value,
+        name: $("#f-name").value,
+        phone: $("#f-phone").value,
+        email: $("#f-email").value || SITE.email,
+        city: $("#f-city").value,
+        order_ref: ref,
+        message: text
+      };
+    } else {
+      url = endpoint;
+      payload = { name: $("#f-name").value, phone: $("#f-phone").value, email: $("#f-email").value, message: text, ref: ref };
+    }
+
+    fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify(payload)
+    })
+    .then(function (r) { return r.json().catch(function () { return { success: r.ok }; }); })
+    .then(function (res) {
+      if (res.success || res.ok) {
+        saveLast(ref, text);
+        Cart.clear();
+        location.href = "thanks.html?ref=" + encodeURIComponent(ref) + "&via=mail";
+      } else { throw new Error(res.message || "فشل الإرسال"); }
+    })
+    .catch(function () {
+      btn.disabled = false; btn.textContent = "✉️ إرسال الطلب للمصنع";
+      alertBox.innerHTML = '<div class="alert alert--warn">تعذّر إرسال الطلب حالياً. ' +
+        'يرجى المحاولة مرة أخرى أو الإرسال عبر <a href="' + waLink(text) + '" target="_blank"><b>الواتساب</b></a>.</div>';
+    });
+  });
+
+  document.addEventListener("cart:change", renderCart);
+  renderCart();
+});
+</script>
+</body>
+</html>
