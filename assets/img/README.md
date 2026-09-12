@@ -24,7 +24,6 @@
 | `facade-curtain-1.jpg` / `facade-curtain-2.jpg` | واجهة كيرتن وول |
 | `facade-spider-1.jpg` | واجهة سبايدر جلاس |
 | `cladding-1.jpg` / `cladding-2.jpg` | كلادنج ألمنيوم |
-| `kitchen-1.jpg` / `kitchen-2.jpg` | مطبخ ألمنيوم |
 | `partition-1.jpg` | قواطع مكاتب زجاجية |
 | `pergola-1.jpg` | برجولة ألمنيوم |
 | `sunshade-1.jpg` | سواتر وأسوار |

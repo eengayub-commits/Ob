@@ -206,7 +206,7 @@
               ? '<span class="price">' +
                   (p.price == null ? 'السعر حسب الطلب' : 'يبدأ من ' + money(p.price) + ' <small>/ ' + esc(p.unit) + '</small>') +
                 '</span>'
-              : '<span class="price price--quote">💬 عرض سعر مجاني <small>/ حسب المقاس</small></span>') +
+              : '<span class="price price--quote">📐 يُنفّذ حسب المقاس</span>') +
           '</div>' +
           '<div class="card__actions">' +
             '<a class="btn btn--primary btn--sm" href="product.html?id=' + encodeURIComponent(p.id) + '">اطلب الآن</a>' +
