@@ -201,11 +201,13 @@
         '<div class="card__body">' +
           '<h3><a href="product.html?id=' + encodeURIComponent(p.id) + '">' + esc(p.name) + '</a></h3>' +
           '<p>' + esc(p.short) + '</p>' +
-          (showPrice
-            ? '<div class="card__meta"><span class="price">' +
-                (p.price == null ? 'السعر حسب الطلب' : 'يبدأ من ' + money(p.price) + ' <small>/ ' + esc(p.unit) + '</small>') +
-              '</span></div>'
-            : '') +
+          '<div class="card__meta">' +
+            (showPrice
+              ? '<span class="price">' +
+                  (p.price == null ? 'السعر حسب الطلب' : 'يبدأ من ' + money(p.price) + ' <small>/ ' + esc(p.unit) + '</small>') +
+                '</span>'
+              : '<span class="price price--quote">💬 عرض سعر مجاني <small>/ حسب المقاس</small></span>') +
+          '</div>' +
           '<div class="card__actions">' +
             '<a class="btn btn--primary btn--sm" href="product.html?id=' + encodeURIComponent(p.id) + '">اطلب الآن</a>' +
             '<a class="btn btn--ghost btn--sm" target="_blank" rel="noopener" href="' +

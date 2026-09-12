@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>تفاصيل المنتج | مصنع برج القمة</title>
 <meta name="description" content="تفاصيل المنتج والمواصفات الفنية وإمكانية إضافته إلى طلبك مع تحديد المقاس واللون ونوع الزجاج.">
-<meta name="keywords" content="مصنع ألمنيوم, واجهات زجاجية, كيرتن وول, كلادنج, أبواب ألمنيوم, شبابيك ألمنيوم, مطابخ ألمنيوم, برج القمة">
-<meta name="author" content="مصنع برج القمة">
+<meta name="keywords" content="مصنع برج القمة للأعمال المعدنية, مصنع ألمنيوم, واجهات زجاجية, كيرتن وول, كلادنج, أبواب ألمنيوم, شبابيك ألمنيوم, مطابخ ألمنيوم, QTG">
+<meta name="author" content="مصنع برج القمة للأعمال المعدنية">
 <meta name="theme-color" content="#0d1b2a">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://example.com/product.html">
@@ -14,14 +14,14 @@
 <!-- مشاركة على وسائل التواصل -->
 <meta property="og:type" content="website">
 <meta property="og:locale" content="ar_SA">
-<meta property="og:site_name" content="مصنع برج القمة">
+<meta property="og:site_name" content="مصنع برج القمة للأعمال المعدنية">
 <meta property="og:title" content="تفاصيل المنتج | مصنع برج القمة">
 <meta property="og:description" content="تفاصيل المنتج والمواصفات الفنية وإمكانية إضافته إلى طلبك مع تحديد المقاس واللون ونوع الزجاج.">
 <meta property="og:image" content="assets/img/brand/og-image.jpg">
 <meta name="twitter:card" content="summary_large_image">
 
 <!-- الأيقونات -->
-<link rel="icon" href="assets/img/brand/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="assets/img/brand/favicon.png" sizes="any" type="image/png">
 <link rel="apple-touch-icon" href="assets/img/brand/apple-touch-icon.png">
 <link rel="manifest" href="manifest.webmanifest">
 
@@ -53,10 +53,10 @@
 <header class="header">
   <div class="container">
     <a class="logo" href="index.html">
-      <img src="assets/img/brand/logo.svg" alt="شعار مصنع برج القمة" width="46" height="46">
+      <img src="assets/img/brand/logo-mark.png" alt="شعار مصنع برج القمة للأعمال المعدنية" width="46" height="41">
       <span>
         <span data-site="name">مصنع برج القمة</span>
-        <small data-site="tagline">للألمنيوم والواجهات الزجاجية</small>
+        <small data-site="tagline">للأعمال المعدنية</small>
       </span>
     </a>
 
@@ -113,7 +113,7 @@
     <div class="footer__grid">
       <div>
         <a class="logo" href="index.html">
-          <img src="assets/img/brand/logo.svg" alt="شعار مصنع برج القمة" width="46" height="46">
+          <img src="assets/img/brand/logo-mark.png" alt="شعار مصنع برج القمة للأعمال المعدنية" width="46" height="41">
           <span><span data-site="name"></span><small data-site="tagline"></small></span>
         </a>
         <p style="margin-top:14px;font-size:.94rem" data-site="about"></p>
@@ -160,7 +160,7 @@
     </div>
 
     <div class="footer__bottom">
-      <span>© <span data-year></span> <span data-site="name"></span> — جميع الحقوق محفوظة.</span>
+      <span>© <span data-year></span> <span data-site="nameFull"></span> — جميع الحقوق محفوظة.</span>
       <span>
         <a href="privacy.html">سياسة الخصوصية</a> ·
         <a href="terms.html">الشروط والأحكام</a> ·
@@ -237,12 +237,15 @@ document.addEventListener("DOMContentLoaded", function () {
       '<h1 style="font-size:clamp(1.5rem,3vw,2.1rem)">' + esc(p.name) + '</h1>' +
       '<p class="muted">' + esc(p.desc) + '</p>' +
 
-      (showPrice ? '<div class="panel" style="background:var(--bg-soft);padding:16px 18px;margin-bottom:18px">' +
-        '<div class="price" style="font-size:1.35rem">' +
-          (p.price == null ? 'السعر حسب الطلب' : money(p.price) + ' <small>/ ' + esc(p.unit) + '</small>') +
-        '</div>' +
-        '<div class="hint" style="color:var(--muted);font-size:.85rem">السعر تقديري ويختلف حسب المقاس ونوع الزجاج واللون والموقع. العرض النهائي بعد المعاينة.</div>' +
-      '</div>' : '') +
+      '<div class="panel" style="background:var(--bg-soft);padding:16px 18px;margin-bottom:18px">' +
+        (showPrice
+          ? '<div class="price" style="font-size:1.35rem">' +
+              (p.price == null ? 'السعر حسب الطلب' : money(p.price) + ' <small>/ ' + esc(p.unit) + '</small>') +
+            '</div>' +
+            '<div class="hint" style="color:var(--muted);font-size:.85rem">السعر تقديري ويختلف حسب المقاس ونوع الزجاج واللون والموقع. العرض النهائي بعد المعاينة.</div>'
+          : '<div class="price" style="font-size:1.2rem">💬 عرض سعر مجاني خلال 24 ساعة</div>' +
+            '<div class="hint" style="color:var(--muted);font-size:.85rem">يختلف السعر حسب المقاس ونوع القطاع والزجاج واللون وموقع التركيب. أضف المنتج إلى طلبك بمقاسك التقريبي وسنرسل لك عرضاً دقيقاً مكتوباً — مجاناً ودون أي التزام.</div>') +
+      '</div>' +
 
       '<form class="panel" id="addForm">' +
         '<h3>أضف إلى طلبك</h3>' +
@@ -301,7 +304,6 @@ document.addEventListener("DOMContentLoaded", function () {
   /* معاينة السعر التقديري للسطر */
   var form = $("#addForm"), prev = $("#linePreview");
   function updatePreview() {
-    if (!showPrice || p.price == null) return;
     var fd = new FormData(form);
     var item = {
       unit: p.unit, price: p.price,
@@ -312,10 +314,11 @@ document.addEventListener("DOMContentLoaded", function () {
     if ((p.unit === "م²" && (!item.width || !item.height)) || (p.unit === "م.ط" && !item.length)) {
       prev.style.display = "none"; return;
     }
-    var total = Cart.lineTotal(item);
     prev.style.display = "block";
-    prev.innerHTML = "المساحة/الطول التقديري: <b>" + area.toFixed(2) + " " + p.unit +
-      "</b> × " + (item.qty || 1) + " قطعة — التقدير المبدئي: <b>" + money(total) + "</b>";
+    var base = "المساحة/الطول التقديري: <b>" + area.toFixed(2) + " " + p.unit +
+               "</b> × " + (item.qty || 1) + " قطعة";
+    if (showPrice && p.price != null) base += " — التقدير المبدئي: <b>" + money(Cart.lineTotal(item)) + "</b>";
+    prev.innerHTML = base;
   }
   form.addEventListener("input", updatePreview);
 

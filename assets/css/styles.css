@@ -137,9 +137,12 @@ p{margin:0 0 1em}
 
 /* ===== الهيرو ===== */
 .hero{
-  position:relative;background-color:var(--navy);min-height:clamp(520px,78vh,720px);display:flex;align-items:center;
-  background:linear-gradient(120deg,rgba(13,27,42,.93) 0%,rgba(13,27,42,.72) 45%,rgba(59,90,122,.55) 100%),
-             var(--hero-img,#0d1b2a) center/cover no-repeat;
+  position:relative;min-height:clamp(520px,78vh,720px);display:flex;align-items:center;
+  background-color:var(--navy);
+  /* ضع صورة الغلاف باسم hero.jpg داخل assets/img/ */
+  background-image:linear-gradient(120deg,rgba(13,27,42,.93) 0%,rgba(13,27,42,.72) 45%,rgba(59,90,122,.55) 100%),
+                   url("../img/hero.jpg");
+  background-size:cover;background-position:center;background-repeat:no-repeat;
   color:#fff;overflow:hidden;
 }
 .hero::after{
@@ -414,3 +417,7 @@ html.js .reveal.in{opacity:1;transform:none}
   background:var(--gold);color:var(--navy);padding:.6rem 1.2rem;border-radius:8px;font-weight:700;
 }
 .skip-link:focus{inset-inline-start:12px}
+
+/* ===== حالة إخفاء الأسعار ===== */
+.price--quote{color:var(--gold);font-weight:700}
+.price--quote small{color:var(--muted);font-weight:500}
