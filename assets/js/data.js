@@ -117,7 +117,7 @@ window.PRODUCTS = [
     nameEn: "Frameless System — Spider · Sliding · Floor Spring · Partitions",
     short: "واجهات ثابتة، نظام الاسبايدر، أبواب سحاب، أبواب مروحة، وقواطع زجاجية.",
     desc: "أنظمة الزجاج الفريملس بلا قطاعات ظاهرة، وتشمل: الواجهات الثابتة، والواجهات بنظام الاسبايدر بمشابك ستانلس، وأبواب السحاب الزجاجية، والأبواب المروحية بمكاين أرضية (فلور سبرنج)، والقواطع الزجاجية للمكاتب والمحلات. تمنح شفافية عالية ومظهراً فاخراً مع سهولة التنفيذ دون أعمال بناء.",
-    img: ["assets/img/products/frameless.jpg", "assets/img/products/partitions.jpg", "assets/img/projects/project-5.jpg"],
+    img: ["assets/img/products/frameless.jpg", "assets/img/products/partitions.jpg"],
     unit: "م²", price: null, featured: true,
     specs: [
       { k: "الأنواع", v: "واجهات ثابتة · اسبايدر · أبواب سحاب · أبواب مروحة · قواطع" },
