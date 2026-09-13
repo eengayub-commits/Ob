@@ -20,6 +20,9 @@ window.SITE = {
   phoneDisplay: "0576772752",      // الصيغة التي تظهر للزائر
   phone2: "",                      // رقم إضافي (اتركه فارغاً "" لإخفائه)
   whatsapp: "966576772752",        // رقم الواتساب بصيغة دولية بدون + وبدون صفر
+  /* رابط الواتساب المختصر لحساب الأعمال — للوصول السريع وللباركود
+     (يفتح المحادثة مباشرة دون حفظ الرقم؛ صورة الباركود في assets/img/brand/whatsapp-qr.png) */
+  whatsappLink: "https://wa.me/message/YNLD7VI74X5DI1",
   email: "info@burjalqimma.com",
   salesEmail: "sales@burjalqimma.com",
 

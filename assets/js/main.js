@@ -34,6 +34,7 @@
       if (t === "tel2") el.href = "tel:" + (S.phone2 || "");
       if (t === "mail") el.href = "mailto:" + (S.email || "");
       if (t === "wa") el.href = waLink("السلام عليكم، أرغب بالاستفسار عن منتجات " + (S.name || "") + " 🙏");
+      if (t === "wa-direct") el.href = S.whatsappLink || waLink("السلام عليكم 🙏");
       if (t === "map") el.href = S.mapLink || "#";
     });
     /* روابط التواصل الاجتماعي: إخفاء غير المعبأ */

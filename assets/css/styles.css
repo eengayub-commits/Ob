@@ -429,3 +429,17 @@ html.js .reveal.in{opacity:1;transform:none}
 /* ===== حالة إخفاء الأسعار ===== */
 .price--quote{color:var(--gold);font-weight:700}
 .price--quote small{color:var(--muted);font-weight:400}
+
+/* ===== بطاقة باركود الواتساب ===== */
+.qr-card{display:flex;align-items:center;gap:20px;flex-wrap:wrap;text-align:start}
+.qr-card__img{
+  flex:none;width:150px;height:150px;padding:8px;background:#fff;
+  border:1px solid var(--line);border-radius:var(--radius-sm);
+}
+.qr-card__img img{width:100%;height:100%;object-fit:contain}
+.qr-card__body{flex:1;min-width:220px}
+.qr-card__body p{margin-bottom:.8rem}
+@media (max-width:520px){
+  .qr-card{justify-content:center;text-align:center}
+  .qr-card__body{text-align:center}
+}
