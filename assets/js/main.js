@@ -45,7 +45,7 @@
     /* سنة الحقوق */
     $$("[data-year]").forEach(function (el) { el.textContent = new Date().getFullYear(); });
     /* رقم الهاتف بصيغة عرض */
-    $$("[data-phone-text]").forEach(function (el) { el.textContent = S.phone || ""; });
+    $$("[data-phone-text]").forEach(function (el) { el.textContent = S.phoneDisplay || S.phone || ""; });
   }
 
   /* ---------- القائمة للجوال ---------- */
