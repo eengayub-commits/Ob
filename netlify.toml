@@ -1,0 +1,10 @@
+# إعدادات نشر موقع مصنع برج القمة على Netlify
+
+[build]
+  # الموقع ثابت — لا يحتاج أمر بناء، والملفات في جذر المستودع
+  publish = "."
+
+[build.processing]
+  # إيقاف المعالجة التلقائية: تمنع تحويل /products.html إلى /products
+  # وهو ما قد يكسر ملف تحقق جوجل ويخالف روابط canonical
+  skip_processing = true
