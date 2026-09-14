@@ -66,6 +66,10 @@
     overlay.addEventListener("click", function () { toggle(false); });
     $$(".nav a").forEach(function (a) { a.addEventListener("click", function () { toggle(false); }); });
     document.addEventListener("keydown", function (e) { if (e.key === "Escape") toggle(false); });
+    /* عند تغيير حجم الشاشة (أو تفعيل «عرض الكمبيوتر») تُغلق القائمة الجانبية */
+    window.addEventListener("resize", function () {
+      if (window.innerWidth > 760 && nav.classList.contains("open")) toggle(false);
+    });
 
     /* تفعيل الرابط الحالي */
     var page = location.pathname.split("/").pop() || "index.html";

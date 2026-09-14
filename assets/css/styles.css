@@ -50,8 +50,9 @@ body{
   line-height:1.85;
   font-size:16px;
   -webkit-font-smoothing:antialiased;
-  overflow-x:hidden;
+  overflow-x:clip;
 }
+html{overflow-x:clip}
 img{max-width:100%;display:block;height:auto}
 a{color:inherit;text-decoration:none}
 ul{margin:0;padding:0;list-style:none}
@@ -129,15 +130,43 @@ p{margin:0 0 1em}
 .burger{display:none;background:none;border:0;cursor:pointer;padding:8px;color:var(--navy)}
 .burger svg{width:28px;height:28px}
 
-@media (max-width:1024px){
-  .burger{display:block}
+/* شاشات كبيرة ضيقة قليلاً: تصغير القائمة قبل اللجوء إلى سطر ثانٍ */
+@media (max-width:1240px){
+  .nav a{padding:.5rem .55rem;font-size:.92rem}
+  .logo img{width:40px;height:36px}
+  .logo{font-size:1rem}
+}
+
+/* التابلت ووضع «عرض الكمبيوتر» في الجوال (≈980 بكسل):
+   القائمة كاملة في سطر ثانٍ داخل الهيدر بدل زر القائمة */
+@media (min-width:761px) and (max-width:1120px){
+  :root{--header-h:112px}
+  .header .container{flex-wrap:wrap;row-gap:4px;padding-block:8px;min-height:0}
+  .logo{order:1}
+  .header__actions{order:2}
   .nav{
-    position:fixed;inset-block-start:0;inset-inline-end:-100%;width:min(300px,84vw);height:100vh;
-    background:#fff;flex-direction:column;align-items:stretch;gap:2px;padding:84px 18px 24px;
-    box-shadow:var(--shadow-lg);transition:.3s ease;overflow-y:auto;
+    order:3;flex-basis:100%;justify-content:center;flex-wrap:wrap;gap:2px;
+    border-top:1px solid var(--line);padding-top:6px;margin-top:2px;
   }
-  .nav.open{inset-inline-end:0}
-  .nav a{padding:.85rem 1rem;border-bottom:1px solid var(--line);border-radius:0}
+  .nav a{font-size:.92rem;padding:.4rem .7rem}
+  .burger{display:none}
+}
+
+/* الجوال: زر القائمة والقائمة الجانبية */
+@media (max-width:760px){
+  /* backdrop-filter يجعل الهيدر مرجعاً للعناصر الثابتة، فتُحسب القائمة من أسفله
+     بدل أعلى الشاشة — نعطّله على الجوال لتغطي القائمة الشاشة كاملة */
+  .header{backdrop-filter:none;background:#fff}
+  .burger{display:block;position:relative;z-index:62}
+  .nav{
+    position:fixed;inset-block-start:0;inset-inline-end:0;width:min(300px,84vw);height:100vh;height:100dvh;
+    background:#fff;flex-direction:column;align-items:stretch;gap:2px;padding:84px 18px 24px;
+    box-shadow:var(--shadow-lg);overflow-y:auto;
+    transform:translateX(-100%);visibility:hidden;z-index:61;
+    transition:transform .3s ease, visibility .3s ease;
+  }
+  .nav.open{transform:translateX(0);visibility:visible}
+  .nav a{padding:.85rem 1rem;border-bottom:1px solid var(--line);border-radius:0;font-size:1rem}
   .nav-overlay{position:fixed;inset:0;background:rgba(13,27,42,.5);z-index:55;opacity:0;pointer-events:none;transition:.3s}
   .nav-overlay.show{opacity:1;pointer-events:auto}
   .header__actions .btn--quote{display:none}
@@ -188,7 +217,7 @@ p{margin:0 0 1em}
 /* ===== شبكة البطاقات العامة ===== */
 .grid{display:grid;gap:24px}
 .grid--2{grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}
-.grid--3{grid-template-columns:repeat(auto-fill,minmax(290px,1fr))}
+.grid--3{grid-template-columns:repeat(auto-fill,minmax(258px,1fr))}
 .grid--4{grid-template-columns:repeat(auto-fill,minmax(230px,1fr))}
 
 /* ===== بطاقة منتج ===== */
@@ -281,7 +310,7 @@ textarea{resize:vertical;min-height:110px}
 .step p{color:var(--muted);font-size:.93rem;margin:0}
 
 /* ===== معرض الأعمال ===== */
-.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px}
 .gallery figure{
   position:relative;margin:0;border-radius:var(--radius);overflow:hidden;cursor:pointer;
   aspect-ratio:4/3;background:var(--silver-2);
