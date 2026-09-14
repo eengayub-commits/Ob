@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /thanks.html
 
-Sitemap: https://eengayub-commits.github.io/Ob/sitemap.xml
+Sitemap: https://qimmatower.netlify.app/sitemap.xml
