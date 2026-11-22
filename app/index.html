@@ -1556,8 +1556,8 @@ function quoteSVGs(q,logo){
     s+=T(x-5,cy,N(it.w)?String(N(it.w)):"—",{size:8.8,anchor:"end"});x-=C[5][2];
     s+=T(x-5,cy,N(it.h)?String(N(it.h)):"—",{size:8.8,anchor:"end"});x-=C[6][2];
     s+=T(x-5,cy,L1.totalArea?L1.totalArea.toFixed(2):"—",{size:8.8,anchor:"end"});x-=C[7][2];
-    s+=T(x-5,cy,it.pricing==="lump"?"مقطوع":m2f(it.price),{size:8.8,anchor:"end"})+EN(x-5,cy+11,it.pricing==="lump"?"Lump sum":it.pricing==="unit"?"للحبة / per unit":"للمتر٢ / per m²",{size:6.8});
-    if(N(it.addon)&&it.pricing!=="lump")s+=T(x-5,cy+22,`+ ${m2f(it.addon)} بوش اوت`,{size:7,anchor:"end",fill:QC.muted})+EN(x-5,cy+31,"push-out / unit",{size:6.2});x-=C[8][2];
+    s+=T(x-5,cy,it.pricing==="lump"?"مقطوع":m2f(it.price),{size:8.8,anchor:"end"})+(it.pricing==="lump"?EN(x-5,cy+11,"Lump sum",{size:6.8}):"");
+    if(N(it.addon)&&it.pricing!=="lump")s+=T(x-5,cy+13,`+ ${m2f(it.addon)} بوش اوت`,{size:7,anchor:"end",fill:QC.muted})+EN(x-5,cy+22,"push-out / unit",{size:6.2});x-=C[8][2];
     s+=T(x-5,cy,m2f(L1.total),{size:9.2,anchor:"end",weight:700});
     s+=L(X1,y+rh,X2,y+rh,{stroke:QC.line,sw:.5});y+=rh;
   });
