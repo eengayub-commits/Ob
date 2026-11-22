@@ -1533,20 +1533,20 @@ function quoteSVGs(q,logo){
   y+=bh+14;
   s+=T(X2,y,"يسرّنا أن نتقدم لكم بعرض سعر لتصنيع وتوريد وتركيب الأعمال التالية شاملاً جميع الإكسسوارات وأصول التركيب:",{size:9.5,anchor:"end"});
   s+=EN(X2,y+11,"We are pleased to quote for the manufacture, supply and installation of the following works, including all accessories and proper installation:",{size:7.4});y+=21;
-  const C=[["#","No.",20],["الشكل","Elevation",42],["الدور","Floor",30],["البند والوصف","Item & description",130],["العدد","Qty",32],["العرض","Width",48],["الارتفاع","Height",48],["الوحدة (م2)","Unit (m²)",54],["سعر الوحدة","Unit price",62],["الإجمالي","Total (SAR)",69]];
+  const C=[["#","No.",20],["الشكل","Elevation",38],["الدور","Floor",28],["البند والوصف","Item & description",158],["العدد","Qty",28],["العرض","Width",44],["الارتفاع","Height",44],["الوحدة (م2)","Unit (m²)",50],["سعر الوحدة","Unit price",58],["الإجمالي","Total (SAR)",67]];
   function thead(){const HH=48;s+=`<rect x="${X1}" y="${y}" width="${W}" height="${HH}" rx="3" fill="${QC.teal}"/>`;let x=X2;
     C.forEach(([l,e,w],ci)=>{if(ci===5||ci===6){s+=T(x-5,y+36,l,{size:7.8,anchor:"end",weight:700,fill:"#fff"})+EN(x-5,y+44,e,{size:6.4,fill:"#d7e7ef"});
         if(ci===5){const gx=x,gw=C[5][2]+C[6][2];s+=T(gx-gw/2,y+12,"المقاس (مم)",{size:8.3,anchor:"middle",weight:700,fill:"#fff"})+EN(gx-gw/2,y+21,"Size (mm)",{size:6.6,fill:"#d7e7ef",anchor:"middle"})+L(gx-gw+4,y+25,gx-4,y+25,{stroke:"#7fa9bc",sw:.6})}}
       else s+=T(x-5,y+21,l,{size:l.length>10?7.2:8.3,anchor:"end",weight:700,fill:"#fff"})+EN(x-5,y+32,e,{size:6.6,fill:"#d7e7ef"});x-=w});y+=HH}
   thead();
   (q.items||[]).forEach((it,i)=>{
-    const L1=qLine(q,it);const isWin=it.type!=="other"&&KINDS[it.type];const dl=wrapText(it.desc||"",36).slice(0,2);const de=wrapText(enOf(it.desc,it.descEn),44).slice(0,2);const typeEn=it.type==="other"?"General item / other works":(KINDS[it.type]?KINDS[it.type][1]:"");const rh=Math.max(isWin?50:30,8+(2+dl.length+de.length)*11);
+    const L1=qLine(q,it);const isWin=it.type!=="other"&&KINDS[it.type];const dl=wrapText(it.desc||"",44).slice(0,2);const de=wrapText(enOf(it.desc,it.descEn),54).slice(0,2);const typeEn=it.type==="other"?"General item / other works":(KINDS[it.type]?KINDS[it.type][1]:"");const rh=Math.max(isWin?50:30,8+(2+dl.length+de.length)*11);
     if(ensure(rh+4)){thead()}
     if(i%2)s+=`<rect x="${X1}" y="${y}" width="${W}" height="${rh}" fill="#f7f9fb"/>`;
     let x=X2;const cy=y+16;
     s+=T(x-5,cy,String(i+1),{size:8.5,anchor:"end",fill:QC.muted});x-=C[0][2];
     if(isWin&&N(it.w)&&N(it.h))s+=`<g>${elevation({...it,kind:it.type,hinge:it.hinge||"R"},x-C[1][2]+4,y+5,C[1][2]-8,rh-10,{mini:true})}</g>`;x-=C[1][2];
-    s+=T(x-C[2][2]/2,cy,flr(it.floor)||"—",{size:9,anchor:"middle",weight:700})+(FLOOR_EN[flr(it.floor)]?EN(x-C[2][2]/2,cy+10,FLOOR_EN[flr(it.floor)],{size:6.2,anchor:"middle"}):"");x-=C[2][2];
+    s+=T(x-C[2][2]/2,cy,flr(it.floor)||"—",{size:9,anchor:"middle",weight:700})+(FLOOR_EN[flr(it.floor)]?EN(x-C[2][2]/2,cy+10,FLOOR_EN[flr(it.floor)],{size:5.4,anchor:"middle"}):"");x-=C[2][2];
     const sysAr=KOPT(it.type).base==="sliding"?((it.sys||defSys(q))==="royal"?" - رويال 12 سم":" - سرايا 10 سم"):"",sysEn=sysAr?((it.sys||defSys(q))==="royal"?" - Royal 12 cm":" - Saraya 10 cm"):"";
     s+=T(x-5,cy,qTypeName(it.type),{size:9,anchor:"end",weight:700});let ly=cy+10.5;
     if(typeEn){s+=EN(x-5,ly,typeEn,{size:7.6});ly+=11}
