@@ -485,7 +485,7 @@ const P={
 };
 const DEFAULT_CFG={
   barLen:6000, trim:20, kerf:5, aluPrice:0, paintRate:0, glassPrice:0, tapeFactor:1, tapeRoll:100, tapePrice:0,
-  prices:{balustrade:400,sar_slide:450,sar_slide_fix:480,roy_slide:570,roy_slide_fix:580,cw:450,pushout:350,awning:350,awning_fix:350,fixed:350,door:550,casement:450},
+  specText:"",prices:{balustrade:400,sar_slide:450,sar_slide_fix:480,roy_slide:570,roy_slide_fix:580,cw:450,pushout:350,awning:350,awning_fix:350,fixed:350,door:550,casement:450},
   company:{nameAr:"مصنع برج القمة للأعمال المعدنية",nameEn:"AL QIMMA TOWER FACTORY",vat:"",cr:"",address:"",phone:"",email:"",website:"",bank:"",account:"",iban:"",logo:""},
   profiles:[[P.sFrame,1.10],[P.sSash,0.95],[P.sScreen,0.45],[P.sInter,0.40],[P.rFrame,1.65],[P.rSash,1.20],[P.rInter,0.45],[P.rScreen,0.42],[P.cFrame,1.25],[P.cSash,1.05],[P.bead24,0.25],[P.dFrame,1.50],[P.dSash,1.30],[P.dKick,1.10],[P.bead1,0.22]].map(([name,kg])=>({name,kg})),
   recipes:[
@@ -629,6 +629,9 @@ function settingsView(){
     ${sIn("company.nameAr","اسم الشركة بالعربي")}${sIn("company.nameEn","اسم الشركة بالإنجليزي")}${sIn("company.vat","الرقم الضريبي (15 رقم)")}${sIn("company.cr","السجل التجاري")}${sIn("company.address","العنوان")}${sIn("company.phone","الهاتف")}${sIn("company.email","البريد الإلكتروني")}${sIn("company.website","الموقع الإلكتروني")}${sIn("company.bank","البنك")}${sIn("company.account","رقم الحساب")}${sIn("company.iban","رقم الآيبان IBAN")}
     <div class="fld">شعار الشركة (للعروض والمستندات)<div class="toolbar">${S.cfgDraft.company&&S.cfgDraft.company.logo?`<img src="${blob(S.cfgDraft.company.logo)}" alt="الشعار" style="height:44px;width:auto;border:1px solid var(--line);border-radius:6px;background:#fff;padding:2px">`:""}${S.canWrite&&S.assets?`<span class="btn upl">${S.busy.logo?"جارٍ الرفع…":"رفع الشعار PNG/JPG"}<input type="file" data-logo="1" accept="image/png,image/jpeg"></span>`:`<span class="small muted">رفع الشعار متاح للمحررين</span>`}</div></div>
   </div></div>
+  <div class="card"><h3>المواصفات الفنية في عروض الأسعار</h3>
+    <p class="small muted" style="margin:0">تظهر في كل عروض الأسعار. السطر اللي يبدأ بـ # عنوان قسم، وكل سطر بالشكل: النص العربي | English. اتركها فاضية لاستخدام المواصفات الافتراضية.</p>
+    <textarea id="s-specText" data-s="specText" rows="14" placeholder="${esc(SPEC_DEFAULT)}" ${S.canWrite?"":"disabled"}>${esc(S.cfgDraft.specText||SPEC_DEFAULT)}</textarea></div>
   <div class="card"><h3>الأسعار الافتراضية لعروض الأسعار <span class="small muted">ر.س / م² (البوش اوت ر.س / درفة)</span></h3>
     <p class="small muted" style="margin:0">أي بند جديد في عرض السعر يأخذ سعره من هنا حسب النوع والنظام. تقدر تغيّر سعر أي بند داخل العرض يدوياً، والسعر اليدوي ما يتغيّر تلقائياً.</p>
     <div class="grid">${PRICE_LABELS.map(([k,l])=>sIn("prices."+k,l,"number")).join("")}</div></div>
@@ -1381,13 +1384,44 @@ const Q_STATUS_CLS={"مسودة":"","مرسل للعميل":"s2","معتمد":"s
 const Q_TYPES={...Object.fromEntries(KIND_LIST.map(([k,v])=>[k,v[0]])),other:"بند عام / أعمال أخرى"};
 const qTypeName=k=>Q_TYPES[k]||(KINDS[k]?KINDS[k][0]:"");
 const PRICING={m2:"بالمتر المربع",unit:"بالحبة",lump:"مقطوعية"};
-const Q_TERMS=`الأسعار بالريال السعودي وغير شاملة ضريبة القيمة المضافة 15% ما لم يُذكر خلاف ذلك.
+const SPEC_DEFAULT=`# الألمنيوم | ALUMINIUM
+قطاع الكارتن وول (ترانزوم) SG-50 مقاس 9.5 × 5 سم، سماكة الأجناب 2.2 مم وسماكة القاعدة 3 مم، سحب الوطنية أو ما يعادله | Curtain wall (transom) profile SG-50, 9.5 × 5 cm, side walls 2.2 mm, base 3 mm, extruded by Al Wataniya or equivalent
+قطاع شبابيك السحاب رويال مقاس 12 سم سماكة 2 مم، عبارة عن مجريين | Royal sliding window profile 12 cm, 2 mm thick, double track
+قطاع شبابيك القلاب مع الثابت: حلق بوكس 10.5 سم سماكة 1.5 مم مع درفة 4 سم سماكة 1.5 مم | Top-hung windows with fixed panel: box frame 10.5 cm, 1.5 mm, with 4 cm sash, 1.5 mm
+قطاع الشبابيك الثابتة: حلق بوكس 10.5 سم سماكة 1.5 مم | Fixed windows: box frame 10.5 cm, 1.5 mm thick
+قطاع الأبواب المفصلية: حلق بوكس 10.5 سم سماكة 2 مم مع درفة 6 سم سماكة 2 مم | Hinged doors: box frame 10.5 cm, 2 mm, with 6 cm leaf, 2 mm
+# الزجاج | GLASS
+جميع الزجاج من شركة جارديان (منتج سعودي أمريكي) | All glass by Guardian (Saudi-American product)
+زجاج 24 مم سيكوريت، اللون حسب اختيار العميل: 6 مم عاكس + 12 مم فراغ هوائي + 6 مم شفاف أو Low-E | 24 mm tempered double glazing, colour as per client's choice: 6 mm reflective + 12 mm air space + 6 mm clear or Low-E
+# الدهان | PAINT
+دهان بودرة (بودر كوتد) حسب ألوان RAL القياسية، أو تغطيس أنودايز حسب اختيار العميل | Powder coating to standard RAL colours, or anodizing as per client's choice
+# السيليكون | SILICONE
+سيليكون ألماني نيوترال من شركة Wacker نوع WA أو GP، مانع لتسرب الغبار والمياه | German neutral silicone by Wacker, type WA or GP, dust and water tight
+# الإكسسوارات | ACCESSORIES
+جميع الإكسسوارات إيطالية من شركة LAVAAL أو RAGNI | All accessories are Italian, by LAVAAL or RAGNI
+المسكات: RAGNI   ·   الأذرعة: LAVAAL   ·   البكرات: TOP   ·   الربل: EPDM | Handles: RAGNI   ·   Arms: LAVAAL   ·   Rollers: TOP   ·   Gaskets: EPDM
+# الضمانات | WARRANTIES
+ضمان لمدة 10 سنوات ضد تبخير أو تغيّر لون الزجاج من مصنع الزجاج | 10-year warranty against glass fogging or discolouration, by the glass manufacturer
+ضمان لمدة 10 سنوات ضد تقشير أو تغيّر لون الألمنيوم من مصنع الألمنيوم | 10-year warranty against peeling or discolouration of aluminium, by the aluminium manufacturer
+ضمان لمدة سنة ضد عيوب التصنيع والتركيب فقط، ولا يشمل سوء الاستخدام | 1-year warranty against manufacturing and installation defects only, excluding misuse`;
+function parseSpecs(txt){const secs=[];let cur=null;String(txt||"").split(/\n/).map(l=>l.trim()).filter(Boolean).forEach(l=>{
+  if(l.startsWith("#")){const [a,e]=l.slice(1).split("|").map(x=>x.trim());cur={ar:a||"",en:e||"",lines:[]};secs.push(cur);return}
+  const i=l.indexOf(" | ");const ar=i>=0?l.slice(0,i).trim():l,en=i>=0?l.slice(i+3).trim():"";if(!cur){cur={ar:"",en:"",lines:[]};secs.push(cur)}cur.lines.push({ar,en})});return secs}
+const qSpecText=q=>String(q.specText||"").trim()?q.specText:(S.cfg.specText||SPEC_DEFAULT);
+
+const Q_TERMS_OLD=`الأسعار بالريال السعودي وغير شاملة ضريبة القيمة المضافة 15% ما لم يُذكر خلاف ذلك.
 المقاسات الواردة تقريبية، والمحاسبة النهائية حسب المقاسات الفعلية بعد الرفع المساحي في الموقع.
 تبدأ مدة التنفيذ من تاريخ استلام الدفعة المقدمة واعتماد المخططات والألوان والعينات.
 يلتزم العميل بتجهيز الفتحات بشكل نهائي (لياسة وتسوية) قبل موعد التركيب.
 أي أعمال إضافية أو تعديلات خارج نطاق هذا العرض تُسعّر بشكل منفصل.
 لا يشمل العرض أعمال السقالات أو الرافعات أو الأعمال المدنية ما لم يُذكر صراحة.
 الضمان على أعمال الألمنيوم والإكسسوارات حسب شروط الضمان المعتمدة لدى المصنع.`;
+const Q_TERMS=`الأسعار بالريال السعودي وغير شاملة ضريبة القيمة المضافة 15% ما لم يُذكر خلاف ذلك.
+المقاسات الواردة تقريبية، والمحاسبة النهائية حسب المقاسات الفعلية بعد الرفع المساحي في الموقع.
+تبدأ مدة التنفيذ من تاريخ استلام الدفعة المقدمة واعتماد المخططات والألوان والعينات.
+يلتزم العميل بتجهيز الفتحات بشكل نهائي (لياسة وتسوية) قبل موعد التركيب.
+أي أعمال إضافية أو تعديلات خارج نطاق هذا العرض تُسعّر بشكل منفصل.
+لا يشمل العرض أعمال السقالات أو الرافعات أو الأعمال المدنية ما لم يُذكر صراحة.`;
 const Q_PAY=[{label:"الدفعة الأولى - عند التعميد",pct:50},{label:"الدفعة الثانية - بعد توريد وتركيب حلوق الألمنيوم",pct:25},{label:"الدفعة الثالثة - بعد توريد الزجاج للموقع قبل بدء التركيب",pct:20},{label:"الدفعة الرابعة - بعد التشطيب والتسليم النهائي",pct:5}];
 
 function nextQuoteNo(){const y=new Date().getFullYear();let mx=1600;S.quotes.forEach(q=>{const m=new RegExp("^QTG-"+y+"-(\\d+)").exec(q.no||"");if(m)mx=Math.max(mx,+m[1])});return `QTG-${y}-${mx+1}`}
@@ -1438,13 +1472,19 @@ async function logoHref(forPdf){const id=CO().logo;if(!id)return"";if(!forPdf)re
 const m2f=n=>N(n).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
 const QC={ink:"#16202a",teal:"#1d5d78",bronze:"#8f6234",soft:"#eef3f6",line:"#d5dde3",muted:"#5d6b77"};
 /* --- bilingual helpers for the quotation --- */
-const Q_TERMS_EN=`Prices are in Saudi Riyals and exclude 15% VAT unless stated otherwise.
+const Q_TERMS_EN_OLD=`Prices are in Saudi Riyals and exclude 15% VAT unless stated otherwise.
 Sizes are approximate; final billing is based on actual dimensions measured on site.
 Execution period starts from receipt of the advance payment and approval of drawings, colours and samples.
 The client shall prepare the openings in their final condition (plastering and levelling) before installation.
 Any additional works or changes outside the scope of this quotation will be priced separately.
 Scaffolding, cranes and civil works are not included unless explicitly stated.
 Warranty on aluminium works and accessories is as per the factory's approved warranty terms.`;
+const Q_TERMS_EN=`Prices are in Saudi Riyals and exclude 15% VAT unless stated otherwise.
+Sizes are approximate; final billing is based on actual dimensions measured on site.
+Execution period starts from receipt of the advance payment and approval of drawings, colours and samples.
+The client shall prepare the openings in their final condition (plastering and levelling) before installation.
+Any additional works or changes outside the scope of this quotation will be priced separately.
+Scaffolding, cranes and civil works are not included unless explicitly stated.`;
 const PAY_EN={"دفعة مقدمة عند التعميد":"Advance payment upon approval","عند توريد الأعمال للموقع":"Upon delivery of works to site","بعد التركيب والتسليم النهائي":"After installation and final handover","الدفعة الأولى - عند التعميد":"First payment - upon approval","الدفعة الثانية - بعد توريد وتركيب حلوق الألمنيوم":"Second payment - after supply and installation of aluminium frames","الدفعة الثالثة - بعد توريد الزجاج للموقع قبل بدء التركيب":"Third payment - after delivery of glass to site, before installation","الدفعة الرابعة - بعد التشطيب والتسليم النهائي":"Fourth payment - after finishing and final handover"};
 const TITLE_EN={"الأستاذ":"Mr.","الأستاذة":"Ms.","المهندس":"Eng.","المهندسة":"Eng.","الدكتور":"Dr.","الدكتورة":"Dr.","السادة":"Messrs."};
 const hasAr=v=>/[؀-ۿ]/.test(String(v||""));
@@ -1452,7 +1492,7 @@ const enOf=(v,vEn)=>{v=String(v||"").trim();if(vEn&&String(vEn).trim())return St
 const BANK_EN=[[/الراجحي/,"Al Rajhi Bank"],[/الأهلي|الاهلي/,"Saudi National Bank (SNB)"],[/الرياض/,"Riyad Bank"],[/الإنماء|الانماء/,"Alinma Bank"],[/البلاد/,"Bank Albilad"],[/ساب|البريطاني/,"SAB"],[/العربي/,"Arab National Bank"],[/الجزيرة/,"Bank AlJazira"],[/الفرنسي/,"Banque Saudi Fransi"],[/الاستثمار/,"Saudi Investment Bank"]];
 const bankEn=v=>{v=String(v||"");if(!hasAr(v))return v;const m=BANK_EN.find(([r])=>r.test(v));return m?m[1]:""};
 const qSaluteEn=q=>{const n=enOf(q.client?.name,q.client?.nameEn);return n?`${TITLE_EN[qTitle(q)]||""} ${n}`.trim():""};
-const qTermsEn=q=>{if(q.termsEn&&String(q.termsEn).trim())return String(q.termsEn);if(String(q.terms||"").trim()===Q_TERMS.trim())return Q_TERMS_EN;return""};
+const qTermsEn=q=>{if(q.termsEn&&String(q.termsEn).trim())return String(q.termsEn);const t=String(q.terms||"").trim();if(t===Q_TERMS.trim())return Q_TERMS_EN;if(t===Q_TERMS_OLD.trim())return Q_TERMS_EN_OLD;return""};
 const qPayEn=p=>p.labelEn||PAY_EN[String(p.label||"").trim()]||(hasAr(p.label)?"":p.label||"");
 const EN1=["","One","Two","Three","Four","Five","Six","Seven","Eight","Nine","Ten","Eleven","Twelve","Thirteen","Fourteen","Fifteen","Sixteen","Seventeen","Eighteen","Nineteen"];
 const EN10=["","","Twenty","Thirty","Forty","Fifty","Sixty","Seventy","Eighty","Ninety"];
@@ -1571,16 +1611,13 @@ function quoteSVGs(q,logo){
   s+=`<rect x="${TX}" y="${y+2}" width="${TW}" height="34" rx="4" fill="${QC.teal}"/>`+T(TX+TW-8,y+17,"الإجمالي شامل الضريبة",{size:10.5,anchor:"end",weight:700,fill:"#fff"})+EN(TX+TW-8,y+29,"Grand total incl. VAT",{size:7.4,fill:"#d7e7ef"})+T(TX+8,y+24,`${m2f(t.total)} SAR`,{size:11.5,weight:700,fill:"#fff"});y+=48;
   wrapText(tafqeet(t.total),90).forEach(l=>{s+=T(X2,y,l,{size:9.2,anchor:"end",weight:600,fill:QC.bronze});y+=13});
   wrapText(amountEn(t.total),100).forEach(l=>{s+=EN(X2,y,l,{size:7.8,fill:QC.bronze,weight:600});y+=11});y+=10;
-  const specRows=[["نظام الألمنيوم","Aluminium system","system"],["سماكة القطاعات","Profile thickness","profileThk"],["لون الدهان","Paint colour","paintColor"],["نوع الدهان","Paint finish","paintFinish"],["الزجاج","Glass","glassType"],["لون الزجاج","Glass colour","glassColor"],["الإكسسوارات","Accessories","accType"],["الشبك","Fly screen","screen"]].map(([a,e,k])=>{
-    let v=sp[k]||"",ve=enOf(sp[k],spE[k]);if(k==="paintColor"){v=[sp.paintColor,sp.paintCode].filter(Boolean).join(" - ");ve=[enOf(sp.paintColor,spE.paintColor),sp.paintCode].filter(Boolean).join(" - ")}
-    if(k==="glassType"){v=[sp.glassType,sp.glassThk].filter(Boolean).join(" - ");ve=[enOf(sp.glassType,spE.glassType),enOf(sp.glassThk,spE.glassThk)].filter(Boolean).join(" - ")}
-    if(k==="accType"){v=[sp.accType,sp.accColor].filter(Boolean).join(" - ");ve=[enOf(sp.accType,spE.accType),enOf(sp.accColor,spE.accColor)].filter(Boolean).join(" - ")}
-    return[a,e,v,ve]}).filter(r=>r[2]);
-  if(specRows.length){ensure(44+Math.ceil(specRows.length/2)*28);secTitle("المواصفات الفنية","TECHNICAL SPECIFICATIONS");
-    const half=Math.ceil(specRows.length/2);for(let r=0;r<half;r++){[specRows[r],specRows[r+half]].forEach((row,k)=>{if(!row)return;const xr=k===0?X2:X1+W/2-6;const bx=k===0?X1+W/2+6:X1;
-      const cut=(v,n=34)=>v.length>n?v.slice(0,n-1)+"…":v;
-      s+=`<rect x="${bx}" y="${y}" width="${W/2-6}" height="27" fill="${r%2?"#fff":QC.soft}"/>`+T(xr-6,y+12,row[0],{size:8.3,anchor:"end",fill:QC.muted})+EN(xr-6,y+22,row[1],{size:6.6})+T(xr-88,y+12,cut(row[2]),{size:8.8,anchor:"end",weight:600})+EN(xr-88,y+22,cut(row[3]||"",44),{size:6.9})});y+=27}
-    y+=14}
+  {const secs=parseSpecs(qSpecText(q));if(secs.length){ensure(60);secTitle("المواصفات الفنية","TECHNICAL SPECIFICATIONS");
+    secs.forEach(sec=>{ensure(48);if(sec.ar||sec.en){s+=`<rect x="${X1}" y="${y}" width="${W}" height="20" rx="3" fill="${QC.soft}"/>`+T(X2-8,y+14,sec.ar,{size:9.6,anchor:"end",weight:700,fill:QC.teal})+EN(X1+8,y+14,sec.en,{size:7.8,weight:700,fill:QC.teal,anchor:"start"});y+=26}
+      sec.lines.forEach((ln,li)=>{const la=wrapText(ln.ar,92),le=wrapText(ln.en,112);ensure(la.length*12.5+le.length*10+5);
+        la.forEach((l,k)=>{s+=T(X2-(k?20:8),y+3,(k?"":"•  ")+l,{size:8.8,anchor:"end"});y+=12.5});le.forEach(l=>{s+=EN(X2-20,y,l,{size:7.2});y+=10});y+=4});y+=4});
+    const sp=q.specs||{},spE=q.specsEn||{};const chosen=[[sp.paintColor||sp.paintCode?`الدهان: ${[sp.paintColor,sp.paintCode].filter(Boolean).join(" ")}`:"",sp.paintColor||sp.paintCode?`Paint: ${[enOf(sp.paintColor,spE.paintColor),sp.paintCode].filter(Boolean).join(" ")}`:""],[sp.glassColor?`الزجاج: ${sp.glassColor}`:"",sp.glassColor?`Glass: ${enOf(sp.glassColor,spE.glassColor)}`:""],[sp.accColor?`الإكسسوارات: ${sp.accColor}`:"",sp.accColor?`Accessories: ${enOf(sp.accColor,spE.accColor)}`:""]].filter(x=>x[0]);
+    if(chosen.length){ensure(36);s+=`<rect x="${X1}" y="${y}" width="${W}" height="30" rx="3" fill="#fff" stroke="${QC.line}"/>`+T(X2-8,y+13,"الألوان المختارة:  "+chosen.map(x=>x[0]).join("   ·   "),{size:8.8,anchor:"end",weight:600})+EN(X2-8,y+24,"Selected colours:  "+chosen.map(x=>x[1]).filter(Boolean).join("   ·   "),{size:7.2});y+=38}
+    y+=8}}
   const pays=(q.payTerms||[]).filter(p=>N(p.pct)>0);
   if(pays.length){ensure(44+pays.length*27);secTitle("جدول الدفعات","PAYMENT SCHEDULE");
     pays.forEach((p,i)=>{s+=`<rect x="${X1}" y="${y}" width="${W}" height="27" fill="${i%2?"#fff":QC.soft}"/>`+T(X2-8,y+12,`${p.label||""}`,{size:9,anchor:"end"})+EN(X2-8,y+22,qPayEn(p),{size:7.2})+T(X1+170,y+16,`${N(p.pct)}%`,{size:9,anchor:"end",weight:700})+T(X1+8,y+16,`${m2f(r2(t.total*N(p.pct)/100))} SAR`,{size:9,weight:600});y+=27});
@@ -1667,7 +1704,14 @@ function quoteEditor(){
         <dt>الإجمالي شامل الضريبة</dt><dd style="font-size:1.2rem;color:var(--accent)">${M(t.total)}</dd></dl>
         <p class="small" style="margin:0;color:var(--bronze);font-weight:600">${esc(tafqeet(t.total))}</p></div>
     </div>
-    <div class="card"><h3>المواصفات الفنية</h3><div class="grid">
+    <div class="card"><h3>المواصفات الفنية</h3>
+      <details ${S.openSpecTxt?"open":""} data-spectxt="1"><summary class="small" style="cursor:pointer;font-weight:600">نص المواصفات في العرض (الألمنيوم، الزجاج، الدهان، السيليكون، الإكسسوارات، الضمانات)</summary>
+        <p class="small muted" style="margin:6px 0">يُؤخذ من الإعدادات. تعديله هنا يخص هذا العرض فقط. السطر اللي يبدأ بـ # عنوان قسم، وكل سطر: العربي | English.</p>
+        <textarea id="qf-specText" data-q="specText" rows="12" ${W_?"":"disabled"} placeholder="${esc(S.cfg.specText||SPEC_DEFAULT)}">${esc(q.specText||"")}</textarea>
+        ${W_?`<div class="toolbar" style="margin-top:6px"><button class="ghost" data-act="q-spec-copy">نسخ المواصفات العامة للتعديل</button>${q.specText?`<button class="ghost" data-act="q-spec-reset">الرجوع للمواصفات العامة</button>`:""}</div>`:""}
+      </details>
+      <p class="small muted" style="margin:0">الألوان المختارة للعميل (تظهر تحت المواصفات وتنتقل لملف العميل عند التعميد):</p>
+      <div class="grid">
       ${qIn("specs.system","نظام الألمنيوم")}${qIn("specs.profileThk","سماكة القطاعات")}${qIn("specs.paintColor","لون الدهان")}${qIn("specs.paintCode","كود اللون RAL")}${qIn("specs.paintFinish","نوع الدهان")}
       ${qIn("specs.glassType","نوع الزجاج")}${qIn("specs.glassThk","سماكة الزجاج")}${qIn("specs.glassColor","لون الزجاج")}${qIn("specs.accType","الإكسسوارات")}${qIn("specs.accColor","لون الإكسسوارات")}${qIn("specs.screen","الشبك")}
     </div></div>
@@ -1793,6 +1837,8 @@ async function act(el){
     if(a==="q-terms-reset"){q.terms=Q_TERMS;render();qScheduleSave();return}
     if(a==="q-sheet-read"){qSheetRead();return}
     if(a==="q-translate"){qTranslate();return}
+    if(a==="q-spec-copy"){q.specText=S.cfg.specText||SPEC_DEFAULT;S.openSpecTxt=true;render();qScheduleSave();return}
+    if(a==="q-spec-reset"){q.specText="";render();qScheduleSave();return}
     if(a==="q-delsel"){if(!S.qsel.size)return;if(S.confirm!=="q-delsel"){S.confirm="q-delsel";render();clearTimeout(act._t);act._t=setTimeout(()=>{S.confirm=null;render()},5000);return}
       S.confirm=null;const n=S.qsel.size;q.items=q.items.filter(x=>!S.qsel.has(x.id));S.qsel.clear();render();qScheduleSave();toast(`حُذف ${n} بند`);return}
     if(a==="q-sheet-stop"){const st=S.ex["qs:"+S.qid];st&&st.ctl&&st.ctl.abort();return}
@@ -2024,7 +2070,7 @@ document.addEventListener("change",async e=>{
   }
 });
 window.addEventListener("hashchange",fromHash);
-document.addEventListener("toggle",e=>{const d=e.target;if(d.dataset&&d.dataset.en){S.openEn=d.open;return}if(d.dataset&&d.dataset.shop){if(d.open)S.openShop=d.dataset.shop;else if(S.openShop===d.dataset.shop)S.openShop=null;return}if(d.dataset&&d.dataset.ri!=null){if(d.open)S.openRecipe=+d.dataset.ri;else if(S.openRecipe===+d.dataset.ri)S.openRecipe=null}},true);
+document.addEventListener("toggle",e=>{const d=e.target;if(d.dataset&&d.dataset.spectxt){S.openSpecTxt=d.open;return}if(d.dataset&&d.dataset.en){S.openEn=d.open;return}if(d.dataset&&d.dataset.shop){if(d.open)S.openShop=d.dataset.shop;else if(S.openShop===d.dataset.shop)S.openShop=null;return}if(d.dataset&&d.dataset.ri!=null){if(d.open)S.openRecipe=+d.dataset.ri;else if(S.openRecipe===+d.dataset.ri)S.openRecipe=null}},true);
 
 /* ---------- boot ---------- */
 fromHash();
