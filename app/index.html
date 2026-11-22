@@ -1514,7 +1514,7 @@ function quoteSVGs(q,logo){
     {const ct=[co.phone?`جوال: ${iso(co.phone)}`:"",co.email?`البريد: ${iso(co.email)}`:""].filter(Boolean).join("   ·   ");if(ct)s+=T(lx-8,73,ct,{size:7.8,anchor:"end",fill:QC.muted})}
     s+=L(X1,84,X2,84,{stroke:QC.line,sw:.8});y=98;
   }
-  function footer(){s+=L(X1,808,X2,808,{stroke:QC.line,sw:.6})+T(X2,822,[co.nameAr,co.address].filter(Boolean).join(" · "),{size:7.5,anchor:"end",fill:QC.muted})+T(X1,822,"{{PAGE}}",{size:7.5,fill:QC.muted});pages.push(s+"</svg>")}
+  function footer(){s+=L(X1,808,X2,808,{stroke:QC.line,sw:.6})+T(297,822,"مصنع برج القمة للأعمال المعدنية - الرياض - حي السلي",{size:8,anchor:"middle",fill:QC.muted});pages.push(s+"</svg>")}
   function ensure(h){if(y+h>795){footer();header();return true}return false}
   const secTitle=(ar,en)=>{s+=T(X2,y+10,ar,{size:12,anchor:"end",weight:700,fill:QC.teal})+EN(X2,y+21,en,{size:8,weight:700,fill:QC.teal});y+=28};
   header();
