@@ -1583,7 +1583,7 @@ function quoteSVGs(q,logo,stamp,sign){
   crow(y+68,"الموقع:","Location",locFmt(q.client?.location)||"—",enOf(locFmt(q.client?.location),q.client?.locationEn));
   s+=T(cx,y+92,[q.client?.attn?`المسؤول: ${q.client.attn}`:"",q.client?.phone?`جوال: ${iso(q.client.phone)}`:""].filter(Boolean).join("   "),{size:8,anchor:"end",fill:QC.muted});
   const mx=X1+bw-10;const mrow=(i,l,le,v)=>{const yy=y+22+i*30;s+=T(mx,yy,l,{size:8.3,anchor:"end",fill:QC.muted})+EN(mx,yy+9,le,{size:6.6})+T(X1+10,yy+3,v,{size:9.5,weight:700})};
-  mrow(0,"رقم العرض","Quotation No.",`${q.no}${q.rev?`-R${q.rev}`:""}`);mrow(1,"تاريخ العرض","Date",q.date||today());mrow(2,"صلاحية عرض السعر","Quotation validity","");s+=`<text x="${X1+10}" y="${y+22+2*30+3}" font-size="9.5" font-weight="700" fill="#111" direction="rtl" text-anchor="end" font-family="${SF}">${N(q.validDays)}يوم</text>`;
+  mrow(0,"رقم العرض","Quotation No.",`${q.no}${q.rev?`-R${q.rev}`:""}`);mrow(1,"تاريخ العرض","Date",q.date||today());mrow(2,"صلاحية عرض السعر","Quotation validity","");s+=`<text x="${X1+10}" y="${y+22+2*30+3}" font-size="9.5" font-weight="700" fill="#111" direction="rtl" text-anchor="end" font-family="${SF}">${N(q.validDays)} يوم</text>`;
   y+=bh+14;
   s+=T(X2,y,"يسرّنا أن نتقدم لكم بعرض سعر لتصنيع وتوريد وتركيب الأعمال التالية شاملاً جميع الإكسسوارات وأصول التركيب:",{size:9.5,anchor:"end"});
   s+=EN(X2,y+11,"We are pleased to quote for the manufacture, supply and installation of the following works, including all accessories and proper installation:",{size:7.4});y+=21;
