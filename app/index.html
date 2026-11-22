@@ -1446,13 +1446,16 @@ function quoteSVGs(q,logo){
   function thead(){s+=`<rect x="${X1}" y="${y}" width="${W}" height="24" rx="3" fill="${QC.teal}"/>`;let x=X2;C.forEach(([l,w])=>{s+=T(x-5,y+16,l,{size:8.3,anchor:"end",weight:700,fill:"#fff"});x-=w});y+=24}
   thead();
   (q.items||[]).forEach((it,i)=>{
-    const L1=qLine(q,it);const isWin=it.type!=="other"&&KINDS[it.type];const dl=wrapText(it.desc||"",40).slice(0,3);const rh=Math.max(isWin?50:30,22+dl.length*11);
+    const L1=qLine(q,it);const isWin=it.type!=="other"&&KINDS[it.type];const dl=wrapText(it.desc||"",40).slice(0,2);const de=wrapText(it.descEn||"",50).slice(0,2);const typeEn=it.type==="other"?"General item / other works":(KINDS[it.type]?KINDS[it.type][1]:"");const rh=Math.max(isWin?50:30,8+(2+dl.length+de.length)*11);
     if(ensure(rh+4)){thead()}
     if(i%2)s+=`<rect x="${X1}" y="${y}" width="${W}" height="${rh}" fill="#f7f9fb"/>`;
     let x=X2;const cy=y+16;
     s+=T(x-5,cy,String(i+1),{size:8.5,anchor:"end",fill:QC.muted});x-=C[0][1];
-    if(isWin&&N(it.w)&&N(it.h))s+=`<g>${elevation({...it,hinge:it.hinge||"R"},x-C[1][1]+4,y+5,C[1][1]-8,rh-10,{mini:true})}</g>`;x-=C[1][1];
-    s+=T(x-5,cy,`${it.ref?it.ref+" - ":""}${qTypeName(it.type)}`,{size:9,anchor:"end",weight:700});dl.forEach((l,k)=>{s+=T(x-5,cy+12+k*11,l,{size:8,anchor:"end",fill:"#333"})});x-=C[2][1];
+    if(isWin&&N(it.w)&&N(it.h))s+=`<g>${elevation({...it,kind:it.type,hinge:it.hinge||"R"},x-C[1][1]+4,y+5,C[1][1]-8,rh-10,{mini:true})}</g>`;x-=C[1][1];
+    s+=T(x-5,cy,`${it.ref?it.ref+" - ":""}${qTypeName(it.type)}`,{size:9,anchor:"end",weight:700});let ly=cy+10.5;
+    if(typeEn){s+=`<text x="${sx(x-5)}" y="${sx(ly)}" font-size="7.6" fill="${QC.muted}" text-anchor="end" font-family="${SF}">${esc((it.ref?it.ref+" - ":"")+typeEn)}</text>`;ly+=11}
+    dl.forEach(l=>{s+=T(x-5,ly,l,{size:8,anchor:"end",fill:"#333"});ly+=11});
+    de.forEach(l=>{s+=`<text x="${sx(x-5)}" y="${sx(ly)}" font-size="7.6" fill="${QC.muted}" text-anchor="end" font-family="${SF}">${esc(l)}</text>`;ly+=11});x-=C[2][1];
     s+=(N(it.w)&&N(it.h)?`<text x="${sx(x-5)}" y="${sx(cy)}" font-size="8.8" fill="#111" text-anchor="end" direction="ltr" unicode-bidi="bidi-override" font-family="${SF}">${N(it.w)} x ${N(it.h)}</text>`:T(x-5,cy,"—",{size:8.8,anchor:"end"}));x-=C[3][1];
     s+=T(x-5,cy,String(L1.qty),{size:8.8,anchor:"end"});x-=C[4][1];
     s+=T(x-5,cy,L1.totalArea?L1.totalArea.toFixed(2):"—",{size:8.8,anchor:"end"});x-=C[5][1];
@@ -1547,9 +1550,9 @@ function quoteEditor(){
     <div class="card"><h3>بيانات العرض</h3><div class="grid">
       ${qIn("date","تاريخ العرض","date")}${qIn("validDays","مدة صلاحية العرض (يوم)","number")}${qIn("deliveryDays","مدة التنفيذ (يوم)","number")}${qIn("minArea","أقل مساحة محسوبة للقطعة م²","number")}${qIn("preparedBy","معدّ العرض")}${qIn("preparedRole","المسمى")}
     </div></div>
-    <div class="card"><h3>البنود ${W_?`<button data-act="q-add">+ بند</button>`:""}</h3>
-      <div class="tablebox"><table class="qitems"><thead><tr><th>الكود</th><th>النوع</th><th>الوصف</th><th>العرض مم</th><th>الارتفاع مم</th><th>العدد</th><th>التسعير</th><th>السعر</th><th>المساحة م²</th><th>الإجمالي</th><th></th></tr></thead><tbody>
-      ${(q.items||[]).map((it,i)=>{const L1=qLine(q,it);return `<tr class="${it.unclear?"unclear":""}"><td>${qCell(`items.${i}.ref`,"text","56px")}</td><td>${qSel(`items.${i}.type`,Q_TYPES,"150px")}</td><td>${qCell(`items.${i}.desc`,"text","180px")}</td><td>${qCell(`items.${i}.w`,"number","70px")}</td><td>${qCell(`items.${i}.h`,"number","70px")}</td><td>${qCell(`items.${i}.qty`,"number","50px")}</td><td>${qSel(`items.${i}.pricing`,PRICING,"110px")}</td><td>${qCell(`items.${i}.price`,"number","80px")}</td><td class="num">${L1.totalArea?L1.totalArea.toFixed(2):"—"}</td><td><b>${M(L1.total)}</b></td>
+    <div class="card"><h3>البنود <span class="toolbar">${W_&&S.sample?(S.ex["qtr:"+S.qid]&&S.ex["qtr:"+S.qid].busy?`<span class="spin" aria-hidden="true"></span><span class="small">جارٍ الترجمة…</span>`:`<button data-act="q-translate">ترجمة الأوصاف للإنجليزي</button>`):""}${W_?`<button data-act="q-add">+ بند</button>`:""}</span></h3>
+      <div class="tablebox"><table class="qitems"><thead><tr><th>الكود</th><th>النوع</th><th>الوصف (عربي)</th><th>الوصف (English)</th><th>العرض مم</th><th>الارتفاع مم</th><th>العدد</th><th>التسعير</th><th>السعر</th><th>المساحة م²</th><th>الإجمالي</th><th></th></tr></thead><tbody>
+      ${(q.items||[]).map((it,i)=>{const L1=qLine(q,it);return `<tr class="${it.unclear?"unclear":""}"><td>${qCell(`items.${i}.ref`,"text","56px")}</td><td>${qSel(`items.${i}.type`,Q_TYPES,"150px")}</td><td>${qCell(`items.${i}.desc`,"text","180px")}</td><td>${qCell(`items.${i}.descEn`,"text","180px",'dir="ltr" placeholder="English description"')}</td><td>${qCell(`items.${i}.w`,"number","70px")}</td><td>${qCell(`items.${i}.h`,"number","70px")}</td><td>${qCell(`items.${i}.qty`,"number","50px")}</td><td>${qSel(`items.${i}.pricing`,PRICING,"110px")}</td><td>${qCell(`items.${i}.price`,"number","80px")}</td><td class="num">${L1.totalArea?L1.totalArea.toFixed(2):"—"}</td><td><b>${M(L1.total)}</b></td>
         <td>${W_?`<span class="toolbar" style="gap:2px;flex-wrap:nowrap"><button class="ghost" data-act="q-mv" data-i="${i}" data-d="-1" ${i?"":"disabled"} aria-label="لأعلى">↑</button><button class="ghost" data-act="q-mv" data-i="${i}" data-d="1" ${i<q.items.length-1?"":"disabled"} aria-label="لأسفل">↓</button>${S.confirm==="qi:"+it.id?`<button class="danger armed" data-act="q-del" data-i="${i}" data-id="${esc(it.id)}">تأكيد</button>`:`<button class="danger ghost" data-act="q-del" data-i="${i}" data-id="${esc(it.id)}">حذف</button>`}</span>`:""}</td></tr>`}).join("")}
       </tbody></table></div>
       <div class="qtot"><dl class="kv">
@@ -1646,6 +1649,16 @@ async function qSheetRead(){
   }catch(e){S.ex["qs:"+S.qid]={busy:false,err:e&&e.code==="image_rejected"?"لا يمكن قراءة الملف. ارفعه صورة JPG/PNG أو PDF.":sampleErr(e)}}
   render();
 }
+async function qTranslate(){
+  const q=S.qd;if(!q||!S.sample)return;const todo=(q.items||[]).filter(it=>String(it.desc||"").trim());if(!todo.length){toast("لا توجد أوصاف عربية للترجمة");return}
+  const key="qtr:"+S.qid;S.ex[key]={busy:true};render();
+  try{const out=await S.sample.json(`Translate these Arabic item descriptions from an aluminium & glass works quotation (Saudi Arabia) into concise, professional English as used in construction quotations (e.g. "غرفة النوم" → "Bedroom", "سانديلاست" → "Sandblasted", "شبك" → "fly screen"). Keep codes, numbers and brand names as they are.
+Reply with ONLY a JSON object mapping each id to its English text:
+${JSON.stringify(Object.fromEntries(todo.map(it=>[it.id,it.desc])))}`,{modelTier:"quick"});
+    let n=0;(q.items||[]).forEach(it=>{if(out&&typeof out[it.id]==="string"&&out[it.id].trim()){it.descEn=out[it.id].trim();n++}});
+    S.ex[key]={busy:false};render();qScheduleSave();toast(`تُرجم ${n} وصف. راجعها وعدّل أي كلمة إذا تحتاج.`);
+  }catch(e){S.ex[key]={busy:false};render();toast(sampleErr(e))}
+}
 function qSheetCard(){
   const q=S.qd;const sheets=q.sheets||[];const st=S.ex["qs:"+S.qid]||{};const W_=S.canWrite&&q.status!=="معتمد";
   return `<div class="card qsheet"><h3>ورقة رفع المقاسات من الموقع ${W_?(S.assets?`<span class="btn upl">${S.busy.qsheet?"جارٍ الرفع…":"رفع صورة أو PDF"}<input type="file" multiple data-qup="1" accept="image/*,application/pdf" aria-label="رفع ورقة المقاسات"></span>`:`<span class="small muted">الرفع متاح للمحررين</span>`):""}</h3>
@@ -1681,6 +1694,7 @@ async function act(el){
     if(a==="q-pay-del"){q.payTerms.splice(+el.dataset.i,1);render();qScheduleSave();return}
     if(a==="q-terms-reset"){q.terms=Q_TERMS;render();qScheduleSave();return}
     if(a==="q-sheet-read"){qSheetRead();return}
+    if(a==="q-translate"){qTranslate();return}
     if(a==="q-sheet-stop"){const st=S.ex["qs:"+S.qid];st&&st.ctl&&st.ctl.abort();return}
     if(a==="q-flags-clear"){q.sheetFlags=[];q.items.forEach(x=>delete x.unclear);render();qScheduleSave();return}
     if(a==="q-sheet-del"){const key="qsh:"+el.dataset.id;if(S.confirm!==key){S.confirm=key;render();clearTimeout(act._t);act._t=setTimeout(()=>{S.confirm=null;render()},4000);return}S.confirm=null;q.sheets=(q.sheets||[]).filter(f=>f.id!==el.dataset.id);render();qScheduleSave();return}
