@@ -486,7 +486,7 @@ const P={
 const DEFAULT_CFG={
   barLen:6000, trim:20, kerf:5, aluPrice:0, paintRate:0, glassPrice:0, tapeFactor:1, tapeRoll:100, tapePrice:0,
   specText:"",prices:{balustrade:400,sar_slide:450,sar_slide_fix:480,roy_slide:570,roy_slide_fix:580,cw:450,pushout:350,awning:350,awning_fix:350,fixed:350,door:550,casement:450},
-  company:{nameAr:"مصنع برج القمة للأعمال المعدنية",nameEn:"AL QIMMA TOWER FACTORY",vat:"",cr:"",address:"",phone:"",email:"",website:"",bank:"",account:"",iban:"",logo:""},
+  company:{nameAr:"مصنع برج القمة للأعمال المعدنية",nameEn:"AL QIMMA TOWER FACTORY",vat:"",cr:"",address:"",phone:"",email:"",website:"",bank:"",account:"",iban:"",logo:"",stamp:"",signature:""},
   profiles:[[P.sFrame,1.10],[P.sSash,0.95],[P.sScreen,0.45],[P.sInter,0.40],[P.rFrame,1.65],[P.rSash,1.20],[P.rInter,0.45],[P.rScreen,0.42],[P.cFrame,1.25],[P.cSash,1.05],[P.bead24,0.25],[P.dFrame,1.50],[P.dSash,1.30],[P.dKick,1.10],[P.bead1,0.22]].map(([name,kg])=>({name,kg})),
   recipes:[
     {id:"sar-slide2",name:"شباك سحاب سرايا 10سم - درفتين",system:"سرايا",
@@ -627,6 +627,7 @@ function settingsView(){
     <div class="toolbar">${S.canWrite?`<button class="primary" data-act="save-settings">حفظ الإعدادات</button>${S.confirm==="reset-cfg"?`<button class="danger armed" data-act="reset-settings">تأكيد الاسترجاع</button>`:`<button class="danger ghost" data-act="reset-settings">استرجاع الافتراضي</button>`}`:""}</div></section>
   <div class="card"><h3>بيانات الشركة للفواتير</h3><div class="grid">
     ${sIn("company.nameAr","اسم الشركة بالعربي")}${sIn("company.nameEn","اسم الشركة بالإنجليزي")}${sIn("company.vat","الرقم الضريبي (15 رقم)")}${sIn("company.cr","السجل التجاري")}${sIn("company.address","العنوان")}${sIn("company.phone","الهاتف")}${sIn("company.email","البريد الإلكتروني")}${sIn("company.website","الموقع الإلكتروني")}${sIn("company.bank","البنك")}${sIn("company.account","رقم الحساب")}${sIn("company.iban","رقم الآيبان IBAN")}
+    ${[["stamp","ختم الشركة (يظهر في عروض الأسعار)"],["signature","التوقيع (يظهر في عروض الأسعار)"]].map(([k,l])=>`<div class="fld">${l}<div class="toolbar">${S.cfgDraft.company&&S.cfgDraft.company[k]?`<img src="${blob(S.cfgDraft.company[k])}" alt="" style="height:52px;width:auto;border:1px solid var(--line);border-radius:6px;background:#fff;padding:2px">${S.canWrite?`<button class="ghost danger" data-act="co-img-del" data-k="${k}">إزالة</button>`:""}`:""}${S.canWrite&&S.assets?`<span class="btn upl">${S.busy["co_"+k]?"جارٍ الرفع…":"رفع صورة PNG"}<input type="file" data-coimg="${k}" accept="image/png,image/jpeg"></span>`:""}</div></div>`).join("")}
     <div class="fld">شعار الشركة (للعروض والمستندات)<div class="toolbar">${S.cfgDraft.company&&S.cfgDraft.company.logo?`<img src="${blob(S.cfgDraft.company.logo)}" alt="الشعار" style="height:44px;width:auto;border:1px solid var(--line);border-radius:6px;background:#fff;padding:2px">`:""}${S.canWrite&&S.assets?`<span class="btn upl">${S.busy.logo?"جارٍ الرفع…":"رفع الشعار PNG/JPG"}<input type="file" data-logo="1" accept="image/png,image/jpeg"></span>`:`<span class="small muted">رفع الشعار متاح للمحررين</span>`}</div></div>
   </div></div>
   <div class="card"><h3>المواصفات الفنية في عروض الأسعار</h3>
@@ -1278,7 +1279,7 @@ async function handoverPdf(c,mode){
 /* ---------- sales invoices & statements ---------- */
 const QRLIB="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js";
 let qrLoad=null;function loadQr(){if(window.qrcode)return Promise.resolve(window.qrcode);if(!qrLoad){qrLoad=addScript(QRLIB).then(()=>window.qrcode);qrLoad.catch(()=>{qrLoad=null})}return qrLoad}
-const CO=()=>{const c={nameAr:"مصنع برج القمة للأعمال المعدنية",nameEn:"AL QIMMA TOWER FACTORY",vat:"",cr:"",address:"",phone:"",email:"",website:"",bank:"",account:"",iban:"",logo:"",...(S.cfg.company||{})};if(!c.nameAr||c.nameAr==="برج القمة للأعمال المعدنية")c.nameAr="مصنع برج القمة للأعمال المعدنية";if(!c.nameEn||/^burj al-qimma metal works$/i.test(c.nameEn))c.nameEn="AL QIMMA TOWER FACTORY";return c};
+const CO=()=>{const c={nameAr:"مصنع برج القمة للأعمال المعدنية",nameEn:"AL QIMMA TOWER FACTORY",vat:"",cr:"",address:"",phone:"",email:"",website:"",bank:"",account:"",iban:"",logo:"",stamp:"",signature:"",...(S.cfg.company||{})};if(!c.nameAr||c.nameAr==="برج القمة للأعمال المعدنية")c.nameAr="مصنع برج القمة للأعمال المعدنية";if(!c.nameEn||/^burj al-qimma metal works$/i.test(c.nameEn))c.nameEn="AL QIMMA TOWER FACTORY";return c};
 function invTotals(amount,mode){const a=N(amount);let net,total;if(mode==="شامل الضريبة"){total=r2(a);net=r2(a/(1+VAT_RATE))}else{net=r2(a);total=r2(a*(1+VAT_RATE))}return{net,vat:r2(total-net),total}}
 function nextInvNo(){const y=new Date().getFullYear();let mx=0;S.clients.forEach(c=>(c.salesInvoices||[]).forEach(i=>{const m=new RegExp("^INV-"+y+"-(\\d+)$").exec(i.no||"");if(m)mx=Math.max(mx,+m[1])}));return `INV-${y}-${String(mx+1).padStart(4,"0")}`}
 function zatcaTLV(co,inv){const enc=new TextEncoder();const parts=[[1,co.nameAr],[2,co.vat],[3,inv.createdAt||(inv.date+"T12:00:00Z")],[4,inv.total.toFixed(2)],[5,inv.vat.toFixed(2)]];
@@ -1470,6 +1471,8 @@ function arWords(n){n=Math.floor(n);if(!n)return"صفر";const p=[];const b=Math
 function tafqeet(v){const i=Math.floor(r2(v)),h=Math.round((r2(v)-i)*100);const r=i%100;const cur=r>=3&&r<=10?"ريالات سعودية":r>=11?"ريالاً سعودياً":"ريال سعودي";const hr=h%100;const hw=h===1?"هللة واحدة":h===2?"هللتان":hr>=3&&hr<=10?`${h<=10?["","","","ثلاث","أربع","خمس","ست","سبع","ثماني","تسع","عشر"][h]:arWords(h)} هللات`:`${arWords(h)} هللة`;return `فقط ${i===1?"ريال سعودي واحد":i===2?"ريالان سعوديان":`${arWords(i)} ${cur}`}${h?` و${hw}`:""} لا غير`}
 
 /* logo for documents */
+const _dataUrls={};
+async function assetDataUrl(id){if(!id)return"";if(_dataUrls[id])return _dataUrls[id];try{const b=await fetchFile({id});const url=await new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result);fr.readAsDataURL(b)});_dataUrls[id]=url;return url}catch(e){return""}}
 async function logoHref(forPdf){const id=CO().logo;if(!id)return"";if(!forPdf)return blob(id);if(S.logoData&&S.logoData.id===id)return S.logoData.url;
   try{const b=await fetchFile({id});const url=await new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result);fr.readAsDataURL(b)});S.logoData={id,url};return url}catch(e){return""}}
 
@@ -1549,7 +1552,7 @@ function qEnCard(){
 }
 
 /* --- quotation PDF pages (A4 595x842), Arabic with English under every line --- */
-function quoteSVGs(q,logo){
+function quoteSVGs(q,logo,stamp,sign){
   const co=CO();const t=qTotals(q);const pages=[];let s,y;const X1=30,X2=565,W=X2-X1;
   const sp=q.specs||{},spE=q.specsEn||{};
   const EN=(x,yy,v,o={})=>v?`<text x="${sx(x)}" y="${sx(yy)}" font-size="${o.size||7.4}" fill="${o.fill||QC.muted}" text-anchor="${o.anchor||"end"}" font-weight="${o.weight||400}" font-family="${SF}">${esc(v)}</text>`:"";
@@ -1642,6 +1645,8 @@ function quoteSVGs(q,logo){
   if(co.iban||co.bank){s+=`<rect x="${X1}" y="${y}" width="${W}" height="34" rx="4" fill="${QC.soft}"/>`+T(X2-8,y+14,`البنك: ${co.bank||""}   ·   ${co.account?`رقم الحساب: ${iso(co.account)}   ·   `:""}الآيبان: ${iso(co.iban||"")}`,{size:8.8,anchor:"end"})+EN(X2-8,y+26,`Bank: ${bankEn(co.bank)}   ·   ${co.account?`Account No.: ${co.account}   ·   `:""}IBAN: ${co.iban||""}   ·   Account name: ${co.nameEn}`,{size:7.2});y+=44}
   const sy=y;const bw2=(W-14)/2;const prep=q.preparedBy?`${q.preparedBy}${q.preparedRole?" - "+q.preparedRole:""}`:(q.preparedRole||"");const prepE=[enOf(q.preparedBy,q.preparedByEn),enOf(q.preparedRole,q.preparedRoleEn)].filter(Boolean).join(" - ");
   s+=`<rect x="${X1+bw2+14}" y="${sy}" width="${bw2}" height="108" rx="6" fill="#fff" stroke="${QC.line}"/>`+T(X2-10,sy+16,co.nameAr,{size:9.5,anchor:"end",weight:700})+EN(X2-10,sy+27,co.nameEn,{size:7.4,weight:700})+T(X2-10,sy+44,prep,{size:9,anchor:"end"})+EN(X2-10,sy+55,prepE,{size:7.4})+T(X2-10,sy+76,"التوقيع:",{size:8.5,anchor:"end",fill:QC.muted})+EN(X2-10,sy+85,"Signature",{size:6.6})+T(X2-10,sy+98,"الختم:",{size:8.5,anchor:"end",fill:QC.muted})+EN(X2-10,sy+106,"Stamp",{size:6.6});
+  if(stamp)s+=`<image href="${esc(stamp)}" xlink:href="${esc(stamp)}" x="${X1+bw2+20}" y="${sy+16}" width="84" height="84" opacity=".9" preserveAspectRatio="xMidYMid meet"/>`;
+  if(sign)s+=`<image href="${esc(sign)}" xlink:href="${esc(sign)}" x="${X2-150}" y="${sy+58}" width="90" height="34" preserveAspectRatio="xMidYMid meet"/>`;
   s+=`<rect x="${X1}" y="${sy}" width="${bw2}" height="108" rx="6" fill="#fff" stroke="${QC.teal}" stroke-dasharray="4 3"/>`+T(X1+bw2-10,sy+16,"موافقة العميل واعتماد العرض",{size:9.5,anchor:"end",weight:700,fill:QC.teal})+EN(X1+bw2-10,sy+27,"Client acceptance & approval",{size:7.4,weight:700,fill:QC.teal});
   [["الاسم:","Name",48],["التوقيع:","Signature",72],["التاريخ:","Date",96]].forEach(([a,e,dy])=>{s+=T(X1+bw2-10,sy+dy,a,{size:8.5,anchor:"end",fill:QC.muted})+EN(X1+bw2-10,sy+dy+9,e,{size:6.6})});
   y+=118;s+=T(297,y+8,"شاكرين لكم ثقتكم، ونتطلع لخدمتكم",{size:8.5,anchor:"middle",fill:QC.muted})+EN(297,y+19,"Thank you for your trust; we look forward to serving you",{size:7.4,anchor:"middle"});
@@ -1650,7 +1655,7 @@ function quoteSVGs(q,logo){
 }
 
 async function quotePdfBlob(q){const {jsPDF}=await loadJsPdf();const logo=await logoHref(true);const pdf=new jsPDF({unit:"mm",format:"a4",orientation:"portrait",compress:true});
-  const pgs=quoteSVGs(q,logo);for(let i=0;i<pgs.length;i++){if(i)pdf.addPage("a4","portrait");pdf.addImage(await svgToJpeg(pgs[i],3.5,595,842),"JPEG",0,0,210,297)}return pdf.output("blob")}
+  const co=CO();const stamp=await assetDataUrl(co.stamp),sign=await assetDataUrl(co.signature);const pgs=quoteSVGs(q,logo,stamp,sign);for(let i=0;i<pgs.length;i++){if(i)pdf.addPage("a4","portrait");pdf.addImage(await svgToJpeg(pgs[i],3.5,595,842),"JPEG",0,0,210,297)}return pdf.output("blob")}
 const qFileName=q=>`عرض-سعر-${q.no}${q.rev?`-R${q.rev}`:""}-${(q.client?.name||"").trim()}.pdf`.replace(/[\\/:*?"<>|]/g,"-");
 
 /* --- quote persistence --- */
@@ -1866,6 +1871,7 @@ async function act(el){
     return;
   }
   if(a==="reset-settings"){if(S.confirm!=="reset-cfg"){S.confirm="reset-cfg";render();return}S.confirm=null;S.cfgDraft=clone(DEFAULT_CFG);render();toast("استُرجعت القيم الافتراضية، اضغط «حفظ الإعدادات» لاعتمادها");return}
+  if(a==="co-img-del"){if(S.cfgDraft&&S.cfgDraft.company){S.cfgDraft.company[el.dataset.k]="";render();toast("أُزيلت الصورة، اضغط «حفظ الإعدادات»")}return}
   if(a==="cfg-add"){const path=el.dataset.path;const list=getPath(S.cfgDraft,path);const key=path.split(".").pop();list.push(BLANK[key]());if(key==="recipes")S.openRecipe=list.length-1;render();return}
   if(a==="cfg-dup"){const ri=+el.dataset.path.split(".")[1];const r=clone(S.cfgDraft.recipes[ri]);r.id="r"+uid();r.name+=" (نسخة)";S.cfgDraft.recipes.splice(ri+1,0,r);S.openRecipe=ri+1;render();return}
   if(a==="cfg-del"){const key="cfg:"+el.dataset.path;if(S.confirm!==key){S.confirm=key;el.textContent="تأكيد الحذف";el.classList.add("armed");clearTimeout(act._t);act._t=setTimeout(()=>{S.confirm=null;render()},4000);return}
@@ -2071,6 +2077,7 @@ document.addEventListener("change",async e=>{
   if(el.dataset.qselall&&S.qd){if(el.checked)(S.qd.items||[]).forEach(it=>S.qsel.add(it.id));else S.qsel.clear();S.confirm=null;render();return}
   if(el.dataset.qsel&&S.qd){if(el.checked)S.qsel.add(el.dataset.qsel);else S.qsel.delete(el.dataset.qsel);S.confirm=null;render();return}
   if(el.dataset.qup&&el.files&&el.files.length){qSheetUpload([...el.files]);return}
+  if(el.dataset.coimg&&el.files&&el.files[0]&&S.cfgDraft){const k=el.dataset.coimg;S.busy["co_"+k]=true;render();const got=await upload([el.files[0]]);S.busy["co_"+k]=false;if(got[0]){S.cfgDraft.company=S.cfgDraft.company||{};S.cfgDraft.company[k]=got[0].id;toast("رُفعت الصورة، اضغط «حفظ الإعدادات»")}render();return}
   if(el.dataset.logo&&el.files&&el.files[0]&&S.cfgDraft){S.busy.logo=true;render();const got=await upload([el.files[0]]);S.busy.logo=false;if(got[0]){S.cfgDraft.company=S.cfgDraft.company||{};S.cfgDraft.company.logo=got[0].id;toast("رُفع الشعار، اضغط «حفظ الإعدادات»")}render();return}
   if(el.dataset.inv&&el.files&&el.files[0]){
     const pid=el.dataset.inv;S.busy["inv:"+pid]=true;render();
