@@ -153,7 +153,7 @@ tr.unclear td{background:var(--warn-soft)}
 @media (max-width:1100px){.qpreview{position:static;max-height:none}}
 .qprev-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
 .sheet.a4{box-shadow:0 2px 10px rgba(0,0,0,.12);border-radius:4px}
-.qitems td{padding:5px 4px;vertical-align:top}.qitems th{padding:8px 4px}.qitems input,.qitems select{padding:5px 6px}
+.qitems td{padding:5px 4px;vertical-align:top}.qitems input.floorin{width:40px;min-width:40px!important;text-align:center;text-transform:uppercase;padding:5px 2px;font-weight:700}.qitems tr.selrow td{background:var(--accent-soft)}.qitems th{padding:8px 4px}.qitems input,.qitems select{padding:5px 6px}
 .qtot{display:flex;flex-direction:column;gap:6px;align-items:flex-end;padding:12px;border-radius:8px;background:var(--surface-2);border:1px solid var(--line)}
 button.armed-ok{background:var(--ok);border-color:var(--ok);color:#fff}
 .brand img.logo{height:40px;width:auto;flex:none}
@@ -1367,7 +1367,7 @@ function tabInvoices(c){
 }
 
 /* ---------- preliminary quotations (عروض الأسعار المبدئية) ---------- */
-S.quotes=[];S.section="clients";S.qid=null;S.qd=null;S.qDirty=false;S.qq="";S.qstatus="";S.logoData=null;
+S.qsel=new Set();S.quotes=[];S.section="clients";S.qid=null;S.qd=null;S.qDirty=false;S.qq="";S.qstatus="";S.logoData=null;
 const Q_STATUS=["مسودة","مرسل للعميل","معتمد","مرفوض"];
 const Q_STATUS_CLS={"مسودة":"","مرسل للعميل":"s2","معتمد":"s3","مرفوض":"bad","منتهي":"bad"};
 const Q_TYPES={...Object.fromEntries(KIND_LIST.map(([k,v])=>[k,v[0]])),other:"بند عام / أعمال أخرى"};
@@ -1394,7 +1394,8 @@ function locFmt(v){v=String(v||"").trim();if(/^الرياض\s*-\s*حي$/.test(v)
 function qSalute(q){const n=String(q.client?.name||"").trim();return n?`عناية ${qTitle(q)}/ ${n}`:"—"}
 const PRICE_LABELS=[["sar_slide","سحاب سرايا 10 سم - سماكة 1.5 مم"],["sar_slide_fix","سحاب مع ثابت - سرايا"],["roy_slide","سحاب رويال 12 سم - سماكة 2 مم"],["roy_slide_fix","سحاب مع ثابت - رويال"],["cw","كارتن وول ثابت - قطاع ترانزوم 9.5 سم"],["pushout","درفة البوش اوت (للدرفة الواحدة)"],["awning","قلاب"],["awning_fix","قلاب مع ثابت"],["fixed","ثابت كامل"],["door","باب مفصلي (كل الأنواع)"],["casement","شباك مفصلي (درفة / درفتين، مع أو بدون ثابت)"]];
 const FLOORS={"":"—",B:"B بيزمنت",G:"G أرضي",F:"F أول","2F":"2F ثاني","3F":"3F ثالث",R:"R ملحق"};
-const FLOOR_EN={B:"Basement",G:"Ground",F:"First","2F":"Second","3F":"Third",R:"Roof"};
+const FLOOR_EN={B:"Basement",G:"Ground",F:"First",S:"Second","2F":"Second",T:"Third","3F":"Third",R:"Roof"};
+const flr=v=>String(v||"").trim().toUpperCase();
 const SYS_OPTS={saraya:"سرايا 10 سم",royal:"رويال 12 سم"};
 const PR=()=>({...DEFAULT_CFG.prices,...(S.cfg.prices||{})});
 function defSys(q){return /رويال|royal/i.test(String(q?.specs?.system||""))?"royal":"saraya"}
@@ -1537,7 +1538,7 @@ function quoteSVGs(q,logo){
     let x=X2;const cy=y+16;
     s+=T(x-5,cy,String(i+1),{size:8.5,anchor:"end",fill:QC.muted});x-=C[0][2];
     if(isWin&&N(it.w)&&N(it.h))s+=`<g>${elevation({...it,kind:it.type,hinge:it.hinge||"R"},x-C[1][2]+4,y+5,C[1][2]-8,rh-10,{mini:true})}</g>`;x-=C[1][2];
-    s+=T(x-C[2][2]/2,cy,it.floor||"—",{size:9,anchor:"middle",weight:700})+(it.floor&&FLOOR_EN[it.floor]?EN(x-C[2][2]/2,cy+10,FLOOR_EN[it.floor],{size:6.2,anchor:"middle"}):"");x-=C[2][2];
+    s+=T(x-C[2][2]/2,cy,flr(it.floor)||"—",{size:9,anchor:"middle",weight:700})+(FLOOR_EN[flr(it.floor)]?EN(x-C[2][2]/2,cy+10,FLOOR_EN[flr(it.floor)],{size:6.2,anchor:"middle"}):"");x-=C[2][2];
     const sysAr=KOPT(it.type).base==="sliding"?((it.sys||defSys(q))==="royal"?" - رويال 12 سم":" - سرايا 10 سم"):"",sysEn=sysAr?((it.sys||defSys(q))==="royal"?" - Royal 12 cm":" - Saraya 10 cm"):"";
     s+=T(x-5,cy,qTypeName(it.type),{size:9,anchor:"end",weight:700});let ly=cy+10.5;
     if(typeEn){s+=EN(x-5,ly,typeEn,{size:7.6});ly+=11}
@@ -1600,7 +1601,7 @@ let qSaveT=null,qSaving=Promise.resolve();
 function qScheduleSave(){if(!S.canWrite||!S.qid)return;S.qDirty=true;clearTimeout(qSaveT);qSaveT=setTimeout(qSaveNow,700)}
 function qSaveNow(){clearTimeout(qSaveT);if(!S.qd||!S.qid||!db)return qSaving;const id=S.qid,data={...clone(S.qd),updatedAt:new Date().toISOString()};delete data._id;
   qSaving=qSaving.then(()=>db.doc("quotes/"+id).set(data)).then(()=>{if(S.qid===id){S.qDirty=false;render()}}).catch(e=>{handleWriteErr(e)});return qSaving}
-function openQuote(id){const q=S.quotes.find(x=>x._id===id);S.qid=id;S.qd=q?clone(q):null;S.qDirty=false;S.confirm=null;try{history.replaceState(null,"","#q-"+id)}catch(e){location.hash="q-"+id}render();window.scrollTo(0,0)}
+function openQuote(id){const q=S.quotes.find(x=>x._id===id);S.qsel=new Set();S.qid=id;S.qd=q?clone(q):null;S.qDirty=false;S.confirm=null;try{history.replaceState(null,"","#q-"+id)}catch(e){location.hash="q-"+id}render();window.scrollTo(0,0)}
 
 /* --- views --- */
 function sectionNav(){const open=S.quotes.filter(q=>["مسودة","مرسل للعميل"].includes(q.status)&&!qExpired(q)).length;
@@ -1644,9 +1645,9 @@ function quoteEditor(){
     <div class="card"><h3>بيانات العرض</h3><div class="grid">
       ${qIn("date","تاريخ العرض","date")}${qIn("validDays","مدة صلاحية العرض (يوم)","number")}${qIn("deliveryDays","مدة التنفيذ (يوم)","number")}${qIn("minArea","أقل مساحة محسوبة للقطعة م² (افتراضي 1)","number")}${qIn("preparedBy","معدّ العرض")}${qIn("preparedRole","المسمى")}
     </div></div>
-    <div class="card"><h3>البنود <span class="toolbar">${W_&&S.sample?(S.ex["qtr:"+S.qid]&&S.ex["qtr:"+S.qid].busy?`<span class="spin" aria-hidden="true"></span><span class="small">جارٍ الترجمة…</span>`:`<button data-act="q-translate">ترجمة النصوص للإنجليزي</button>`):""}${W_?`<button data-act="q-add">+ بند</button>`:""}</span></h3>
-      <div class="tablebox"><table class="qitems"><thead><tr><th>الكود</th><th>الدور</th><th>النوع</th><th>النظام</th><th>الوصف (عربي / English)</th><th>العرض مم</th><th>الارتفاع مم</th><th>العدد</th><th>التسعير</th><th>السعر</th><th>المساحة م²</th><th>الإجمالي</th><th></th></tr></thead><tbody>
-      ${(q.items||[]).map((it,i)=>{const L1=qLine(q,it);return `<tr class="${it.unclear?"unclear":""}"><td>${qCell(`items.${i}.ref`,"text","56px")}</td><td>${qSel(`items.${i}.floor`,FLOORS,"84px")}</td><td>${qSel(`items.${i}.type`,Q_TYPES,"128px")}</td><td>${KOPT(it.type).base==="sliding"?qSel(`items.${i}.sys`,SYS_OPTS,"92px"):`<span class="muted small">—</span>`}</td><td>${qCell(`items.${i}.desc`,"text","150px",'placeholder="الوصف بالعربي"')}<div style="margin-top:4px">${qCell(`items.${i}.descEn`,"text","150px",'dir="ltr" placeholder="English description"')}</div></td><td>${qCell(`items.${i}.w`,"number","70px")}</td><td>${qCell(`items.${i}.h`,"number","70px")}</td><td>${qCell(`items.${i}.qty`,"number","50px")}</td><td>${qSel(`items.${i}.pricing`,PRICING,"110px")}</td><td>${qCell(`items.${i}.price`,"number","80px")}${N(it.price)!==defPrice(it.type,it.sys||defSys(q))&&it.type!=="other"&&defPrice(it.type,it.sys||defSys(q))?`<div class="small muted" title="السعر الافتراضي">افتراضي ${defPrice(it.type,it.sys||defSys(q))}</div>`:""}${it.type==="cw_pushout"||N(it.addon)?`<div class="small">+ بوش اوت ${qCell(`items.${i}.addon`,"number","60px")}</div>`:""}</td><td class="num">${L1.totalArea?L1.totalArea.toFixed(2):"—"}</td><td><b>${M(L1.total)}</b></td>
+    <div class="card"><h3>البنود <span class="toolbar">${W_&&S.sample?(S.ex["qtr:"+S.qid]&&S.ex["qtr:"+S.qid].busy?`<span class="spin" aria-hidden="true"></span><span class="small">جارٍ الترجمة…</span>`:`<button data-act="q-translate">ترجمة النصوص للإنجليزي</button>`):""}${W_&&S.qsel.size?(S.confirm==="q-delsel"?`<button class="danger armed" data-act="q-delsel">تأكيد حذف ${S.qsel.size} بند</button>`:`<button class="danger" data-act="q-delsel">حذف المحدد (${S.qsel.size})</button>`):""}${W_?`<button data-act="q-add">+ بند</button>`:""}</span></h3><datalist id="floors-dl"><option value="B">بيزمنت</option><option value="G">أرضي</option><option value="F">أول</option><option value="S">ثاني</option><option value="T">ثالث</option><option value="R">روف / سطح</option></datalist>
+      <div class="tablebox"><table class="qitems"><thead><tr><th><input type="checkbox" data-qselall="1" aria-label="تحديد كل البنود" ${(q.items||[]).length&&(q.items||[]).every(it=>S.qsel.has(it.id))?"checked":""}></th><th>الكود</th><th>الدور</th><th>النوع</th><th>النظام</th><th>الوصف (عربي / English)</th><th>العرض مم</th><th>الارتفاع مم</th><th>العدد</th><th>التسعير</th><th>السعر</th><th>المساحة م²</th><th>الإجمالي</th><th></th></tr></thead><tbody>
+      ${(q.items||[]).map((it,i)=>{const L1=qLine(q,it);return `<tr class="${it.unclear?"unclear":""}${S.qsel.has(it.id)?" selrow":""}"><td><input type="checkbox" data-qsel="${esc(it.id)}" ${S.qsel.has(it.id)?"checked":""} aria-label="تحديد البند"></td><td>${qCell(`items.${i}.ref`,"text","56px")}</td><td>${qCell(`items.${i}.floor`,"text","40px",'list="floors-dl" maxlength="4" class="floorin" dir="ltr"')}</td><td>${qSel(`items.${i}.type`,Q_TYPES,"128px")}</td><td>${KOPT(it.type).base==="sliding"?qSel(`items.${i}.sys`,SYS_OPTS,"92px"):`<span class="muted small">—</span>`}</td><td>${qCell(`items.${i}.desc`,"text","150px",'placeholder="الوصف بالعربي"')}<div style="margin-top:4px">${qCell(`items.${i}.descEn`,"text","150px",'dir="ltr" placeholder="English description"')}</div></td><td>${qCell(`items.${i}.w`,"number","70px")}</td><td>${qCell(`items.${i}.h`,"number","70px")}</td><td>${qCell(`items.${i}.qty`,"number","50px")}</td><td>${qSel(`items.${i}.pricing`,PRICING,"110px")}</td><td>${qCell(`items.${i}.price`,"number","80px")}${N(it.price)!==defPrice(it.type,it.sys||defSys(q))&&it.type!=="other"&&defPrice(it.type,it.sys||defSys(q))?`<div class="small muted" title="السعر الافتراضي">افتراضي ${defPrice(it.type,it.sys||defSys(q))}</div>`:""}${it.type==="cw_pushout"||N(it.addon)?`<div class="small">+ بوش اوت ${qCell(`items.${i}.addon`,"number","60px")}</div>`:""}</td><td class="num">${L1.totalArea?L1.totalArea.toFixed(2):"—"}</td><td><b>${M(L1.total)}</b></td>
         <td>${W_?`<span class="toolbar" style="gap:2px;flex-wrap:nowrap"><button class="ghost" data-act="q-mv" data-i="${i}" data-d="-1" ${i?"":"disabled"} aria-label="لأعلى">↑</button><button class="ghost" data-act="q-mv" data-i="${i}" data-d="1" ${i<q.items.length-1?"":"disabled"} aria-label="لأسفل">↓</button>${S.confirm==="qi:"+it.id?`<button class="danger armed" data-act="q-del" data-i="${i}" data-id="${esc(it.id)}">تأكيد</button>`:`<button class="danger ghost" data-act="q-del" data-i="${i}" data-id="${esc(it.id)}">حذف</button>`}</span>`:""}</td></tr>`}).join("")}
       </tbody></table></div>
       <div class="qtot"><dl class="kv">
@@ -1697,7 +1698,7 @@ function qSheetPrompt(i,n){return `You are reading page ${i} of ${n}: a PRELIMIN
 Precision is the top priority: read every number twice and never guess a digit silently.
 For every opening (window, door, facade, partition…) return:
 - ref: the code/number as written (e.g. "W1", "D2"). If none, use "#" + line number.
-- floor: the floor of the opening if written: "B" basement (بيزمنت/قبو), "G" ground (أرضي), "F" first (أول), "2F" second, "3F" third, "R" roof annex (ملحق/سطح); "" if not written.
+- floor: the floor of the opening if written: "B" basement (بيزمنت/قبو), "G" ground (أرضي), "F" first (أول), "S" second (ثاني), "T" third (ثالث), "R" roof (روف/سطح/ملحق); "" if not written.
 - type: best match of these keys: ${KIND_PROMPT}, other (general works / non-window item).
 - desc: short ARABIC description including the room/location if written (e.g. "شباك سحاب - غرفة النوم").
 - w_mm, h_mm: width and height in MILLIMETERS. Detect the unit used on the sheet: centimeters are the usual case (×10), meters (×1000), millimeters (keep). null if not given.
@@ -1727,7 +1728,7 @@ async function qSheetRead(){
     for(let i=0;i<pages.length;i++){st.msg=`جارٍ قراءة الصفحة ${i+1} من ${pages.length}… (قد تأخذ دقيقة)`;render();
       const out=await S.sample.json(qSheetPrompt(i+1,pages.length),{images:[pages[i]],modelTier:"complex",signal:st.ctl.signal});
       (out&&out.items||[]).forEach(x=>{const type=Q_TYPES[x.type]?x.type:"sliding2";
-        items.push({id:uid(),ref:String(x.ref||""),floor:FLOORS[x.floor]&&x.floor?x.floor:"",type,desc:String(x.desc||"")+(x.unclear?` (رقم غير واضح${x.alt?`، بديل: ${x.alt}`:""})`:""),w:Math.round(N(x.w_mm)),h:Math.round(N(x.h_mm)),qty:Math.max(1,Math.round(N(x.qty)||1)),pricing:type==="other"?"lump":"m2",sys:defSys(q),price:defPrice(type,defSys(q)),addon:defAddon(type),unclear:!!x.unclear})});
+        items.push({id:uid(),ref:String(x.ref||""),floor:flr(x.floor).slice(0,4),type,desc:String(x.desc||"")+(x.unclear?` (رقم غير واضح${x.alt?`، بديل: ${x.alt}`:""})`:""),w:Math.round(N(x.w_mm)),h:Math.round(N(x.h_mm)),qty:Math.max(1,Math.round(N(x.qty)||1)),pricing:type==="other"?"lump":"m2",sys:defSys(q),price:defPrice(type,defSys(q)),addon:defAddon(type),unclear:!!x.unclear})});
       if(out&&out.client)for(const k of ["name","phone","project","location"])if(out.client[k]&&!client[k])client[k]=String(out.client[k]);
       if(out&&N(out.stated_total)>0)stated+=N(out.stated_total);
       (out&&out.flags||[]).forEach(t=>t&&flags.push(`ص${i+1}: ${t}`));}
@@ -1779,6 +1780,8 @@ async function act(el){
     if(a==="q-terms-reset"){q.terms=Q_TERMS;render();qScheduleSave();return}
     if(a==="q-sheet-read"){qSheetRead();return}
     if(a==="q-translate"){qTranslate();return}
+    if(a==="q-delsel"){if(!S.qsel.size)return;if(S.confirm!=="q-delsel"){S.confirm="q-delsel";render();clearTimeout(act._t);act._t=setTimeout(()=>{S.confirm=null;render()},5000);return}
+      S.confirm=null;const n=S.qsel.size;q.items=q.items.filter(x=>!S.qsel.has(x.id));S.qsel.clear();render();qScheduleSave();toast(`حُذف ${n} بند`);return}
     if(a==="q-sheet-stop"){const st=S.ex["qs:"+S.qid];st&&st.ctl&&st.ctl.abort();return}
     if(a==="q-flags-clear"){q.sheetFlags=[];q.items.forEach(x=>delete x.unclear);render();qScheduleSave();return}
     if(a==="q-sheet-del"){const key="qsh:"+el.dataset.id;if(S.confirm!==key){S.confirm=key;render();clearTimeout(act._t);act._t=setTimeout(()=>{S.confirm=null;render()},4000);return}S.confirm=null;q.sheets=(q.sheets||[]).filter(f=>f.id!==el.dataset.id);render();qScheduleSave();return}
@@ -1970,7 +1973,7 @@ const onField=e=>{const el=e.target;
     if(fk.startsWith("info:")&&(f==="quoteValue"||f==="quoteVatMode")){const box=document.getElementById("quote-calc");const c=cur();if(box&&c)box.innerHTML=quoteCalcHtml(fk,c)}
     return}
   if(el.dataset&&el.dataset.s&&S.cfgDraft){setPath(S.cfgDraft,el.dataset.s,el.value);if(e.type==="change")render();return}
-  if(el.dataset&&el.dataset.q&&S.qd){if(el.tagName==="SELECT"&&e.type!=="change")return;let v=el.value;const mm=/^items\.(\d+)\.(type|sys)$/.exec(el.dataset.q);const itm=mm?S.qd.items[+mm[1]]:null;const oldDef=itm?defPrice(itm.type,itm.sys||defSys(S.qd)):0,oldAdd=itm?defAddon(itm.type):0;
+  if(el.dataset&&el.dataset.q&&S.qd){if(el.tagName==="SELECT"&&e.type!=="change")return;let v=el.value;if(/\.floor$/.test(el.dataset.q))v=v.toUpperCase();const mm=/^items\.(\d+)\.(type|sys)$/.exec(el.dataset.q);const itm=mm?S.qd.items[+mm[1]]:null;const oldDef=itm?defPrice(itm.type,itm.sys||defSys(S.qd)):0,oldAdd=itm?defAddon(itm.type):0;
     setPath(S.qd,el.dataset.q,v);
     if(itm&&e.type==="change"){if(!N(itm.price)||N(itm.price)===oldDef)itm.price=defPrice(itm.type,itm.sys||defSys(S.qd));if(!N(itm.addon)||N(itm.addon)===oldAdd)itm.addon=defAddon(itm.type)}
     if(e.type==="change"){if(/^items\.\d+\.type$/.test(el.dataset.q)&&v==="other"){const it=getPath(S.qd,el.dataset.q.replace(/\.type$/,""));if(it.pricing==="m2")it.pricing="lump"}render();qScheduleSave()}return}
@@ -1993,6 +1996,8 @@ document.addEventListener("change",async e=>{
     if(got.length&&cid===S.id){if(await mutateFiles(cat,l=>l.concat(got)))toast(got.length===1?"رُفع الملف":"رُفعت "+got.length+" ملفات")}
     render();return;
   }
+  if(el.dataset.qselall&&S.qd){if(el.checked)(S.qd.items||[]).forEach(it=>S.qsel.add(it.id));else S.qsel.clear();S.confirm=null;render();return}
+  if(el.dataset.qsel&&S.qd){if(el.checked)S.qsel.add(el.dataset.qsel);else S.qsel.delete(el.dataset.qsel);S.confirm=null;render();return}
   if(el.dataset.qup&&el.files&&el.files.length){qSheetUpload([...el.files]);return}
   if(el.dataset.logo&&el.files&&el.files[0]&&S.cfgDraft){S.busy.logo=true;render();const got=await upload([el.files[0]]);S.busy.logo=false;if(got[0]){S.cfgDraft.company=S.cfgDraft.company||{};S.cfgDraft.company.logo=got[0].id;toast("رُفع الشعار، اضغط «حفظ الإعدادات»")}render();return}
   if(el.dataset.inv&&el.files&&el.files[0]){
