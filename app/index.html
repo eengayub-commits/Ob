@@ -153,6 +153,8 @@ tr.unclear td{background:var(--warn-soft)}
 .qitems td{padding:6px 6px}.qitems input,.qitems select{padding:5px 6px}
 .qtot{display:flex;flex-direction:column;gap:6px;align-items:flex-end;padding:12px;border-radius:8px;background:var(--surface-2);border:1px solid var(--line)}
 button.armed-ok{background:var(--ok);border-color:var(--ok);color:#fff}
+.brand img.logo{height:40px;width:auto;flex:none}
+.qsheet{border-color:var(--bronze)}
 .kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:.9rem}
 .kv dt{color:var(--muted)}.kv dd{margin:0;font-weight:600}
 @media (prefers-reduced-motion:no-preference){.card,.stat{transition:border-color .15s}}
@@ -245,7 +247,7 @@ function mutateFiles(cat,fn){const c=cur();if(!c)return;const files={...(c.files
 function topbar(){
   const c=cur();
   return `<header class="top"><div class="wrap">
-    <div class="brand"><div class="mark" aria-hidden="true"></div><h1>${esc(CO().nameAr)}<small>سجل ملفات العملاء والمشاريع</small></h1></div>
+    <div class="brand">${CO().logo?`<img class="logo" src="${blob(CO().logo)}" alt="">`:`<div class="mark" aria-hidden="true"></div>`}<h1>${esc(CO().nameAr)}<small>سجل ملفات العملاء والمشاريع</small></h1></div>
     ${c||S.settings||S.qid?`<button data-act="back">${S.settings&&c?"→ رجوع للملف":S.settings&&S.qid?"→ رجوع للعرض":S.qid&&!S.settings?"→ عروض الأسعار":"→ كل الملفات"}</button>`:""}
     ${db&&!S.settings?`<button data-act="open-settings">الإعدادات</button>`:""}
     ${S.canWrite&&db&&!c&&!S.settings&&!S.qid?(S.section==="quotes"?`<button class="primary" data-act="q-new">+ عرض سعر جديد</button>`:`<button class="primary" data-act="new">+ عميل جديد</button>`):""}
@@ -984,8 +986,8 @@ function sheetSVG(c,it,idx,total){
   if(it.note&&y<660)s+=row("NOTES",U(enOnly(it.note)));
   const TY=700;s+=L(22,TY,1168,TY,{sw:1.2});
   [[250],[560],[800],[960]].forEach(([a])=>{s+=L(a,TY,a,820,{sw:.8})});
-  s+=`<rect x="34" y="${TY+14}" width="26" height="26" rx="5" fill="#1d5d78"/><rect x="40" y="${TY+20}" width="14" height="14" fill="none" stroke="#fff" stroke-width="2"/>`;
-  s+=T(68,TY+26,"AL QIMMA TOWER",{size:11.5,weight:700})+T(68,TY+42,"FACTORY",{size:10,weight:700})+T(34,TY+66,"ALUMINIUM & GLASS WORKS",{size:9,fill:"#555"});
+  s+=lg()?svgLogo(28,TY+8,42,48):`<rect x="34" y="${TY+14}" width="26" height="26" rx="5" fill="#1d5d78"/><rect x="40" y="${TY+20}" width="14" height="14" fill="none" stroke="#fff" stroke-width="2"/>`;
+  s+=T(76,TY+26,"AL QIMMA TOWER",{size:11.5,weight:700})+T(76,TY+42,"FACTORY",{size:10,weight:700})+T(34,TY+66,"ALUMINIUM & GLASS WORKS",{size:9,fill:"#555"});
   const cn=c.nameEn||enOnly(c.name)||c.name,cl=c.locationEn||enOnly(c.location)||"";
   s+=T(260,TY+20,"CLIENT / PROJECT",{size:8.5,fill:"#666"})+T(260,TY+42,U(cn)||"-",{size:12,weight:700})+T(260,TY+60,U(cl),{size:10})+T(260,TY+82,`FILE NO. ${c.fileNo||"-"}${c.contractNo&&!/[؀-ۿ]/.test(c.contractNo)?`   |   CONTRACT NO. ${c.contractNo}`:""}`,{size:9.5});
   s+=T(570,TY+20,"DRAWING TITLE",{size:8.5,fill:"#666"})+T(570,TY+42,"PRELIMINARY SHOP DRAWING",{size:11,weight:700})+T(570,TY+60,`ITEM ${it.ref||""}`,{size:11,weight:700})+T(570,TY+80,U(kd[1]),{size:9,fill:"#444"});
@@ -1190,7 +1192,7 @@ function hoMerged(c){const d=S.draft["ho:"+c._id]||{};const h=clone(c.handover||
 function handoverSVG(c){
   const h=hoMerged(c);const works=hoWorks(c);let y;
   let s=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 595 842" width="595" height="842"><rect width="595" height="842" fill="#fff"/>`;
-  s+=`<rect x="0" y="0" width="595" height="8" fill="#1d5d78"/>`+R(20,20,555,802,{sw:.8});
+  s+=`<rect x="0" y="0" width="595" height="8" fill="#1d5d78"/>`+R(20,20,555,802,{sw:.8})+svgLogo(276,26,44,50);
   s+=T(560,52,CO().nameAr,{size:15,anchor:"end",weight:700})+T(35,52,CO().nameEn.toUpperCase(),{size:10,weight:700})+T(35,66,"Aluminium & Glass Works",{size:8.5,fill:"#555"});
   s+=`<rect x="35" y="82" width="525" height="38" fill="#eef3f6"/>`+T(560-8,106,"محضر تسليم نهائي",{size:16,anchor:"end",weight:700,fill:"#1d5d78"})+T(43,106,"FINAL HANDOVER CERTIFICATE",{size:11,weight:700,fill:"#1d5d78"});
   y=146;const kv=(ar,v,en)=>{s+=T(560,y,ar+":",{size:10,anchor:"end",fill:"#555"})+T(470,y,v||"—",{size:10.5,anchor:"end",weight:600})+T(35,y,en,{size:8.5,fill:"#888"});y+=20};
@@ -1233,7 +1235,7 @@ async function qrSvg(text,x,y,size){const qr=(await loadQr())(0,"M");qr.addData(
   for(let r=0;r<n;r++)for(let c=0;c<n;c++)if(qr.isDark(r,c))p+=`M${sx(x+c*m)} ${sx(y+r*m)}h${sx(m)}v${sx(m)}h${-sx(m)}z`;return `<rect x="${x-4}" y="${y-4}" width="${size+8}" height="${size+8}" fill="#fff"/><path d="${p}" fill="#000"/>`}
 
 function docHeader(co,titleAr,titleEn){
-  let s=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 595 842" width="595" height="842"><rect width="595" height="842" fill="#fff"/><rect x="0" y="0" width="595" height="8" fill="#1d5d78"/>`;
+  let s=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 595 842" width="595" height="842"><rect width="595" height="842" fill="#fff"/><rect x="0" y="0" width="595" height="8" fill="#1d5d78"/>`+svgLogo(276,20,44,52);
   s+=T(560,46,co.nameAr,{size:15,anchor:"end",weight:700})+T(35,46,co.nameEn,{size:10.5,weight:700});
   const l1=[co.vat?`الرقم الضريبي: ${iso(co.vat)}`:"",co.cr?`السجل التجاري: ${iso(co.cr)}`:""].filter(Boolean).join("   ");
   const e1=[co.vat?`VAT No. ${co.vat}`:"",co.cr?`CR ${co.cr}`:""].filter(Boolean).join("  ·  ");
@@ -1343,6 +1345,10 @@ function newQuote(){const co=CO();return{no:nextQuoteNo(),rev:0,date:today(),val
   items:[{id:uid(),ref:"W1",type:"sliding2",desc:"",w:1500,h:1200,qty:1,pricing:"m2",price:0}],minArea:0,discount:0,
   specs:{system:"سرايا 10 سم",profileThk:"1.5 مم",paintColor:"",paintCode:"",paintFinish:"دهان بودرة (Powder coated)",glassType:"دبل سكوريت",glassThk:"24 مم (6+12+6)",glassColor:"شفاف",accType:"",accColor:"",screen:"شبك ألمنيوم مع درفة سلك"},
   deliveryDays:30,payTerms:clone(Q_PAY),terms:Q_TERMS,notes:"",preparedBy:"",preparedRole:"قسم المبيعات",createdAt:new Date().toISOString()}}
+const Q_TITLES=["الأستاذ","الأستاذة","المهندس","المهندسة","الدكتور","الدكتورة","السادة"];
+const isCompanyName=n=>/^(شركة|مؤسسة|مجموعة|مكتب|مصنع|مستشفى|مدارس|جمعية|وزارة|هيئة|أمانة|بلدية)|مقاولات|للمقاولات|المحدودة|التجارية|القابضة/.test(String(n||"").trim());
+function qTitle(q){const c=q.client||{};return c.title||(isCompanyName(c.name)?"السادة":"الأستاذ")}
+function qSalute(q){const n=String(q.client?.name||"").trim();return n?`عناية ${qTitle(q)}/ ${n}`:"—"}
 function qLine(q,it){const area=N(it.w)*N(it.h)/1e6;const a1=Math.max(area,N(q.minArea));const qty=N(it.qty)||1;
   const totalArea=it.type==="other"&&!(N(it.w)&&N(it.h))?0:a1*qty;
   const total=it.pricing==="lump"?N(it.price):it.pricing==="unit"?qty*N(it.price):totalArea*N(it.price);return{area:a1,totalArea,qty,total:r2(total)}}
@@ -1392,7 +1398,7 @@ function quoteSVGs(q,logo){
   y+=48;
   const bw=(W-12)/2;
   s+=`<rect x="${X1+bw+12}" y="${y}" width="${bw}" height="86" rx="6" fill="${QC.soft}"/>`+`<rect x="${X1}" y="${y}" width="${bw}" height="86" rx="6" fill="#fff" stroke="${QC.line}" stroke-width=".8"/>`;
-  const cx=X2-10;s+=T(cx,y+16,"مقدّم إلى السادة",{size:8,anchor:"end",fill:QC.muted})+T(cx,y+34,q.client?.name||"—",{size:13,anchor:"end",weight:700})+T(cx,y+52,[q.client?.project,q.client?.location].filter(Boolean).join(" - ")||"",{size:9,anchor:"end"})+T(cx,y+68,[q.client?.attn?`عناية: ${q.client.attn}`:"",q.client?.phone?`جوال: ${iso(q.client.phone)}`:""].filter(Boolean).join("   "),{size:8.5,anchor:"end",fill:QC.muted});
+  const cx=X2-10;s+=T(cx,y+16,"مقدّم إلى",{size:8,anchor:"end",fill:QC.muted})+T(cx,y+34,qSalute(q),{size:12.5,anchor:"end",weight:700})+T(cx,y+52,[q.client?.project,q.client?.location].filter(Boolean).join(" - ")||"",{size:9,anchor:"end"})+T(cx,y+68,[q.client?.attn?`المسؤول: ${q.client.attn}`:"",q.client?.phone?`جوال: ${iso(q.client.phone)}`:""].filter(Boolean).join("   "),{size:8.5,anchor:"end",fill:QC.muted});
   const mx=X1+bw-10;const mrow=(i,l,v)=>{s+=T(mx,y+18+i*17,l,{size:8.5,anchor:"end",fill:QC.muted})+T(X1+10,y+18+i*17,v,{size:9.5,weight:700})};
   mrow(0,"رقم العرض",`${q.no}${q.rev?`-R${q.rev}`:""}`);mrow(1,"تاريخ العرض",q.date||today());mrow(2,"صالح حتى",qValidUntil(q));mrow(3,"مدة التنفيذ",`${N(q.deliveryDays)} يوماً`);
   y+=100;
@@ -1409,7 +1415,7 @@ function quoteSVGs(q,logo){
     s+=T(x-5,cy,String(i+1),{size:8.5,anchor:"end",fill:QC.muted});x-=C[0][1];
     if(isWin&&N(it.w)&&N(it.h))s+=`<g>${elevation({...it,hinge:it.hinge||"R"},x-C[1][1]+4,y+5,C[1][1]-8,rh-10,{mini:true})}</g>`;x-=C[1][1];
     s+=T(x-5,cy,`${it.ref?it.ref+" - ":""}${Q_TYPES[it.type]||""}`,{size:9,anchor:"end",weight:700});dl.forEach((l,k)=>{s+=T(x-5,cy+12+k*11,l,{size:8,anchor:"end",fill:"#333"})});x-=C[2][1];
-    s+=T(x-5,cy,N(it.w)&&N(it.h)?`${N(it.w)} × ${N(it.h)}`:"—",{size:8.8,anchor:"end"});x-=C[3][1];
+    s+=(N(it.w)&&N(it.h)?`<text x="${sx(x-5)}" y="${sx(cy)}" font-size="8.8" fill="#111" text-anchor="end" direction="ltr" unicode-bidi="bidi-override" font-family="${SF}">${N(it.w)} x ${N(it.h)}</text>`:T(x-5,cy,"—",{size:8.8,anchor:"end"}));x-=C[3][1];
     s+=T(x-5,cy,String(L1.qty),{size:8.8,anchor:"end"});x-=C[4][1];
     s+=T(x-5,cy,L1.totalArea?L1.totalArea.toFixed(2):"—",{size:8.8,anchor:"end"});x-=C[5][1];
     s+=T(x-5,cy,it.pricing==="lump"?"مقطوع":m2f(it.price),{size:8.8,anchor:"end"})+(it.pricing!=="lump"?T(x-5,cy+11,it.pricing==="unit"?"للحبة":"للمتر٢",{size:7,anchor:"end",fill:QC.muted}):"");x-=C[6][1];
@@ -1473,7 +1479,7 @@ function quotesListView(){
   `<div class="tablebox"><table><thead><tr><th>رقم العرض</th><th>التاريخ</th><th>العميل</th><th>المشروع / الموقع</th><th>الإجمالي شامل الضريبة</th><th>صالح حتى</th><th>الحالة</th></tr></thead><tbody>
   ${rows.map(q=>{const st=qStatus(q);return `<tr class="click" data-act="q-open" data-id="${esc(q._id)}" tabindex="0"><td class="fileno num">${esc(q.no)}${q.rev?`-R${q.rev}`:""}</td><td class="num">${esc(q.date)}</td><td><b>${esc(q.client?.name||"بدون اسم")}</b></td><td>${esc([q.client?.project,q.client?.location].filter(Boolean).join(" - ")||"—")}</td><td>${M(tot(q))}</td><td class="num ${st==="منتهي"?"neg":""}">${qValidUntil(q)}</td><td><span class="pill ${Q_STATUS_CLS[st]||""}">${esc(st)}</span></td></tr>`}).join("")||`<tr><td colspan="7" class="muted">لا توجد نتائج مطابقة</td></tr>`}
   </tbody></table></div>`;
-  return `${sectionNav()}${stats}<div class="toolbar"><input id="qq" type="search" placeholder="ابحث برقم العرض أو اسم العميل أو المشروع" value="${esc(S.qq)}" aria-label="بحث"><select id="qstatusFilter" aria-label="الحالة"><option value="">كل الحالات</option>${[...Q_STATUS,"منتهي"].map(x=>`<option ${x===S.qstatus?"selected":""}>${x}</option>`).join("")}</select></div>${table}`;
+  return `${sectionNav()}${stats}<div class="toolbar">${S.canWrite?`<button data-act="q-new">+ عرض من ورقة مقاسات المندوب</button>`:""}<input id="qq" type="search" placeholder="ابحث برقم العرض أو اسم العميل أو المشروع" value="${esc(S.qq)}" aria-label="بحث"><select id="qstatusFilter" aria-label="الحالة"><option value="">كل الحالات</option>${[...Q_STATUS,"منتهي"].map(x=>`<option ${x===S.qstatus?"selected":""}>${x}</option>`).join("")}</select></div>${table}`;
 }
 function qIn(path,label,type="text",extra=""){const v=getPath(S.qd,path);return `<label class="fld">${label}<input id="${"qf-"+path.replace(/[^a-zA-Z0-9_-]/g,"_")}" data-q="${esc(path)}" type="${type}" value="${esc(v??"")}" ${type==="number"?'step="any" inputmode="decimal"':""} ${extra} ${S.canWrite&&S.qd.status!=="معتمد"?"":"disabled"}></label>`}
 function qCell(path,type="text",w="",extra=""){const v=getPath(S.qd,path);return `<input id="${"qf-"+path.replace(/[^a-zA-Z0-9_-]/g,"_")}" data-q="${esc(path)}" type="${type}" value="${esc(v??"")}" style="${w?`min-width:${w}`:""}" ${type==="number"?'step="any" inputmode="decimal"':""} ${extra} ${S.canWrite&&S.qd.status!=="معتمد"?"":"disabled"} aria-label="${esc(path)}">`}
@@ -1484,7 +1490,7 @@ function quoteEditor(){
   const linkedClient=q.clientId&&S.clients.find(c=>c._id===q.clientId);
   const pay=(q.payTerms||[]);const pctSum=sum(pay,p=>N(p.pct));
   return `<section class="head"><div><div class="fileno">عرض سعر رقم <span class="num">${esc(q.no)}${q.rev?`-R${q.rev}`:""}</span></div><h2>${esc(q.client?.name||"عرض سعر جديد")}</h2>
-      <div class="small muted">${esc([q.client?.project,q.client?.location].filter(Boolean).join(" · "))} ${S.qDirty?`<span class="pill">جارٍ الحفظ…</span>`:`<span class="small ok-badge">محفوظ</span>`}</div></div>
+      <div class="small muted">${q.client?.name?esc(qSalute(q))+" · ":""}${esc([q.client?.project,q.client?.location].filter(Boolean).join(" · "))} ${S.qDirty?`<span class="pill">جارٍ الحفظ…</span>`:`<span class="small ok-badge">محفوظ</span>`}</div></div>
       <div class="toolbar"><span class="pill ${Q_STATUS_CLS[st]||""}">${esc(st)}</span>${W_?qSel("status",Object.fromEntries(Q_STATUS.filter(x=>x!=="معتمد").map(x=>[x,x])),"140px"):""}</div></section>
     ${locked?`<div class="note" style="background:var(--ok-soft);color:var(--ok)">تم تعميد هذا العرض${linkedClient?` وإنشاء ملف العميل رقم ${esc(linkedClient.fileNo||"")}`:""}. العرض مقفل للتعديل؛ لإجراء تعديل أنشئ مراجعة جديدة.</div>`:""}
     <div class="toolbar qactions">
@@ -1496,15 +1502,16 @@ function quoteEditor(){
     </div>
     <div class="qsplit">
     <div class="qform">
+    ${qSheetCard()}
     <div class="card"><h3>العميل والمشروع</h3><div class="grid">
-      ${qIn("client.name","اسم العميل")}${qIn("client.attn","عناية (الشخص المسؤول)")}${qIn("client.phone","الجوال","tel")}${qIn("client.email","البريد الإلكتروني","email")}${qIn("client.project","المشروع")}${qIn("client.location","الموقع")}
+      ${qIn("client.name","اسم العميل (شخص أو شركة / مؤسسة)")}<label class="fld">اللقب في العرض<select id="qf-client_title" data-q="client.title" ${S.canWrite&&S.qd.status!=="معتمد"?"":"disabled"}><option value="" ${!q.client?.title?"selected":""}>تلقائي (${esc(isCompanyName(q.client?.name)?"السادة":"الأستاذ")})</option>${Q_TITLES.map(t=>`<option ${q.client?.title===t?"selected":""}>${t}</option>`).join("")}</select></label>${qIn("client.attn","الشخص المسؤول (اختياري)")}${qIn("client.phone","الجوال","tel")}${qIn("client.email","البريد الإلكتروني","email")}${qIn("client.project","المشروع")}${qIn("client.location","الموقع")}
     </div></div>
     <div class="card"><h3>بيانات العرض</h3><div class="grid">
       ${qIn("date","تاريخ العرض","date")}${qIn("validDays","مدة صلاحية العرض (يوم)","number")}${qIn("deliveryDays","مدة التنفيذ (يوم)","number")}${qIn("minArea","أقل مساحة محسوبة للقطعة م²","number")}${qIn("preparedBy","معدّ العرض")}${qIn("preparedRole","المسمى")}
     </div></div>
     <div class="card"><h3>البنود ${W_?`<button data-act="q-add">+ بند</button>`:""}</h3>
       <div class="tablebox"><table class="qitems"><thead><tr><th>الكود</th><th>النوع</th><th>الوصف</th><th>العرض مم</th><th>الارتفاع مم</th><th>العدد</th><th>التسعير</th><th>السعر</th><th>المساحة م²</th><th>الإجمالي</th><th></th></tr></thead><tbody>
-      ${(q.items||[]).map((it,i)=>{const L1=qLine(q,it);return `<tr><td>${qCell(`items.${i}.ref`,"text","56px")}</td><td>${qSel(`items.${i}.type`,Q_TYPES,"150px")}</td><td>${qCell(`items.${i}.desc`,"text","180px")}</td><td>${qCell(`items.${i}.w`,"number","70px")}</td><td>${qCell(`items.${i}.h`,"number","70px")}</td><td>${qCell(`items.${i}.qty`,"number","50px")}</td><td>${qSel(`items.${i}.pricing`,PRICING,"110px")}</td><td>${qCell(`items.${i}.price`,"number","80px")}</td><td class="num">${L1.totalArea?L1.totalArea.toFixed(2):"—"}</td><td><b>${M(L1.total)}</b></td>
+      ${(q.items||[]).map((it,i)=>{const L1=qLine(q,it);return `<tr class="${it.unclear?"unclear":""}"><td>${qCell(`items.${i}.ref`,"text","56px")}</td><td>${qSel(`items.${i}.type`,Q_TYPES,"150px")}</td><td>${qCell(`items.${i}.desc`,"text","180px")}</td><td>${qCell(`items.${i}.w`,"number","70px")}</td><td>${qCell(`items.${i}.h`,"number","70px")}</td><td>${qCell(`items.${i}.qty`,"number","50px")}</td><td>${qSel(`items.${i}.pricing`,PRICING,"110px")}</td><td>${qCell(`items.${i}.price`,"number","80px")}</td><td class="num">${L1.totalArea?L1.totalArea.toFixed(2):"—"}</td><td><b>${M(L1.total)}</b></td>
         <td>${W_?`<span class="toolbar" style="gap:2px;flex-wrap:nowrap"><button class="ghost" data-act="q-mv" data-i="${i}" data-d="-1" ${i?"":"disabled"} aria-label="لأعلى">↑</button><button class="ghost" data-act="q-mv" data-i="${i}" data-d="1" ${i<q.items.length-1?"":"disabled"} aria-label="لأسفل">↓</button>${S.confirm==="qi:"+it.id?`<button class="danger armed" data-act="q-del" data-i="${i}" data-id="${esc(it.id)}">تأكيد</button>`:`<button class="danger ghost" data-act="q-del" data-i="${i}" data-id="${esc(it.id)}">حذف</button>`}</span>`:""}</td></tr>`}).join("")}
       </tbody></table></div>
       <div class="qtot"><dl class="kv">
@@ -1549,6 +1556,68 @@ async function approveQuote(){
     S.qid=null;S.qd=null;S.section="clients";go(ref.id,"info");toast(`تم التعميد وأُنشئ ملف رقم ${fileNo} بكل بيانات العرض`)}catch(e){handleWriteErr(e)}
 }
 
+/* ---------- site measurement sheet → quotation items ---------- */
+const lg=()=>{const id=CO().logo;return id&&S.logoData&&S.logoData.id===id?S.logoData.url:""};
+const svgLogo=(x,y,w,h)=>{const u=lg();return u?`<image href="${esc(u)}" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="xMidYMid meet"/>`:""};
+function qSheetPrompt(i,n){return `You are reading page ${i} of ${n}: a PRELIMINARY SITE MEASUREMENT sheet (handwritten or printed, Arabic/English) filled by a sales representative of Al Qimma Tower Factory (مصنع برج القمة), an aluminium & glass factory in Saudi Arabia. It is used to prepare a price quotation.
+Precision is the top priority: read every number twice and never guess a digit silently.
+For every opening (window, door, facade, partition…) return:
+- ref: the code/number as written (e.g. "W1", "D2", "1-W3" for floor-code). If none, use "#" + line number.
+- type: best match of sliding2, sliding3, slidingdoor, casement1, casement2, awning, fixed, door1, door2, other.
+- desc: short ARABIC description including the room/location if written (e.g. "شباك سحاب - غرفة النوم").
+- w_mm, h_mm: width and height in MILLIMETERS. Detect the unit used on the sheet: centimeters are the usual case (×10), meters (×1000), millimeters (keep). null if not given.
+- qty: count (default 1).
+- unclear: true if any digit is uncertain; alt: your alternative reading.
+Also return:
+- client: {"name","phone","project","location"} if written on the sheet, else empty strings.
+- unit: the unit you detected ("cm","m","mm").
+- stated_total: total pieces written on the sheet (number) or null.
+- flags: short ARABIC notes about unclear digits (best reading + alternative), unit assumptions, missing sizes, unusual sizes compared to similar openings, anything a salesperson should double-check.
+Reply with ONLY this JSON:
+{"items":[{"ref":"W1","type":"sliding2","desc":"","w_mm":1500,"h_mm":1200,"qty":1,"unclear":false,"alt":""}],"client":{"name":"","phone":"","project":"","location":""},"unit":"cm","stated_total":null,"flags":[]}`}
+async function qSheetUpload(files){
+  if(!S.assets){toast("رفع الملفات متاح لمن يملك صلاحية «محرر»");return}
+  S.busy.qsheet=true;render();const got=await upload(files);S.busy.qsheet=false;
+  if(got.length&&S.qd){S.qd.sheets=[...(S.qd.sheets||[]),...got];await qSaveNow();toast(got.length===1?"رُفعت ورقة المقاسات":"رُفعت "+got.length+" ملفات")}render();
+}
+async function qSheetRead(){
+  const q=S.qd;const sheets=q&&q.sheets||[];if(!sheets.length){toast("ارفع ورقة المقاسات أولاً");return}
+  if(!S.sample){toast("قراءة الأوراق متاحة فقط داخل Claude");return}
+  const st=S.ex["qs:"+S.qid]={busy:true,msg:"جارٍ تجهيز الصفحات…",ctl:new AbortController()};render();
+  try{
+    const pages=[];for(const f of sheets){(await sheetImages(f)).forEach(b=>pages.push(b))}
+    if(!pages.length)throw{code:"image_rejected"};
+    const items=[],flags=[];let client={};let stated=0;
+    const last=(q.items||[]).filter(i=>N(i.price)>0).slice(-1)[0];
+    for(let i=0;i<pages.length;i++){st.msg=`جارٍ قراءة الصفحة ${i+1} من ${pages.length}… (قد تأخذ دقيقة)`;render();
+      const out=await S.sample.json(qSheetPrompt(i+1,pages.length),{images:[pages[i]],modelTier:"complex",signal:st.ctl.signal});
+      (out&&out.items||[]).forEach(x=>{const type=Q_TYPES[x.type]?x.type:"sliding2";
+        items.push({id:uid(),ref:String(x.ref||""),type,desc:String(x.desc||"")+(x.unclear?` (رقم غير واضح${x.alt?`، بديل: ${x.alt}`:""})`:""),w:Math.round(N(x.w_mm)),h:Math.round(N(x.h_mm)),qty:Math.max(1,Math.round(N(x.qty)||1)),pricing:type==="other"?"lump":(last?.pricing||"m2"),price:last?N(last.price):0,unclear:!!x.unclear})});
+      if(out&&out.client)for(const k of ["name","phone","project","location"])if(out.client[k]&&!client[k])client[k]=String(out.client[k]);
+      if(out&&N(out.stated_total)>0)stated+=N(out.stated_total);
+      (out&&out.flags||[]).forEach(t=>t&&flags.push(`ص${i+1}: ${t}`));}
+    const cnt=sum(items,x=>x.qty);if(stated&&stated!==cnt)flags.unshift(`المكتوب في الورقة ${stated} قطعة لكن المستخرج ${cnt}. راجع الأسطر.`);
+    items.forEach(x=>{if(!(x.w>0&&x.h>0)&&x.type!=="other")flags.push(`«${x.ref}» بدون مقاس واضح، أدخله يدوياً.`)});
+    // replace the single untouched starter line, otherwise append
+    const starter=(q.items||[]).length===1&&!N(q.items[0].price)&&!q.items[0].desc;
+    q.items=starter?items:[...(q.items||[]),...items];
+    q.client=q.client||{};for(const k in client)if(!q.client[k])q.client[k]=client[k];
+    q.sheetFlags=flags;q.sheetReadAt=new Date().toISOString();
+    S.ex["qs:"+S.qid]={busy:false};await qSaveNow();
+    toast(`أُضيف ${items.length} بند (${cnt} قطعة) من ورقة المقاسات. راجعها وأدخل الأسعار.`);
+  }catch(e){S.ex["qs:"+S.qid]={busy:false,err:e&&e.code==="image_rejected"?"لا يمكن قراءة الملف. ارفعه صورة JPG/PNG أو PDF.":sampleErr(e)}}
+  render();
+}
+function qSheetCard(){
+  const q=S.qd;const sheets=q.sheets||[];const st=S.ex["qs:"+S.qid]||{};const W_=S.canWrite&&q.status!=="معتمد";
+  return `<div class="card qsheet"><h3>ورقة رفع المقاسات من الموقع ${W_?(S.assets?`<span class="btn upl">${S.busy.qsheet?"جارٍ الرفع…":"رفع صورة أو PDF"}<input type="file" multiple data-qup="1" accept="image/*,application/pdf" aria-label="رفع ورقة المقاسات"></span>`:`<span class="small muted">الرفع متاح للمحررين</span>`):""}</h3>
+    <p class="small muted" style="margin:0">ارفع ورقة المقاسات المبدئية اللي عبّاها المندوب في الموقع. يقرأها Claude ويضيف البنود للعرض بالمقاسات بالمليمتر ونوع كل فتحة، وبعدها تدخل الأسعار.</p>
+    ${sheets.length?`<div class="files">${sheets.map(f=>`<div class="file"><span class="ext">${esc(extOf(f.name))}</span><button class="linkbtn" data-act="view" data-id="${esc(f.id)}" data-name="${esc(f.name)}" data-type="${esc(f.type||"")}">${esc(f.name)}</button>${W_?(S.confirm==="qsh:"+f.id?`<button class="danger ghost armed" data-act="q-sheet-del" data-id="${esc(f.id)}">تأكيد الحذف</button>`:`<button class="danger ghost" data-act="q-sheet-del" data-id="${esc(f.id)}">حذف</button>`):""}</div>`).join("")}</div>`:""}
+    ${sheets.length&&W_?`<div class="toolbar">${st.busy?`<span class="spin" aria-hidden="true"></span><span class="small">${esc(st.msg||"")}</span><button data-act="q-sheet-stop">إيقاف</button>`:S.sample?`<button class="primary" data-act="q-sheet-read">${q.sheetReadAt?"قراءة الورقة مرة أخرى وإضافة البنود":"قراءة الورقة وإضافة البنود"}</button>`:`<span class="small muted">القراءة تعمل عند فتح البرنامج داخل Claude.</span>`}${st.err?`<span class="small neg">${esc(st.err)}</span>`:""}</div>`:""}
+    ${q.sheetFlags&&q.sheetFlags.length?`<div class="note"><b>ملاحظات القراءة للمراجعة:</b><br>${q.sheetFlags.map(esc).join("<br>")}${W_?`<div style="margin-top:6px"><button class="ghost" data-act="q-flags-clear">تمت المراجعة، إخفاء الملاحظات</button></div>`:""}</div>`:""}
+  </div>`;
+}
+
 /* ---------- actions ---------- */
 function need(fk,fields){const d=S.draft[fk]||{};for(const[f,l]of fields){if(!String(d[f]??"").trim()){toast("أدخل "+l);const el=document.getElementById(("f-"+fk+"-"+f).replace(/[^a-zA-Z0-9_-]/g,"_"));el&&el.focus();return null}}return d}
 function rowFrom(fk,defaults){return{...defaults,...(S.draft[fk]||{})}}
@@ -1573,6 +1642,10 @@ async function act(el){
     if(a==="q-pay-add"){q.payTerms=q.payTerms||[];q.payTerms.push({label:"دفعة",pct:0});render();qScheduleSave();return}
     if(a==="q-pay-del"){q.payTerms.splice(+el.dataset.i,1);render();qScheduleSave();return}
     if(a==="q-terms-reset"){q.terms=Q_TERMS;render();qScheduleSave();return}
+    if(a==="q-sheet-read"){qSheetRead();return}
+    if(a==="q-sheet-stop"){const st=S.ex["qs:"+S.qid];st&&st.ctl&&st.ctl.abort();return}
+    if(a==="q-flags-clear"){q.sheetFlags=[];q.items.forEach(x=>delete x.unclear);render();qScheduleSave();return}
+    if(a==="q-sheet-del"){const key="qsh:"+el.dataset.id;if(S.confirm!==key){S.confirm=key;render();clearTimeout(act._t);act._t=setTimeout(()=>{S.confirm=null;render()},4000);return}S.confirm=null;q.sheets=(q.sheets||[]).filter(f=>f.id!==el.dataset.id);render();qScheduleSave();return}
     if(a==="del"&&String(el.dataset.key).startsWith("quote:")){const key=el.dataset.key;if(S.confirm!==key){S.confirm=key;render();clearTimeout(act._t);act._t=setTimeout(()=>{S.confirm=null;render()},4000);return}
       S.confirm=null;const id=S.qid;clearTimeout(qSaveT);S.qid=null;S.qd=null;try{await db.doc("quotes/"+id).delete();toast("حُذف العرض")}catch(e){handleWriteErr(e)}try{history.replaceState(null,"","#quotes")}catch(e){}render();return}
   }
@@ -1751,6 +1824,7 @@ document.addEventListener("change",async e=>{
     if(got.length&&cid===S.id){if(await mutateFiles(cat,l=>l.concat(got)))toast(got.length===1?"رُفع الملف":"رُفعت "+got.length+" ملفات")}
     render();return;
   }
+  if(el.dataset.qup&&el.files&&el.files.length){qSheetUpload([...el.files]);return}
   if(el.dataset.logo&&el.files&&el.files[0]&&S.cfgDraft){S.busy.logo=true;render();const got=await upload([el.files[0]]);S.busy.logo=false;if(got[0]){S.cfgDraft.company=S.cfgDraft.company||{};S.cfgDraft.company.logo=got[0].id;toast("رُفع الشعار، اضغط «حفظ الإعدادات»")}render();return}
   if(el.dataset.inv&&el.files&&el.files[0]){
     const pid=el.dataset.inv;S.busy["inv:"+pid]=true;render();
@@ -1782,7 +1856,8 @@ fromHash();
     render();
   },()=>{});
   db.doc("settings/takeoff").onSnapshot(snap=>{
-    if(snap.exists){const d=snap.data();S.cfg={...clone(DEFAULT_CFG),...clone(d)};S.cfgSaved=true}
+    if(snap.exists){const d=snap.data();S.cfg={...clone(DEFAULT_CFG),...clone(d),company:{...clone(DEFAULT_CFG.company),...clone(d.company||{})}};S.cfgSaved=Array.isArray(d.recipes)}
+    if(CO().logo&&(!S.logoData||S.logoData.id!==CO().logo))logoHref(true).then(()=>render());
     render();
   },()=>{});
   render();
