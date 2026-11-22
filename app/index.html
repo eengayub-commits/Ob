@@ -19,6 +19,7 @@
   --bg:#0e1418; --surface:#161f26; --surface-2:#1b262e; --ink:#e4eaef; --muted:#93a2ae; --line:#2a3741;
   --accent:#5eb0d1; --accent-soft:#183746; --accent-ink:#06141b; --bronze:#d3a26e;
   --ok:#62c48f; --ok-soft:#173527; --warn:#e5a54a; --warn-soft:#3a2b14; --bad:#f07b72; --bad-soft:#3d1c1a; color-scheme:dark}
+html{direction:rtl}
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.6}
 h1,h2,h3{font-family:var(--f-head);text-wrap:balance;margin:0;line-height:1.3}
@@ -134,7 +135,7 @@ tr.unclear td{background:var(--warn-soft)}
 .spin{width:16px;height:16px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;display:inline-block}
 @media (prefers-reduced-motion:no-preference){.spin{animation:spin 1s linear infinite}}
 @keyframes spin{to{transform:rotate(360deg)}}
-.sheet{background:#fff;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.sheet{background:#fff;border:1px solid var(--line);border-radius:8px;overflow:hidden;direction:ltr}
 .sheet svg{width:100%;height:auto;display:block}
 .maplink{color:var(--accent);font-weight:600;text-decoration:none}.maplink:hover{text-decoration:underline}
 .checks{display:flex;flex-direction:column;gap:8px;padding:12px;border:1px solid var(--line);border-radius:8px}
@@ -167,6 +168,7 @@ button.armed-ok{background:var(--ok);border-color:var(--ok);color:#fff}
 <script>
 (function(){
 "use strict";
+try{document.documentElement.setAttribute("dir","rtl");document.documentElement.setAttribute("lang","ar")}catch(_){}
 const STATUSES=["عرض سعر","تم التعميد","تحت التصنيع","جاهز للتركيب","قيد التركيب","مكتمل","ملغي"];
 const STATUS_CLS={"تم التعميد":"s1","تحت التصنيع":"s2","جاهز للتركيب":"s2","قيد التركيب":"s2","مكتمل":"s3","ملغي":"bad"};
 const BUY_CATS=["ألمنيوم","زجاج","إكسسوارات","مواد تركيب","عمالة","نقل","أخرى"];
@@ -1806,7 +1808,8 @@ window.addEventListener("keydown",e=>{
     const ltr=getComputedStyle(el).direction==="ltr";
     try{const n=el.value.length,a=el.selectionStart,b=el.selectionEnd;if(a!=null){const atEnd=a===n&&b===n,atStart=a===0&&b===0;
       if(e.key==="ArrowLeft"&&!(ltr?atStart:atEnd))return;if(e.key==="ArrowRight"&&!(ltr?atEnd:atStart))return}}catch(_){}
-    dir=e.key==="ArrowLeft"?1:-1;
+    const rtl=getComputedStyle(el.closest("table,.grid,.addrow,.card")||document.body).direction!=="ltr";
+    dir=(e.key==="ArrowLeft")===rtl?1:-1;
   }
   if(!dir)return;
   const scope=el.closest(".addrow")||el.closest("table")||el.closest(".grid")||el.closest(".card")||document;
