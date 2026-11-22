@@ -116,6 +116,16 @@ details.recipe>summary{padding:0}
 .cutpc{display:inline-flex;gap:4px;align-items:baseline;border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:1px 8px;margin:2px}
 input.badf{border-color:var(--bad);background:var(--bad-soft)}
 td input,td select{padding:5px 8px}
+.linkbtn{border:0;background:none;padding:0;color:var(--accent);font-weight:500;text-align:start;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;display:block}
+.linkbtn:hover{text-decoration:underline;border:0}
+td .linkbtn{display:inline}
+.viewer{position:fixed;inset:0;z-index:55;background:var(--bg);display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px)}
+.vbar{display:flex;gap:10px;align-items:center;padding-block:10px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));border-bottom:1px solid var(--line);background:var(--surface)}
+.vname{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.vbody{flex:1;overflow:auto;display:flex;flex-direction:column;align-items:center;gap:12px;padding:16px max(16px,env(safe-area-inset-right,0px)) calc(16px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.vbody canvas{max-width:100%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.25)}
+.vimg{max-width:100%;height:auto}
+.vmsg{color:var(--muted);text-align:center;margin-top:40px}
 .kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:.9rem}
 .kv dt{color:var(--muted)}.kv dd{margin:0;font-weight:600}
 @media (prefers-reduced-motion:no-preference){.card,.stat{transition:border-color .15s}}
@@ -313,7 +323,7 @@ function tabInfo(c){
 function fileList(c,cat){
   const list=(c.files||{})[cat]||[];
   if(!list.length)return `<p class="muted small">لا توجد ملفات مرفوعة.</p>`;
-  return `<div class="files">${list.map(f=>`<div class="file"><span class="ext">${esc(extOf(f.name))}</span><a href="${blob(f.id)}" target="_blank" rel="noopener">${esc(f.name)}</a><span class="small muted num">${esc((f.at||"").slice(0,10))}</span>${del("file:"+cat+":"+f.id)}</div>`).join("")}</div>`;
+  return `<div class="files">${list.map(f=>`<div class="file"><span class="ext">${esc(extOf(f.name))}</span><button class="linkbtn" data-act="view" data-id="${esc(f.id)}" data-name="${esc(f.name)}" data-type="${esc(f.type||"")}">${esc(f.name)}</button><span class="small muted num">${esc((f.at||"").slice(0,10))}</span>${del("file:"+cat+":"+f.id)}</div>`).join("")}</div>`;
 }
 function uploader(cat,label="رفع ملف",accept=""){
   if(!S.canWrite)return"";
@@ -407,7 +417,7 @@ function tabBuy(c,k){
   <div class="card"><h3>فواتير المشتريات</h3>
     <div class="tablebox"><table><thead><tr><th>التاريخ</th><th>المورد</th><th>رقم الفاتورة</th><th>البند</th><th>المبلغ</th><th>الفاتورة</th><th></th></tr></thead><tbody>
     ${list.map(p=>`<tr><td class="num">${esc(p.date)}</td><td>${esc(p.supplier||"")}</td><td class="num">${esc(p.invoiceNo||"")}</td><td>${esc(p.category||"")}${p.note?`<div class="small muted">${esc(p.note)}</div>`:""}</td><td>${M(p.amount)}</td>
-      <td>${p.fileId?`<a href="${blob(p.fileId)}" target="_blank" rel="noopener">عرض</a>`:(S.canWrite&&S.assets?`<span class="btn upl" style="padding:3px 8px">${S.busy["inv:"+p.id]?"…":"إرفاق"}<input type="file" data-inv="${esc(p.id)}" aria-label="إرفاق الفاتورة"></span>`:"—")}</td><td>${del("buy:"+p.id)}</td></tr>`).join("")||`<tr><td colspan="7" class="muted">لم تُسجّل مشتريات بعد.</td></tr>`}
+      <td>${p.fileId?`<button class="linkbtn" data-act="view" data-id="${esc(p.fileId)}" data-name="${esc(p.fileName||("فاتورة-"+(p.invoiceNo||p.id)))}">عرض الفاتورة</button>`:(S.canWrite&&S.assets?`<span class="btn upl" style="padding:3px 8px">${S.busy["inv:"+p.id]?"…":"إرفاق"}<input type="file" data-inv="${esc(p.id)}" aria-label="إرفاق الفاتورة"></span>`:"—")}</td><td>${del("buy:"+p.id)}</td></tr>`).join("")||`<tr><td colspan="7" class="muted">لم تُسجّل مشتريات بعد.</td></tr>`}
     </tbody><tfoot><tr><td colspan="4">إجمالي المشتريات</td><td colspan="3">${M(k.cost)}</td></tr></tfoot></table></div>
     ${S.canWrite?`<div class="addrow">${inp(fk,"date","التاريخ",today(),"date")}${inp(fk,"supplier","المورد","")}${inp(fk,"invoiceNo","رقم الفاتورة","")}${sel(fk,"category","البند",BUY_CATS,"ألمنيوم")}${inp(fk,"amount","المبلغ شامل الضريبة","","number",'step="0.01" min="0" inputmode="decimal"')}${inp(fk,"note","ملاحظة","")}<button class="primary" data-act="add-buy">+ إضافة فاتورة</button></div>`:""}
   </div>
@@ -654,6 +664,50 @@ function settingsView(){
 function fmtEv(f,dp=0){const v=ev(f,1500,1200);return isFinite(v)?(dp?(Math.round(v*100)/100):Math.round(v)):"خطأ"}
 const BLANK={profiles:()=>({name:"قطاع جديد",kg:0}),pieces:()=>({p:(S.cfgDraft.profiles[0]||{}).name||"",n:2,f:"W"}),glass:()=>({n:1,w:"W-100",h:"H-100"}),acc:()=>({name:"صنف جديد",unit:"حبة",q:"1",price:0}),recipes:()=>({id:"r"+uid(),name:"قالب جديد",system:"",pieces:[],glass:[],acc:[]})};
 
+/* ---------- in-page file viewer ---------- */
+const PDFJS="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/";
+let pdfLoad=null,viewTok=0;
+function addScript(src){return new Promise((res,rej)=>{const s=document.createElement("script");s.src=src;s.onload=res;s.onerror=rej;document.head.appendChild(s)})}
+function loadPdfJs(){
+  if(window.pdfjsLib)return Promise.resolve(window.pdfjsLib);
+  if(!pdfLoad){pdfLoad=addScript(PDFJS+"pdf.min.js").then(()=>addScript(PDFJS+"pdf.worker.min.js")).then(()=>{window.pdfjsLib.GlobalWorkerOptions.workerSrc=PDFJS+"pdf.worker.min.js";return window.pdfjsLib});pdfLoad.catch(()=>{pdfLoad=null})}
+  return pdfLoad;
+}
+function fileKind(f){const n=(f.name||"").toLowerCase(),t=f.type||"";if(t.startsWith("image/")||/\.(png|jpe?g|webp|gif|bmp)$/.test(n))return"img";if(t==="application/pdf"||/\.pdf$/.test(n))return"pdf";return"other"}
+async function fetchFile(f){const r=await fetch(blob(f.id));if(!r.ok)throw new Error("http "+r.status);return r.blob()}
+function closeViewer(){viewTok++;const v=document.getElementById("viewer");if(v)v.remove();document.body.style.overflow=""}
+async function openViewer(f){
+  closeViewer();const tok=++viewTok;
+  const v=document.createElement("div");v.id="viewer";v.className="viewer";v.setAttribute("role","dialog");v.setAttribute("aria-label",f.name);
+  v.innerHTML=`<div class="vbar"><b class="vname"></b><span style="flex:1"></span>${S.downloads?`<button data-v="dl">تنزيل</button>`:""}<button data-v="close">إغلاق ✕</button></div><div class="vbody"><p class="vmsg">جارٍ فتح الملف…</p></div>`;
+  v.querySelector(".vname").textContent=f.name;document.body.appendChild(v);document.body.style.overflow="hidden";
+  const body=v.querySelector(".vbody"),msg=t=>{body.innerHTML="";const p=document.createElement("p");p.className="vmsg";p.textContent=t;body.appendChild(p)};
+  let data=null;
+  v.addEventListener("click",async e=>{const b=e.target.closest("[data-v]");if(!b)return;
+    if(b.dataset.v==="close")closeViewer();
+    if(b.dataset.v==="dl"){try{data=data||await fetchFile(f);await S.downloads.save({filename:f.name,data})}catch(err){const c=err&&err.code;if(c==="declined")return;toast(c==="rejected_extension"?"هذا النوع من الملفات لا يمكن تنزيله من البرنامج":"تعذّر تنزيل الملف")}}
+  });
+  try{data=await fetchFile(f)}catch(e){if(tok===viewTok)msg("تعذّر تحميل الملف. ربما لم يكتمل رفعه، احذفه وارفعه مرة ثانية.");return}
+  if(tok!==viewTok)return;
+  const kind=fileKind({name:f.name,type:f.type||data.type});
+  if(kind==="img"){body.innerHTML="";const img=document.createElement("img");img.src=URL.createObjectURL(data);img.alt=f.name;img.className="vimg";body.appendChild(img);return}
+  if(kind==="pdf"){
+    try{
+      const lib=await loadPdfJs();if(tok!==viewTok)return;
+      const doc=await lib.getDocument({data:new Uint8Array(await data.arrayBuffer())}).promise;if(tok!==viewTok)return;
+      body.innerHTML="";const dpr=Math.min(2,window.devicePixelRatio||1);
+      for(let i=1;i<=doc.numPages;i++){
+        const pg=await doc.getPage(i);if(tok!==viewTok)return;
+        const base=pg.getViewport({scale:1});const w=Math.min(body.clientWidth-16,1000);const vp=pg.getViewport({scale:w/base.width*dpr});
+        const cv=document.createElement("canvas");cv.width=vp.width;cv.height=vp.height;cv.style.width=(vp.width/dpr)+"px";body.appendChild(cv);
+        await pg.render({canvasContext:cv.getContext("2d"),viewport:vp}).promise;
+      }
+    }catch(e){if(tok===viewTok)msg(S.downloads?"تعذّر عرض ملف PDF هنا. اضغط «تنزيل» لفتحه على جهازك.":"تعذّر عرض ملف PDF هنا.")}
+    return;
+  }
+  msg(S.downloads?"لا يمكن معاينة هذا النوع داخل البرنامج. اضغط «تنزيل» لفتحه على جهازك.":"لا يمكن معاينة هذا النوع داخل البرنامج.");
+}
+
 /* ---------- actions ---------- */
 function need(fk,fields){const d=S.draft[fk]||{};for(const[f,l]of fields){if(!String(d[f]??"").trim()){toast("أدخل "+l);const el=document.getElementById(("f-"+fk+"-"+f).replace(/[^a-zA-Z0-9_-]/g,"_"));el&&el.focus();return null}}return d}
 function rowFrom(fk,defaults){return{...defaults,...(S.draft[fk]||{})}}
@@ -676,6 +730,7 @@ async function act(el){
   if(a==="cfg-del"){const key="cfg:"+el.dataset.path;if(S.confirm!==key){S.confirm=key;el.textContent="تأكيد الحذف";el.classList.add("armed");clearTimeout(act._t);act._t=setTimeout(()=>{S.confirm=null;render()},4000);return}
     S.confirm=null;const ks=el.dataset.path.split(".");const idx=+ks.pop();getPath(S.cfgDraft,ks.join(".")).splice(idx,1);render();return}
   if(a==="tab"){S.tab=el.dataset.tab;S.confirm=null;render();return}
+  if(a==="view"){openViewer({id:el.dataset.id,name:el.dataset.name||"ملف",type:el.dataset.type||""});return}
   if(a==="zoom"){S.lightbox=el.dataset.id;render();return}
   if(a==="unzoom"){S.lightbox=null;render();return}
   if(a==="new"){
@@ -773,8 +828,9 @@ function go(id,tab){S.id=id;S.tab=tab||"info";S.confirm=null;try{history.replace
 function fromHash(){const m=/^#c-([A-Za-z0-9_.~:@+-]+)$/.exec(location.hash);S.id=m?m[1]:null;if(!m)S.tab="info";render()}
 
 /* ---------- events ---------- */
-document.addEventListener("click",e=>{const el=e.target.closest("[data-act]");if(!el||el.tagName==="SELECT")return;if(el.tagName==="INPUT")return;e.preventDefault&&el.tagName!=="A"&&e.preventDefault();act(el)});
+document.addEventListener("click",e=>{const el=e.target.closest("[data-act]");if(!el||el.tagName==="SELECT")return;if(el.tagName==="INPUT")return;e.preventDefault();act(el)});
 document.addEventListener("keydown",e=>{
+  if(e.key==="Escape"&&document.getElementById("viewer")){closeViewer();return}
   if(e.key==="Escape"&&S.lightbox){S.lightbox=null;render();return}
   if(e.key==="Enter"){const el=e.target.closest("tr[data-act],li[data-act]");if(el){act(el);return}
     const row=e.target.closest(".addrow");if(row&&e.target.tagName==="INPUT"){const b=row.querySelector("button[data-act]");if(b){e.preventDefault();act(b)}}}
