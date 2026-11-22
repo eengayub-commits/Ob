@@ -1528,8 +1528,8 @@ function quoteSVGs(q,logo){
   crow(y+44,"اسم المشروع:","Project",q.client?.project||"—",enOf(q.client?.project,q.client?.projectEn),{weight:600});
   crow(y+68,"الموقع:","Location",locFmt(q.client?.location)||"—",enOf(locFmt(q.client?.location),q.client?.locationEn));
   s+=T(cx,y+92,[q.client?.attn?`المسؤول: ${q.client.attn}`:"",q.client?.phone?`جوال: ${iso(q.client.phone)}`:""].filter(Boolean).join("   "),{size:8,anchor:"end",fill:QC.muted});
-  const mx=X1+bw-10;const mrow=(i,l,le,v)=>{const yy=y+18+i*23;s+=T(mx,yy,l,{size:8.3,anchor:"end",fill:QC.muted})+EN(mx,yy+9,le,{size:6.6})+T(X1+10,yy+3,v,{size:9.5,weight:700})};
-  mrow(0,"رقم العرض","Quotation No.",`${q.no}${q.rev?`-R${q.rev}`:""}`);mrow(1,"تاريخ العرض","Date",q.date||today());mrow(2,"صالح حتى","Valid until",qValidUntil(q));mrow(3,"مدة التنفيذ","Delivery period",`${N(q.deliveryDays)} Days`);
+  const mx=X1+bw-10;const mrow=(i,l,le,v)=>{const yy=y+22+i*30;s+=T(mx,yy,l,{size:8.3,anchor:"end",fill:QC.muted})+EN(mx,yy+9,le,{size:6.6})+T(X1+10,yy+3,v,{size:9.5,weight:700})};
+  mrow(0,"رقم العرض","Quotation No.",`${q.no}${q.rev?`-R${q.rev}`:""}`);mrow(1,"تاريخ العرض","Date",q.date||today());mrow(2,"صالح حتى","Valid until",qValidUntil(q));
   y+=bh+14;
   {const il=wrapText("يسرّنا أن نتقدم لكم بعرض السعر لتصنيع وتوريد وتركيب أعمال الألمنيوم والزجاج شاملاً جميع الإكسسوارات وأصول التركيب حسب البنود والمواصفات التالية:",92);il.forEach((l,k)=>{s+=T(X2,y+k*13,l,{size:9.5,anchor:"end"})});y+=(il.length-1)*13;}
   wrapText("We are pleased to submit our quotation for the manufacture, supply and installation of aluminium and glass works, inclusive of all accessories and proper installation, as per the following items and specifications:",118).forEach((l,k)=>{s+=EN(X2,y+11+k*9.5,l,{size:7.4})});y+=30;
@@ -1589,7 +1589,8 @@ function quoteSVGs(q,logo){
     terms.forEach((tx,i)=>{const ls=wrapText(tx,96);const le=wrapText(termsE[i]||"",110);ensure(ls.length*12+le.length*10+5);
       ls.forEach((l,k)=>{s+=T(X2-(k?14:0),y,(k?"":`${i+1}. `)+l,{size:8.6,anchor:"end"});y+=12});le.forEach(l=>{s+=EN(X2-14,y-1,l,{size:7.2});y+=10});y+=4});y+=6}
   if(q.notes){const ls=wrapText(q.notes,96).slice(0,6);const le=wrapText(enOf(q.notes,q.notesEn),110).slice(0,6);ensure(36+ls.length*12+le.length*10);secTitle("ملاحظات","NOTES");ls.forEach(l=>{s+=T(X2,y,l,{size:8.8,anchor:"end"});y+=12});le.forEach(l=>{s+=EN(X2,y-1,l,{size:7.4});y+=10});y+=8}
-  ensure(170);
+  ensure(210);
+  if(N(q.deliveryDays)){s+=`<rect x="${X1}" y="${y}" width="${W}" height="34" rx="4" fill="#fff" stroke="${QC.teal}" stroke-width=".8"/>`+T(X2-8,y+15,`مدة التنفيذ: ${N(q.deliveryDays)} يوماً من تاريخ استلام الدفعة المقدمة واعتماد المخططات والألوان`,{size:9.2,anchor:"end",weight:600})+EN(X2-8,y+27,`Delivery period: ${N(q.deliveryDays)} days from receipt of the advance payment and approval of drawings and colours`,{size:7.2});y+=44}
   if(co.iban||co.bank){s+=`<rect x="${X1}" y="${y}" width="${W}" height="34" rx="4" fill="${QC.soft}"/>`+T(X2-8,y+14,`البنك: ${co.bank||""}   ·   ${co.account?`رقم الحساب: ${iso(co.account)}   ·   `:""}الآيبان: ${iso(co.iban||"")}`,{size:8.8,anchor:"end"})+EN(X2-8,y+26,`Bank: ${bankEn(co.bank)}   ·   ${co.account?`Account No.: ${co.account}   ·   `:""}IBAN: ${co.iban||""}   ·   Account name: ${co.nameEn}`,{size:7.2});y+=44}
   const sy=y;const bw2=(W-14)/2;const prep=q.preparedBy?`${q.preparedBy}${q.preparedRole?" - "+q.preparedRole:""}`:(q.preparedRole||"");const prepE=[enOf(q.preparedBy,q.preparedByEn),enOf(q.preparedRole,q.preparedRoleEn)].filter(Boolean).join(" - ");
   s+=`<rect x="${X1+bw2+14}" y="${sy}" width="${bw2}" height="108" rx="6" fill="#fff" stroke="${QC.line}"/>`+T(X2-10,sy+16,`عن ${co.nameAr}`,{size:9.5,anchor:"end",weight:700})+EN(X2-10,sy+27,`For ${co.nameEn}`,{size:7.4,weight:700})+T(X2-10,sy+44,prep,{size:9,anchor:"end"})+EN(X2-10,sy+55,prepE,{size:7.4})+T(X2-10,sy+76,"التوقيع:",{size:8.5,anchor:"end",fill:QC.muted})+EN(X2-10,sy+85,"Signature",{size:6.6})+T(X2-10,sy+98,"الختم:",{size:8.5,anchor:"end",fill:QC.muted})+EN(X2-10,sy+106,"Stamp",{size:6.6});
