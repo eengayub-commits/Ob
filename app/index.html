@@ -1436,7 +1436,9 @@ function quoteSVGs(q,logo){
   y+=48;
   const bw=(W-12)/2;
   s+=`<rect x="${X1+bw+12}" y="${y}" width="${bw}" height="86" rx="6" fill="${QC.soft}"/>`+`<rect x="${X1}" y="${y}" width="${bw}" height="86" rx="6" fill="#fff" stroke="${QC.line}" stroke-width=".8"/>`;
-  const cx=X2-10;s+=T(cx,y+16,"مقدّم إلى",{size:8,anchor:"end",fill:QC.muted})+T(cx,y+34,qSalute(q),{size:12.5,anchor:"end",weight:700})+T(cx,y+52,[q.client?.project,q.client?.location].filter(Boolean).join(" - ")||"",{size:9,anchor:"end"})+T(cx,y+68,[q.client?.attn?`المسؤول: ${q.client.attn}`:"",q.client?.phone?`جوال: ${iso(q.client.phone)}`:""].filter(Boolean).join("   "),{size:8.5,anchor:"end",fill:QC.muted});
+  const cx=X2-10,vx=cx-62;const crow=(yy,l,v,o={})=>{s+=T(cx,yy,l,{size:8.5,anchor:"end",fill:QC.muted})+T(vx,yy,v||"—",{size:9.5,anchor:"end",...o})};
+  crow(y+20,"اسم العميل:",qSalute(q),{size:11.5,weight:700});crow(y+40,"اسم المشروع:",q.client?.project||"—",{weight:600});crow(y+58,"الموقع:",q.client?.location||"—");
+  s+=T(cx,y+76,[q.client?.attn?`المسؤول: ${q.client.attn}`:"",q.client?.phone?`جوال: ${iso(q.client.phone)}`:""].filter(Boolean).join("   "),{size:8.5,anchor:"end",fill:QC.muted});
   const mx=X1+bw-10;const mrow=(i,l,v)=>{s+=T(mx,y+18+i*17,l,{size:8.5,anchor:"end",fill:QC.muted})+T(X1+10,y+18+i*17,v,{size:9.5,weight:700})};
   mrow(0,"رقم العرض",`${q.no}${q.rev?`-R${q.rev}`:""}`);mrow(1,"تاريخ العرض",q.date||today());mrow(2,"صالح حتى",qValidUntil(q));mrow(3,"مدة التنفيذ",`${N(q.deliveryDays)} يوماً`);
   y+=100;
