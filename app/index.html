@@ -1520,8 +1520,8 @@ function quoteSVGs(q,logo){
   const mx=X1+bw-10;const mrow=(i,l,le,v)=>{const yy=y+18+i*23;s+=T(mx,yy,l,{size:8.3,anchor:"end",fill:QC.muted})+EN(mx,yy+9,le,{size:6.6})+T(X1+10,yy+3,v,{size:9.5,weight:700})};
   mrow(0,"رقم العرض","Quotation No.",`${q.no}${q.rev?`-R${q.rev}`:""}`);mrow(1,"تاريخ العرض","Date",q.date||today());mrow(2,"صالح حتى","Valid until",qValidUntil(q));mrow(3,"مدة التنفيذ","Delivery period",`${N(q.deliveryDays)} Days`);
   y+=bh+14;
-  s+=T(X2,y,"يسرّنا أن نتقدم لكم بعرض السعر لتصنيع وتوريد وتركيب أعمال الألمنيوم والزجاج أدناه، شاملاً جميع الإكسسوارات وأصول التركيب:",{size:9.5,anchor:"end"});
-  wrapText("We are pleased to submit our quotation for the manufacture, supply and installation of the aluminium and glass works below, inclusive of all accessories and proper installation:",118).forEach((l,k)=>{s+=EN(X2,y+11+k*9.5,l,{size:7.4})});y+=30;
+  {const il=wrapText("يسرّنا أن نتقدم لكم بعرض السعر لتصنيع وتوريد وتركيب أعمال الألمنيوم والزجاج شاملاً جميع الإكسسوارات وأصول التركيب حسب البنود والمواصفات التالية:",92);il.forEach((l,k)=>{s+=T(X2,y+k*13,l,{size:9.5,anchor:"end"})});y+=(il.length-1)*13;}
+  wrapText("We are pleased to submit our quotation for the manufacture, supply and installation of aluminium and glass works, inclusive of all accessories and proper installation, as per the following items and specifications:",118).forEach((l,k)=>{s+=EN(X2,y+11+k*9.5,l,{size:7.4})});y+=30;
   const C=[["#","No.",20],["الشكل","Elevation",46],["البند والوصف","Item & description",146],["العدد","Qty",32],["العرض","Width",50],["الارتفاع","Height",50],["المساحة (م2)","Area (m²)",46],["سعر الوحدة","Unit price",66],["الإجمالي","Total (SAR)",79]];
   function thead(){const HH=48;s+=`<rect x="${X1}" y="${y}" width="${W}" height="${HH}" rx="3" fill="${QC.teal}"/>`;let x=X2;
     C.forEach(([l,e,w],ci)=>{if(ci===4||ci===5){s+=T(x-5,y+36,l,{size:7.8,anchor:"end",weight:700,fill:"#fff"})+EN(x-5,y+44,e,{size:6.4,fill:"#d7e7ef"});
