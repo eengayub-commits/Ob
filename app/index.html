@@ -884,12 +884,12 @@ async function makePdf(c,src,mode){
 /* ---------- preliminary shop drawings ---------- */
 const KINDS={
   sliding2:["شباك سحاب درفتين","Sliding window - 2 sashes","sar-slide2",{base:"sliding",n:2}],
-  sliding2f:["شباك سحاب مع ثابت درفتين","Sliding window - 2 sashes with fixed panel","sar-slide2",{base:"sliding",n:2,fix:1}],
+  sliding2f:["شباك سحاب درفتين مع ثابت","Sliding window - 2 sashes with fixed panel","sar-slide2",{base:"sliding",n:2,fix:1}],
   sliding3:["شباك سحاب 3 درف","Sliding window - 3 sashes","sar-slide2",{base:"sliding",n:3}],
   sliding3f:["شباك سحاب 3 درف مع ثابت","Sliding window - 3 sashes with fixed panel","sar-slide2",{base:"sliding",n:3,fix:1}],
   sliding4:["شباك سحاب 4 درف","Sliding window - 4 sashes","sar-slide2",{base:"sliding",n:4}],
   sliding4f:["شباك سحاب 4 درف مع ثابت","Sliding window - 4 sashes with fixed panel","sar-slide2",{base:"sliding",n:4,fix:1}],
-  cw_fixed:["كارتن وول ثابت كامل","Curtain wall - fully fixed","sar-fix",{base:"cw",cw:"fixed"}],
+  cw_fixed:["كارتن وول","Curtain wall - fully fixed","sar-fix",{base:"cw",cw:"fixed"}],
   cw_pushout:["كارتن وول مع فتحة بوش اوت","Curtain wall with push-out vent","sar-fix",{base:"cw",cw:"pushout"}],
   cw_door:["كارتن وول مع باب مفصلي","Curtain wall with hinged door","sar-fix",{base:"cw",cw:"door"}],
   cw_swing:["كارتن وول مع باب مروحة","Curtain wall with double-action (swing) door","sar-fix",{base:"cw",cw:"swing"}],
@@ -899,7 +899,7 @@ const KINDS={
   casement2f:["شباك مفصلي درفتين مع ثابت","Casement window - 2 sashes with fixed panel","sar-case1",{base:"casement",n:2,fix:1}],
   awning:["شباك قلاب","Top-hung (awning) window","sar-case1",{base:"awning"}],
   awningf:["شباك قلاب مع ثابت","Top-hung (awning) window with fixed panel","sar-case1",{base:"awning",fix:1}],
-  fixed:["شباك ثابت كامل","Fixed window","sar-fix",{base:"fixed"}],
+  fixed:["شباك ثابت","Fixed window","sar-fix",{base:"fixed"}],
   door1f:["باب مفصلي مع ثابت","Hinged door with fixed panel","sar-door1",{base:"door",n:1,fix:1}],
   door1:["باب مفصلي","Hinged door","sar-door1",{base:"door",n:1}],
   door1ff:["باب مفصلي مع ثابت مع فورمايكا","Hinged door with fixed panel and formica panel","sar-door1",{base:"door",n:1,fix:1,formica:1}],
