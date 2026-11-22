@@ -1421,7 +1421,7 @@ function quoteSVGs(q,logo){
     const lx=X2-(logo?58:34);
     if(logo)s+=`<image href="${esc(logo)}" xlink:href="${esc(logo)}" x="${X2-52}" y="20" width="52" height="52" preserveAspectRatio="xMidYMid meet"/>`;
     else s+=`<rect x="${X2-34}" y="24" width="34" height="34" rx="7" fill="${QC.teal}"/><rect x="${X2-26}" y="32" width="18" height="18" fill="none" stroke="#fff" stroke-width="2.4"/>`;
-    s+=T(lx-8,42,co.nameAr,{size:16,anchor:"end",weight:700,fill:QC.ink})+T(lx-8,58,"أعمال الألمنيوم والزجاج",{size:8.5,anchor:"end",fill:QC.muted});
+    s+=T(lx-8,42,co.nameAr,{size:16,anchor:"end",weight:700,fill:QC.ink})+T(lx-8,58,"لجميع أعمال الألمنيوم والزجاج والسيكوريت",{size:8.5,anchor:"end",fill:QC.muted});
     s+=T(X1,40,co.nameEn.toUpperCase(),{size:11.5,weight:700,fill:QC.ink})+T(X1,54,"ALUMINIUM & GLASS WORKS",{size:7.5,fill:QC.muted});
     const meta=[co.vat?`VAT ${co.vat}`:"",co.cr?`CR ${co.cr}`:"",co.phone||"",co.email||""].filter(Boolean).join("   ·   ");
     s+=T(X1,68,meta,{size:7.5,fill:QC.muted});
