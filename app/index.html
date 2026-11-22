@@ -1509,8 +1509,11 @@ function quoteSVGs(q,logo){
   y+=bh+14;
   s+=T(X2,y,"يسرّنا أن نتقدم لكم بعرض سعرنا لتوريد وتركيب أعمال الألمنيوم والزجاج حسب البنود والمواصفات التالية:",{size:9.5,anchor:"end"});
   s+=EN(X2,y+11,"We are pleased to submit our quotation for the supply and installation of aluminium and glass works as per the following items and specifications:",{size:7.4});y+=20;
-  const C=[["#","No.",20],["الشكل","Elevation",46],["البند والوصف","Item & description",146],["العرض (مم)","Width (mm)",51],["الارتفاع (مم)","Height (mm)",51],["العدد","Qty",30],["المساحة م٢","Area m²",46],["سعر الوحدة","Unit price",66],["الإجمالي","Total (SAR)",79]];
-  function thead(){s+=`<rect x="${X1}" y="${y}" width="${W}" height="30" rx="3" fill="${QC.teal}"/>`;let x=X2;C.forEach(([l,e,w])=>{s+=T(x-5,y+13,l,{size:l.length>9?7.6:8.3,anchor:"end",weight:700,fill:"#fff"})+EN(x-5,y+24,e,{size:6.6,fill:"#d7e7ef"});x-=w});y+=30}
+  const C=[["#","No.",20],["الشكل","Elevation",46],["البند والوصف","Item & description",146],["العدد","Qty",32],["العرض","Width",50],["الارتفاع","Height",50],["المساحة م٢","Area m²",46],["سعر الوحدة","Unit price",66],["الإجمالي","Total (SAR)",79]];
+  function thead(){const HH=48;s+=`<rect x="${X1}" y="${y}" width="${W}" height="${HH}" rx="3" fill="${QC.teal}"/>`;let x=X2;
+    C.forEach(([l,e,w],ci)=>{if(ci===4||ci===5){s+=T(x-5,y+36,l,{size:7.8,anchor:"end",weight:700,fill:"#fff"})+EN(x-5,y+44,e,{size:6.4,fill:"#d7e7ef"});
+        if(ci===4){const gx=x,gw=C[4][2]+C[5][2];s+=T(gx-gw/2,y+12,"المقاس (مم)",{size:8.3,anchor:"middle",weight:700,fill:"#fff"})+EN(gx-gw/2,y+21,"Size (mm)",{size:6.6,fill:"#d7e7ef",anchor:"middle"})+L(gx-gw+4,y+25,gx-4,y+25,{stroke:"#7fa9bc",sw:.6})}}
+      else s+=T(x-5,y+21,l,{size:8.3,anchor:"end",weight:700,fill:"#fff"})+EN(x-5,y+32,e,{size:6.6,fill:"#d7e7ef"});x-=w});y+=HH}
   thead();
   (q.items||[]).forEach((it,i)=>{
     const L1=qLine(q,it);const isWin=it.type!=="other"&&KINDS[it.type];const dl=wrapText(it.desc||"",36).slice(0,2);const de=wrapText(enOf(it.desc,it.descEn),44).slice(0,2);const typeEn=it.type==="other"?"General item / other works":(KINDS[it.type]?KINDS[it.type][1]:"");const rh=Math.max(isWin?50:30,8+(2+dl.length+de.length)*11);
@@ -1523,9 +1526,9 @@ function quoteSVGs(q,logo){
     if(typeEn){s+=EN(x-5,ly,(it.ref?it.ref+" - ":"")+typeEn,{size:7.6});ly+=11}
     dl.forEach(l=>{s+=T(x-5,ly,l,{size:8,anchor:"end",fill:"#333"});ly+=11});
     de.forEach(l=>{s+=EN(x-5,ly,l,{size:7.6});ly+=11});x-=C[2][2];
-    s+=T(x-5,cy,N(it.w)?String(N(it.w)):"—",{size:8.8,anchor:"end"});x-=C[3][2];
-    s+=T(x-5,cy,N(it.h)?String(N(it.h)):"—",{size:8.8,anchor:"end"});x-=C[4][2];
-    s+=T(x-5,cy,String(L1.qty),{size:8.8,anchor:"end"});x-=C[5][2];
+    s+=T(x-5,cy,String(L1.qty),{size:8.8,anchor:"end",weight:600});x-=C[3][2];
+    s+=T(x-5,cy,N(it.w)?String(N(it.w)):"—",{size:8.8,anchor:"end"});x-=C[4][2];
+    s+=T(x-5,cy,N(it.h)?String(N(it.h)):"—",{size:8.8,anchor:"end"});x-=C[5][2];
     s+=T(x-5,cy,L1.totalArea?L1.totalArea.toFixed(2):"—",{size:8.8,anchor:"end"});x-=C[6][2];
     s+=T(x-5,cy,it.pricing==="lump"?"مقطوع":m2f(it.price),{size:8.8,anchor:"end"})+EN(x-5,cy+11,it.pricing==="lump"?"Lump sum":it.pricing==="unit"?"للحبة / per unit":"للمتر٢ / per m²",{size:6.8});x-=C[7][2];
     s+=T(x-5,cy,m2f(L1.total),{size:9.2,anchor:"end",weight:700});
