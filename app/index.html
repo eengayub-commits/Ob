@@ -1536,8 +1536,8 @@ function quoteSVGs(q,logo){
     s+=T(x-5,cy,String(i+1),{size:8.5,anchor:"end",fill:QC.muted});x-=C[0][2];
     if(isWin&&N(it.w)&&N(it.h))s+=`<g>${elevation({...it,kind:it.type,hinge:it.hinge||"R"},x-C[1][2]+4,y+5,C[1][2]-8,rh-10,{mini:true})}</g>`;x-=C[1][2];
     const sysAr=KOPT(it.type).base==="sliding"?((it.sys||defSys(q))==="royal"?" - رويال 12 سم":" - سرايا 10 سم"):"",sysEn=sysAr?((it.sys||defSys(q))==="royal"?" - Royal 12 cm":" - Saraya 10 cm"):"";
-    s+=T(x-5,cy,`${it.ref?it.ref+" - ":""}${qTypeName(it.type)}${sysAr}`,{size:9,anchor:"end",weight:700});let ly=cy+10.5;
-    if(typeEn){s+=EN(x-5,ly,(it.ref?it.ref+" - ":"")+typeEn+sysEn,{size:7.6});ly+=11}
+    s+=T(x-5,cy,qTypeName(it.type),{size:9,anchor:"end",weight:700});let ly=cy+10.5;
+    if(typeEn){s+=EN(x-5,ly,typeEn,{size:7.6});ly+=11}
     dl.forEach(l=>{s+=T(x-5,ly,l,{size:8,anchor:"end",fill:"#333"});ly+=11});
     de.forEach(l=>{s+=EN(x-5,ly,l,{size:7.6});ly+=11});x-=C[2][2];
     s+=T(x-5,cy,String(L1.qty),{size:8.8,anchor:"end",weight:600});x-=C[3][2];
