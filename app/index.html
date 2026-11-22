@@ -484,6 +484,7 @@ const P={
 };
 const DEFAULT_CFG={
   barLen:6000, trim:20, kerf:5, aluPrice:0, paintRate:0, glassPrice:0, tapeFactor:1, tapeRoll:100, tapePrice:0,
+  prices:{sar_slide:450,sar_slide_fix:480,roy_slide:570,roy_slide_fix:580,cw:450,pushout:350,awning:350,awning_fix:350,fixed:350,door:550,casement:450},
   company:{nameAr:"مصنع برج القمة للأعمال المعدنية",nameEn:"AL QIMMA TOWER FACTORY",vat:"",cr:"",address:"",phone:"",email:"",website:"",bank:"",iban:"",logo:""},
   profiles:[[P.sFrame,1.10],[P.sSash,0.95],[P.sScreen,0.45],[P.sInter,0.40],[P.rFrame,1.65],[P.rSash,1.20],[P.rInter,0.45],[P.rScreen,0.42],[P.cFrame,1.25],[P.cSash,1.05],[P.bead24,0.25],[P.dFrame,1.50],[P.dSash,1.30],[P.dKick,1.10],[P.bead1,0.22]].map(([name,kg])=>({name,kg})),
   recipes:[
@@ -627,6 +628,9 @@ function settingsView(){
     ${sIn("company.nameAr","اسم الشركة بالعربي")}${sIn("company.nameEn","اسم الشركة بالإنجليزي")}${sIn("company.vat","الرقم الضريبي (15 رقم)")}${sIn("company.cr","السجل التجاري")}${sIn("company.address","العنوان")}${sIn("company.phone","الهاتف")}${sIn("company.email","البريد الإلكتروني")}${sIn("company.website","الموقع الإلكتروني")}${sIn("company.bank","البنك")}${sIn("company.iban","رقم الآيبان IBAN")}
     <div class="fld">شعار الشركة (للعروض والمستندات)<div class="toolbar">${S.cfgDraft.company&&S.cfgDraft.company.logo?`<img src="${blob(S.cfgDraft.company.logo)}" alt="الشعار" style="height:44px;width:auto;border:1px solid var(--line);border-radius:6px;background:#fff;padding:2px">`:""}${S.canWrite&&S.assets?`<span class="btn upl">${S.busy.logo?"جارٍ الرفع…":"رفع الشعار PNG/JPG"}<input type="file" data-logo="1" accept="image/png,image/jpeg"></span>`:`<span class="small muted">رفع الشعار متاح للمحررين</span>`}</div></div>
   </div></div>
+  <div class="card"><h3>الأسعار الافتراضية لعروض الأسعار <span class="small muted">ر.س / م² (البوش اوت ر.س / درفة)</span></h3>
+    <p class="small muted" style="margin:0">أي بند جديد في عرض السعر يأخذ سعره من هنا حسب النوع والنظام. تقدر تغيّر سعر أي بند داخل العرض يدوياً، والسعر اليدوي ما يتغيّر تلقائياً.</p>
+    <div class="grid">${PRICE_LABELS.map(([k,l])=>sIn("prices."+k,l,"number")).join("")}</div></div>
   <div class="card"><h3>عام</h3><div class="grid">
     ${sIn("barLen","طول عود الألمنيوم (مم)","number")}${sIn("trim","تشذيب أطراف العود (مم)","number")}${sIn("kerf","سماكة قص المنشار (مم)","number")}
     ${sIn("aluPrice","سعر الألمنيوم (ر.س / كجم)","number")}${sIn("paintRate","سعر الدهان (ر.س / كجم)","number")}${sIn("glassPrice","سعر الزجاج (ر.س / م²)","number")}${sIn("tapeFactor","تيب الحماية (م لكل م ألمنيوم)","number")}${sIn("tapeRoll","طول رول التيب (م)","number")}${sIn("tapePrice","سعر رول التيب (ر.س)","number")}
@@ -1380,7 +1384,7 @@ const Q_PAY=[{label:"دفعة مقدمة عند التعميد",pct:50},{label:"
 
 function nextQuoteNo(){const y=new Date().getFullYear();let mx=0;S.quotes.forEach(q=>{const m=new RegExp("^Q-"+y+"-(\\d+)").exec(q.no||"");if(m)mx=Math.max(mx,+m[1])});return `Q-${y}-${String(mx+1).padStart(4,"0")}`}
 function newQuote(){const co=CO();return{no:nextQuoteNo(),rev:0,date:today(),validDays:15,status:"مسودة",client:{name:"",phone:"",email:"",project:"",location:"الرياض - حي ",attn:""},
-  items:[{id:uid(),ref:"W1",type:"sliding2",desc:"",w:1500,h:1200,qty:1,pricing:"m2",price:0}],minArea:1,discount:0,
+  items:[{id:uid(),ref:"W1",type:"sliding2",sys:"saraya",desc:"",w:1500,h:1200,qty:1,pricing:"m2",price:defPrice("sliding2","saraya"),addon:0}],minArea:1,discount:0,
   specs:{system:"سرايا 10 سم",profileThk:"1.5 مم",paintColor:"",paintCode:"",paintFinish:"دهان بودرة (Powder coated)",glassType:"دبل سكوريت",glassThk:"24 مم (6+12+6)",glassColor:"شفاف",accType:"",accColor:"",screen:"شبك ألمنيوم مع درفة سلك"},
   deliveryDays:30,payTerms:clone(Q_PAY),terms:Q_TERMS,notes:"",preparedBy:"",preparedRole:"قسم المبيعات",createdAt:new Date().toISOString()}}
 const Q_TITLES=["الأستاذ","الأستاذة","المهندس","المهندسة","الدكتور","الدكتورة","السادة"];
@@ -1388,10 +1392,18 @@ const isCompanyName=n=>/^(شركة|مؤسسة|مجموعة|مكتب|مصنع|م�
 function qTitle(q){const c=q.client||{};return c.title||(isCompanyName(c.name)?"السادة":"الأستاذ")}
 function locFmt(v){v=String(v||"").trim();if(/^الرياض\s*-\s*حي$/.test(v))return "الرياض";return v}
 function qSalute(q){const n=String(q.client?.name||"").trim();return n?`عناية ${qTitle(q)}/ ${n}`:"—"}
+const PRICE_LABELS=[["sar_slide","سحاب سرايا 10 سم - سماكة 1.5 مم"],["sar_slide_fix","سحاب مع ثابت - سرايا"],["roy_slide","سحاب رويال 12 سم - سماكة 2 مم"],["roy_slide_fix","سحاب مع ثابت - رويال"],["cw","كارتن وول ثابت - قطاع ترانزوم 9.5 سم"],["pushout","درفة البوش اوت (للدرفة الواحدة)"],["awning","قلاب"],["awning_fix","قلاب مع ثابت"],["fixed","ثابت كامل"],["door","باب مفصلي (كل الأنواع)"],["casement","شباك مفصلي (درفة / درفتين، مع أو بدون ثابت)"]];
+const SYS_OPTS={saraya:"سرايا 10 سم",royal:"رويال 12 سم"};
+const PR=()=>({...DEFAULT_CFG.prices,...(S.cfg.prices||{})});
+function defSys(q){return /رويال|royal/i.test(String(q?.specs?.system||""))?"royal":"saraya"}
+function defPrice(type,sys){const p=PR(),o=KOPT(type);if(type==="other"||!KINDS[type])return 0;
+  if(o.base==="sliding"){const r=sys==="royal";return N(o.fix?(r?p.roy_slide_fix:p.sar_slide_fix):(r?p.roy_slide:p.sar_slide))}
+  if(o.base==="cw")return N(p.cw);if(o.base==="awning")return N(o.fix?p.awning_fix:p.awning);if(o.base==="fixed")return N(p.fixed);if(o.base==="door")return N(p.door);if(o.base==="casement")return N(p.casement);return 0}
+const defAddon=type=>type==="cw_pushout"?N(PR().pushout):0;
 const qMinArea=q=>N(q.minArea)>0?N(q.minArea):1;
 function qLine(q,it){const area=N(it.w)*N(it.h)/1e6;const a1=it.type==='other'?area:Math.max(area,qMinArea(q));const qty=N(it.qty)||1;
   const totalArea=it.type==="other"&&!(N(it.w)&&N(it.h))?0:a1*qty;
-  const total=it.pricing==="lump"?N(it.price):it.pricing==="unit"?qty*N(it.price):totalArea*N(it.price);return{area:a1,totalArea,qty,total:r2(total)}}
+  const total=(it.pricing==="lump"?N(it.price):it.pricing==="unit"?qty*N(it.price):totalArea*N(it.price))+(it.pricing==="lump"?0:qty*N(it.addon));return{area:a1,totalArea,qty,total:r2(total)}}
 function qTotals(q){const sub=r2(sum(q.items||[],it=>qLine(q,it).total));const disc=r2(Math.min(N(q.discount),sub));const net=r2(sub-disc);const vat=r2(net*VAT_RATE);return{sub,disc,net,vat,total:r2(net+vat),area:sum(q.items||[],it=>qLine(q,it).totalArea),qty:sum((q.items||[]).filter(i=>i.type!=="other"),it=>N(it.qty)||1)}}
 function qExpired(q){if(q.status==="معتمد"||q.status==="مرفوض")return false;const d=new Date(q.date+"T00:00:00");d.setDate(d.getDate()+N(q.validDays));return d<new Date(today()+"T00:00:00")}
 function qValidUntil(q){const d=new Date((q.date||today())+"T00:00:00");d.setDate(d.getDate()+N(q.validDays));return d.toISOString().slice(0,10)}
@@ -1523,15 +1535,17 @@ function quoteSVGs(q,logo){
     let x=X2;const cy=y+16;
     s+=T(x-5,cy,String(i+1),{size:8.5,anchor:"end",fill:QC.muted});x-=C[0][2];
     if(isWin&&N(it.w)&&N(it.h))s+=`<g>${elevation({...it,kind:it.type,hinge:it.hinge||"R"},x-C[1][2]+4,y+5,C[1][2]-8,rh-10,{mini:true})}</g>`;x-=C[1][2];
-    s+=T(x-5,cy,`${it.ref?it.ref+" - ":""}${qTypeName(it.type)}`,{size:9,anchor:"end",weight:700});let ly=cy+10.5;
-    if(typeEn){s+=EN(x-5,ly,(it.ref?it.ref+" - ":"")+typeEn,{size:7.6});ly+=11}
+    const sysAr=KOPT(it.type).base==="sliding"?((it.sys||defSys(q))==="royal"?" - رويال 12 سم":" - سرايا 10 سم"):"",sysEn=sysAr?((it.sys||defSys(q))==="royal"?" - Royal 12 cm":" - Saraya 10 cm"):"";
+    s+=T(x-5,cy,`${it.ref?it.ref+" - ":""}${qTypeName(it.type)}${sysAr}`,{size:9,anchor:"end",weight:700});let ly=cy+10.5;
+    if(typeEn){s+=EN(x-5,ly,(it.ref?it.ref+" - ":"")+typeEn+sysEn,{size:7.6});ly+=11}
     dl.forEach(l=>{s+=T(x-5,ly,l,{size:8,anchor:"end",fill:"#333"});ly+=11});
     de.forEach(l=>{s+=EN(x-5,ly,l,{size:7.6});ly+=11});x-=C[2][2];
     s+=T(x-5,cy,String(L1.qty),{size:8.8,anchor:"end",weight:600});x-=C[3][2];
     s+=T(x-5,cy,N(it.w)?String(N(it.w)):"—",{size:8.8,anchor:"end"});x-=C[4][2];
     s+=T(x-5,cy,N(it.h)?String(N(it.h)):"—",{size:8.8,anchor:"end"});x-=C[5][2];
     s+=T(x-5,cy,L1.totalArea?L1.totalArea.toFixed(2):"—",{size:8.8,anchor:"end"});x-=C[6][2];
-    s+=T(x-5,cy,it.pricing==="lump"?"مقطوع":m2f(it.price),{size:8.8,anchor:"end"})+EN(x-5,cy+11,it.pricing==="lump"?"Lump sum":it.pricing==="unit"?"للحبة / per unit":"للمتر٢ / per m²",{size:6.8});x-=C[7][2];
+    s+=T(x-5,cy,it.pricing==="lump"?"مقطوع":m2f(it.price),{size:8.8,anchor:"end"})+EN(x-5,cy+11,it.pricing==="lump"?"Lump sum":it.pricing==="unit"?"للحبة / per unit":"للمتر٢ / per m²",{size:6.8});
+    if(N(it.addon)&&it.pricing!=="lump")s+=T(x-5,cy+22,`+ ${m2f(it.addon)} بوش اوت`,{size:7,anchor:"end",fill:QC.muted})+EN(x-5,cy+31,"push-out / unit",{size:6.2});x-=C[7][2];
     s+=T(x-5,cy,m2f(L1.total),{size:9.2,anchor:"end",weight:700});
     s+=L(X1,y+rh,X2,y+rh,{stroke:QC.line,sw:.5});y+=rh;
   });
@@ -1628,8 +1642,8 @@ function quoteEditor(){
       ${qIn("date","تاريخ العرض","date")}${qIn("validDays","مدة صلاحية العرض (يوم)","number")}${qIn("deliveryDays","مدة التنفيذ (يوم)","number")}${qIn("minArea","أقل مساحة محسوبة للقطعة م² (افتراضي 1)","number")}${qIn("preparedBy","معدّ العرض")}${qIn("preparedRole","المسمى")}
     </div></div>
     <div class="card"><h3>البنود <span class="toolbar">${W_&&S.sample?(S.ex["qtr:"+S.qid]&&S.ex["qtr:"+S.qid].busy?`<span class="spin" aria-hidden="true"></span><span class="small">جارٍ الترجمة…</span>`:`<button data-act="q-translate">ترجمة النصوص للإنجليزي</button>`):""}${W_?`<button data-act="q-add">+ بند</button>`:""}</span></h3>
-      <div class="tablebox"><table class="qitems"><thead><tr><th>الكود</th><th>النوع</th><th>الوصف (عربي)</th><th>الوصف (English)</th><th>العرض مم</th><th>الارتفاع مم</th><th>العدد</th><th>التسعير</th><th>السعر</th><th>المساحة م²</th><th>الإجمالي</th><th></th></tr></thead><tbody>
-      ${(q.items||[]).map((it,i)=>{const L1=qLine(q,it);return `<tr class="${it.unclear?"unclear":""}"><td>${qCell(`items.${i}.ref`,"text","56px")}</td><td>${qSel(`items.${i}.type`,Q_TYPES,"150px")}</td><td>${qCell(`items.${i}.desc`,"text","180px")}</td><td>${qCell(`items.${i}.descEn`,"text","180px",'dir="ltr" placeholder="English description"')}</td><td>${qCell(`items.${i}.w`,"number","70px")}</td><td>${qCell(`items.${i}.h`,"number","70px")}</td><td>${qCell(`items.${i}.qty`,"number","50px")}</td><td>${qSel(`items.${i}.pricing`,PRICING,"110px")}</td><td>${qCell(`items.${i}.price`,"number","80px")}</td><td class="num">${L1.totalArea?L1.totalArea.toFixed(2):"—"}</td><td><b>${M(L1.total)}</b></td>
+      <div class="tablebox"><table class="qitems"><thead><tr><th>الكود</th><th>النوع</th><th>النظام</th><th>الوصف (عربي)</th><th>الوصف (English)</th><th>العرض مم</th><th>الارتفاع مم</th><th>العدد</th><th>التسعير</th><th>السعر</th><th>المساحة م²</th><th>الإجمالي</th><th></th></tr></thead><tbody>
+      ${(q.items||[]).map((it,i)=>{const L1=qLine(q,it);return `<tr class="${it.unclear?"unclear":""}"><td>${qCell(`items.${i}.ref`,"text","56px")}</td><td>${qSel(`items.${i}.type`,Q_TYPES,"150px")}</td><td>${KOPT(it.type).base==="sliding"?qSel(`items.${i}.sys`,SYS_OPTS,"110px"):`<span class="muted small">—</span>`}</td><td>${qCell(`items.${i}.desc`,"text","180px")}</td><td>${qCell(`items.${i}.descEn`,"text","180px",'dir="ltr" placeholder="English description"')}</td><td>${qCell(`items.${i}.w`,"number","70px")}</td><td>${qCell(`items.${i}.h`,"number","70px")}</td><td>${qCell(`items.${i}.qty`,"number","50px")}</td><td>${qSel(`items.${i}.pricing`,PRICING,"110px")}</td><td>${qCell(`items.${i}.price`,"number","80px")}${N(it.price)!==defPrice(it.type,it.sys||defSys(q))&&it.type!=="other"&&defPrice(it.type,it.sys||defSys(q))?`<div class="small muted" title="السعر الافتراضي">افتراضي ${defPrice(it.type,it.sys||defSys(q))}</div>`:""}${it.type==="cw_pushout"||N(it.addon)?`<div class="small">+ بوش اوت ${qCell(`items.${i}.addon`,"number","60px")}</div>`:""}</td><td class="num">${L1.totalArea?L1.totalArea.toFixed(2):"—"}</td><td><b>${M(L1.total)}</b></td>
         <td>${W_?`<span class="toolbar" style="gap:2px;flex-wrap:nowrap"><button class="ghost" data-act="q-mv" data-i="${i}" data-d="-1" ${i?"":"disabled"} aria-label="لأعلى">↑</button><button class="ghost" data-act="q-mv" data-i="${i}" data-d="1" ${i<q.items.length-1?"":"disabled"} aria-label="لأسفل">↓</button>${S.confirm==="qi:"+it.id?`<button class="danger armed" data-act="q-del" data-i="${i}" data-id="${esc(it.id)}">تأكيد</button>`:`<button class="danger ghost" data-act="q-del" data-i="${i}" data-id="${esc(it.id)}">حذف</button>`}</span>`:""}</td></tr>`}).join("")}
       </tbody></table></div>
       <div class="qtot"><dl class="kv">
@@ -1712,7 +1726,7 @@ async function qSheetRead(){
     for(let i=0;i<pages.length;i++){st.msg=`جارٍ قراءة الصفحة ${i+1} من ${pages.length}… (قد تأخذ دقيقة)`;render();
       const out=await S.sample.json(qSheetPrompt(i+1,pages.length),{images:[pages[i]],modelTier:"complex",signal:st.ctl.signal});
       (out&&out.items||[]).forEach(x=>{const type=Q_TYPES[x.type]?x.type:"sliding2";
-        items.push({id:uid(),ref:String(x.ref||""),type,desc:String(x.desc||"")+(x.unclear?` (رقم غير واضح${x.alt?`، بديل: ${x.alt}`:""})`:""),w:Math.round(N(x.w_mm)),h:Math.round(N(x.h_mm)),qty:Math.max(1,Math.round(N(x.qty)||1)),pricing:type==="other"?"lump":(last?.pricing||"m2"),price:last?N(last.price):0,unclear:!!x.unclear})});
+        items.push({id:uid(),ref:String(x.ref||""),type,desc:String(x.desc||"")+(x.unclear?` (رقم غير واضح${x.alt?`، بديل: ${x.alt}`:""})`:""),w:Math.round(N(x.w_mm)),h:Math.round(N(x.h_mm)),qty:Math.max(1,Math.round(N(x.qty)||1)),pricing:type==="other"?"lump":"m2",sys:defSys(q),price:defPrice(type,defSys(q)),addon:defAddon(type),unclear:!!x.unclear})});
       if(out&&out.client)for(const k of ["name","phone","project","location"])if(out.client[k]&&!client[k])client[k]=String(out.client[k]);
       if(out&&N(out.stated_total)>0)stated+=N(out.stated_total);
       (out&&out.flags||[]).forEach(t=>t&&flags.push(`ص${i+1}: ${t}`));}
@@ -1756,7 +1770,7 @@ async function act(el){
     if(a==="q-approve"){if(S.confirm!=="q-approve"){S.confirm="q-approve";render();clearTimeout(act._t);act._t=setTimeout(()=>{S.confirm=null;render()},5000);return}S.confirm=null;await approveQuote();return}
     if(a==="q-rev"){await qSaveNow();const n=clone(q);delete n._id;delete n.clientId;delete n.approvedAt;n.rev=(N(q.rev)||0)+1;n.status="مسودة";n.date=today();n.createdAt=new Date().toISOString();
       const same=S.quotes.filter(x=>x.no===q.no);n.rev=Math.max(n.rev,...same.map(x=>(N(x.rev)||0)+1));const ref=db.collection("quotes").doc();try{await ref.set(n)}catch(e){handleWriteErr(e);return}S.quotes=[...S.quotes,{...n,_id:ref.id}];openQuote(ref.id);toast(`أُنشئت المراجعة R${n.rev}`);return}
-    if(a==="q-add"){const last=q.items[q.items.length-1]||{};q.items.push({id:uid(),ref:"W"+(q.items.length+1),type:last.type||"sliding2",desc:"",w:last.w||1500,h:last.h||1200,qty:1,pricing:last.pricing||"m2",price:last.price||0});render();qScheduleSave();return}
+    if(a==="q-add"){const last=q.items[q.items.length-1]||{};const ty=last.type||"sliding2",sy=last.sys||defSys(q);q.items.push({id:uid(),ref:"W"+(q.items.length+1),type:ty,sys:sy,desc:"",w:last.w||1500,h:last.h||1200,qty:1,pricing:last.pricing||"m2",price:ty==="other"?0:defPrice(ty,sy),addon:defAddon(ty)});render();qScheduleSave();return}
     if(a==="q-del"){const key="qi:"+el.dataset.id;if(S.confirm!==key){S.confirm=key;render();clearTimeout(act._t);act._t=setTimeout(()=>{S.confirm=null;render()},4000);return}S.confirm=null;q.items=q.items.filter(x=>x.id!==el.dataset.id);render();qScheduleSave();return}
     if(a==="q-mv"){const i=+el.dataset.i,j=i+(+el.dataset.d);if(j<0||j>=q.items.length)return;[q.items[i],q.items[j]]=[q.items[j],q.items[i]];render();qScheduleSave();return}
     if(a==="q-pay-add"){q.payTerms=q.payTerms||[];q.payTerms.push({label:"دفعة",pct:0});render();qScheduleSave();return}
@@ -1773,7 +1787,7 @@ async function act(el){
   if(a==="open-settings"){S.cfgDraft=clone(S.cfg);S.settings=true;S.confirm=null;render();window.scrollTo(0,0);return}
   if(a==="save-settings"){
     if(!db||!S.canWrite)return;
-    const d=S.cfgDraft;d.recipes.forEach(r=>{r.pieces.forEach(x=>x.n=N(x.n));r.glass.forEach(x=>x.n=N(x.n));r.acc.forEach(x=>x.price=N(x.price))});d.profiles.forEach(x=>x.kg=N(x.kg));["barLen","trim","kerf","aluPrice","paintRate","glassPrice","tapeFactor","tapeRoll","tapePrice"].forEach(k=>d[k]=N(d[k]));
+    const d=S.cfgDraft;d.recipes.forEach(r=>{r.pieces.forEach(x=>x.n=N(x.n));r.glass.forEach(x=>x.n=N(x.n));r.acc.forEach(x=>x.price=N(x.price))});d.profiles.forEach(x=>x.kg=N(x.kg));d.prices=Object.fromEntries(Object.entries({...DEFAULT_CFG.prices,...(d.prices||{})}).map(([k,v])=>[k,N(v)]));["barLen","trim","kerf","aluPrice","paintRate","glassPrice","tapeFactor","tapeRoll","tapePrice"].forEach(k=>d[k]=N(d[k]));
     if(d.barLen<=0){toast("طول العود يجب أن يكون أكبر من صفر");return}
     try{await db.doc("settings/takeoff").set({...d,updatedAt:new Date().toISOString()});S.everWrote=true;toast("حُفظت قوالب الحساب")}catch(e){handleWriteErr(e)}
     return;
@@ -1955,7 +1969,10 @@ const onField=e=>{const el=e.target;
     if(fk.startsWith("info:")&&(f==="quoteValue"||f==="quoteVatMode")){const box=document.getElementById("quote-calc");const c=cur();if(box&&c)box.innerHTML=quoteCalcHtml(fk,c)}
     return}
   if(el.dataset&&el.dataset.s&&S.cfgDraft){setPath(S.cfgDraft,el.dataset.s,el.value);if(e.type==="change")render();return}
-  if(el.dataset&&el.dataset.q&&S.qd){let v=el.value;setPath(S.qd,el.dataset.q,v);if(e.type==="change"){if(/^items\.\d+\.type$/.test(el.dataset.q)&&v==="other"){const it=getPath(S.qd,el.dataset.q.replace(/\.type$/,""));if(it.pricing==="m2")it.pricing="lump"}render();qScheduleSave()}return}
+  if(el.dataset&&el.dataset.q&&S.qd){if(el.tagName==="SELECT"&&e.type!=="change")return;let v=el.value;const mm=/^items\.(\d+)\.(type|sys)$/.exec(el.dataset.q);const itm=mm?S.qd.items[+mm[1]]:null;const oldDef=itm?defPrice(itm.type,itm.sys||defSys(S.qd)):0,oldAdd=itm?defAddon(itm.type):0;
+    setPath(S.qd,el.dataset.q,v);
+    if(itm&&e.type==="change"){if(!N(itm.price)||N(itm.price)===oldDef)itm.price=defPrice(itm.type,itm.sys||defSys(S.qd));if(!N(itm.addon)||N(itm.addon)===oldAdd)itm.addon=defAddon(itm.type)}
+    if(e.type==="change"){if(/^items\.\d+\.type$/.test(el.dataset.q)&&v==="other"){const it=getPath(S.qd,el.dataset.q.replace(/\.type$/,""));if(it.pricing==="m2")it.pricing="lump"}render();qScheduleSave()}return}
   if(el.id==="qq"){S.qq=el.value;render();return}
   if(el.id==="qstatusFilter"&&e.type==="change"){S.qstatus=el.value;render();return}
   if(el.id==="q"){S.q=el.value;render();return}
@@ -2007,7 +2024,7 @@ fromHash();
     render();
   },()=>{});
   db.doc("settings/takeoff").onSnapshot(snap=>{
-    if(snap.exists){const d=snap.data();S.cfg={...clone(DEFAULT_CFG),...clone(d),company:{...clone(DEFAULT_CFG.company),...clone(d.company||{})}};S.cfgSaved=Array.isArray(d.recipes)}
+    if(snap.exists){const d=snap.data();S.cfg={...clone(DEFAULT_CFG),...clone(d),company:{...clone(DEFAULT_CFG.company),...clone(d.company||{})},prices:{...clone(DEFAULT_CFG.prices),...clone(d.prices||{})}};S.cfgSaved=Array.isArray(d.recipes)}
     if(CO().logo&&(!S.logoData||S.logoData.id!==CO().logo))logoHref(true).then(()=>render());
     render();
   },()=>{});
