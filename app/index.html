@@ -126,6 +126,12 @@ td .linkbtn{display:inline}
 .vbody canvas{max-width:100%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.25)}
 .vimg{max-width:100%;height:auto}
 .vmsg{color:var(--muted);text-align:center;margin-top:40px}
+.exbox{display:flex;flex-direction:column;gap:10px;padding:12px;border:1px solid var(--accent);border-radius:8px;background:var(--accent-soft)}
+.exbox .tablebox{background:var(--surface)}
+tr.unclear td{background:var(--warn-soft)}
+.spin{width:16px;height:16px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;display:inline-block}
+@media (prefers-reduced-motion:no-preference){.spin{animation:spin 1s linear infinite}}
+@keyframes spin{to{transform:rotate(360deg)}}
 .kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:.9rem}
 .kv dt{color:var(--muted)}.kv dd{margin:0;font-weight:600}
 @media (prefers-reduced-motion:no-preference){.card,.stat{transition:border-color .15s}}
@@ -279,7 +285,7 @@ function listView(){
 
 function clientView(c){
   const k=calc(c);
-  const counts={docs:(c.files?.contract?.length||0)+(c.files?.quote?.length||0)+(c.files?.drawings?.length||0),pay:(c.payments||[]).length,inst:(c.installs||[]).length,meas:(c.glass||[]).length+(c.alu||[]).length,photos:(c.files?.photos||[]).length,buy:(c.purchases||[]).length};
+  const counts={docs:(c.files?.contract?.length||0)+(c.files?.quote?.length||0)+(c.files?.drawings?.length||0),pay:(c.payments||[]).length,inst:(c.installs||[]).length,meas:(c.glass||[]).length+(c.alu||[]).length+((c.files||{}).measSheets||[]).length,photos:(c.files?.photos||[]).length,buy:(c.purchases||[]).length};
   const body={info:tabInfo,docs:tabDocs,colors:tabColors,pay:tabPay,inst:tabInst,meas:tabMeas,calc:tabCalc,photos:tabPhotos,buy:tabBuy}[S.tab]||tabInfo;
   return `<section class="head">
       <div><div class="fileno">ملف رقم <span class="num">${esc(c.fileNo||"—")}</span></div><h2>${esc(c.name||"بدون اسم")}</h2>
@@ -388,8 +394,8 @@ function tabMeas(c){
   const G=c.glass||[],A=c.alu||[];
   const gQty=sum(G,r=>N(r.qty)||1),gArea=sum(G,r=>area(r.w,r.h,r.qty));
   const aQty=sum(A,r=>N(r.qty)||1),aArea=sum(A,r=>area(r.w,r.h,r.qty));
-  return `<div class="card"><div class="toolbar">${chk(mk,"final","المقاسات نهائية ومعتمدة للتصنيع",c.measFinal)}${inp(mk,"date","تاريخ الاعتماد",c.measFinalDate,"date")}${S.canWrite?`<button data-act="save-mfin">حفظ</button>`:""}${c.measFinal?`<span class="ok-badge">✓ معتمدة للتصنيع</span>`:`<span class="note">مقاسات أولية، لا تُرسل للتصنيع قبل الاعتماد</span>`}</div></div>
-  <div class="card"><h3>مقاسات الألمنيوم النهائية <span class="small muted">بالمليمتر</span></h3>
+  return `${sheetsCard(c)}<div class="card"><div class="toolbar">${chk(mk,"final","المقاسات نهائية ومعتمدة للتصنيع",c.measFinal)}${inp(mk,"date","تاريخ الاعتماد",c.measFinalDate,"date")}${S.canWrite?`<button data-act="save-mfin">حفظ</button>`:""}${c.measFinal?`<span class="ok-badge">✓ معتمدة للتصنيع</span>`:`<span class="note">مقاسات أولية، لا تُرسل للتصنيع قبل الاعتماد</span>`}</div></div>
+  <div class="card"><h3><span>مقاسات الألمنيوم النهائية <span class="small muted">بالمليمتر</span></span><span class="toolbar">${A.length||G.length?`<button data-act="pdf-dl" data-src="meas" ${S.pdfBusy?"disabled":""}>${S.pdfBusy?"جارٍ إنشاء PDF…":"تنزيل المقاسات PDF"}</button>${S.canWrite&&S.assets?`<button data-act="pdf-save" data-src="meas" ${S.pdfBusy?"disabled":""}>حفظ PDF في ملف العميل</button>`:""}`:""}</span></h3>
     <div class="tablebox"><table><thead><tr><th>المرجع</th><th>النوع (قالب الحساب)</th><th>العرض</th><th>الارتفاع</th><th>العدد</th><th>المساحة م²</th><th>ملاحظة</th><th></th></tr></thead><tbody>
     ${A.map(r=>`<tr><td><b>${esc(r.ref)}</b></td><td>${recCell(r)}</td><td class="num">${esc(r.w)}</td><td class="num">${esc(r.h)}</td><td class="num">${esc(r.qty||1)}</td><td class="num">${area(r.w,r.h,r.qty).toFixed(2)}</td><td>${esc(r.note||"")}</td><td>${del("alu:"+r.id)}</td></tr>`).join("")||`<tr><td colspan="8" class="muted">أضف مقاسات الشبابيك والأبواب.</td></tr>`}
     </tbody><tfoot><tr><td colspan="4">الإجمالي</td><td class="num">${aQty}</td><td class="num">${aArea.toFixed(2)}</td><td colspan="2"></td></tr></tfoot></table></div>
@@ -708,6 +714,182 @@ async function openViewer(f){
   msg(S.downloads?"لا يمكن معاينة هذا النوع داخل البرنامج. اضغط «تنزيل» لفتحه على جهازك.":"لا يمكن معاينة هذا النوع داخل البرنامج.");
 }
 
+/* ---------- handwritten sheets → extraction → PDF ---------- */
+const GROUPS={regular:"شبابيك",bath_door:"شبابيك حمامات سانديلاست وأبواب",small_green:"مقاسات صغيرة (مظللة بالأخضر)"};
+S.ex={};S.sample=null;S.pdfBusy=false;
+const JSPDF="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
+let jspdfLoad=null;
+function loadJsPdf(){if(window.jspdf)return Promise.resolve(window.jspdf);if(!jspdfLoad){jspdfLoad=addScript(JSPDF).then(()=>window.jspdf);jspdfLoad.catch(()=>{jspdfLoad=null})}return jspdfLoad}
+function canvasBlob(cv,type="image/jpeg",q=.9){return new Promise(r=>cv.toBlob(r,type,q))}
+async function toJpeg(b,maxSide=2400){
+  const bmp=await createImageBitmap(b);const k=Math.min(1,maxSide/Math.max(bmp.width,bmp.height));
+  const cv=document.createElement("canvas");cv.width=Math.round(bmp.width*k);cv.height=Math.round(bmp.height*k);
+  const ctx=cv.getContext("2d");ctx.fillStyle="#fff";ctx.fillRect(0,0,cv.width,cv.height);ctx.drawImage(bmp,0,0,cv.width,cv.height);
+  return canvasBlob(cv);
+}
+async function sheetImages(f){
+  const b=await fetchFile(f);const kind=fileKind({name:f.name,type:f.type||b.type});
+  if(kind==="img")return [await toJpeg(b)];
+  if(kind==="pdf"){
+    const lib=await loadPdfJs();const doc=await lib.getDocument({data:new Uint8Array(await b.arrayBuffer())}).promise;const out=[];
+    for(let i=1;i<=doc.numPages;i++){const pg=await doc.getPage(i);const base=pg.getViewport({scale:1});const vp=pg.getViewport({scale:2200/Math.max(base.width,base.height)});
+      const cv=document.createElement("canvas");cv.width=vp.width;cv.height=vp.height;const ctx=cv.getContext("2d");ctx.fillStyle="#fff";ctx.fillRect(0,0,cv.width,cv.height);
+      await pg.render({canvasContext:ctx,viewport:vp}).promise;out.push(await canvasBlob(cv))}
+    return out;
+  }
+  return [];
+}
+function exPrompt(i,n){return `You are reading page ${i} of ${n}: a photographed HANDWRITTEN site measurement sheet (Arabic/English) for aluminium windows and doors at Burj Al-Qimma factory, Saudi Arabia.
+Measurements on the sheet are in CENTIMETERS. Precision is the top priority: read every number twice, and never guess a digit silently.
+For every window/door line return:
+- ref: the code and the window/door number in ONE string formatted "floor-code", e.g. "14-D3". If no floor is written, just the code, e.g. "W1".
+- w_cm, h_cm: width and height exactly as written, in cm (decimals allowed, e.g. 145.5).
+- qty: count (default 1).
+- group: "bath_door" for bathroom windows with sandblasted glass (سانديلاست) and for doors; "small_green" for measurements highlighted in green; otherwise "regular".
+- note: any text written beside the line (e.g. pending approval such as "بانتظار اعتماد ...").
+- unclear: true if any digit is uncertain; alt: your alternative reading in that case.
+- pending: true if the line is marked pending / unconfirmed / C.O.
+Also return:
+- stated_total: a total count of pieces written on the page (number) or null; stated_total_text: that text as written.
+- flags: short notes IN ARABIC about widths/heights that break the pattern of similar units, missing floors or skipped numbers, unreadable digits (give best reading + alternative), and pending items. Empty list if none.
+Reply with ONLY this JSON:
+{"rows":[{"ref":"14-D3","w_cm":145.5,"h_cm":120,"qty":1,"group":"regular","note":"","unclear":false,"alt":"","pending":false}],"stated_total":null,"stated_total_text":"","flags":[]}`}
+function sampleErr(e){const c=e&&e.code;return({not_granted:"لم يُسمح لـ Claude بقراءة الكشف. اسمح له من نافذة الإذن ثم أعد المحاولة.",images_unavailable:"قراءة الصور غير متاحة في هذا العرض. افتح البرنامج داخل Claude.",image_rejected:"تعذّر قراءة الصورة. ارفعها بصيغة JPG أو PNG.",rate_limited:"طلبات كثيرة، انتظر دقيقة ثم أعد المحاولة.",cancelled:"أُوقفت القراءة.",invalid_json:"لم تُفهم نتيجة القراءة، أعد المحاولة.",session_expired:"انتهت الجلسة، أعد تحميل الصفحة."})[c]||"تعذّرت قراءة الكشف، أعد المحاولة.";}
+
+async function runExtract(c){
+  const sheets=(c.files||{}).measSheets||[];if(!sheets.length){toast("ارفع صورة الكشف أولاً");return}
+  if(!S.sample){toast("قراءة الكشوف متاحة فقط داخل Claude");return}
+  const cid=c._id;const ex=S.ex[cid]={busy:true,msg:"جارٍ تجهيز الصفحات…",ctl:new AbortController()};render();
+  try{
+    const pages=[];for(const f of sheets){const imgs=await sheetImages(f);imgs.forEach(b=>pages.push({b,src:f.name}))}
+    if(!pages.length)throw{code:"image_rejected"};
+    const rows=[],flags=[],totals=[];
+    for(let i=0;i<pages.length;i++){
+      ex.msg=`جارٍ قراءة الصفحة ${i+1} من ${pages.length}… (قد تأخذ دقيقة)`;render();
+      const out=await S.sample.json(exPrompt(i+1,pages.length),{images:[pages[i].b],modelTier:"complex",signal:ex.ctl.signal});
+      (out&&out.rows||[]).forEach(r=>{const w=Math.round(N(r.w_cm)*10),h=Math.round(N(r.h_cm)*10);
+        rows.push({id:uid(),ref:String(r.ref||"").trim(),w,h,qty:Math.max(1,Math.round(N(r.qty)||1)),group:GROUPS[r.group]?r.group:"regular",note:String(r.note||""),unclear:!!r.unclear,alt:String(r.alt||""),pending:!!r.pending,page:i+1})});
+      (out&&out.flags||[]).forEach(t=>t&&flags.push(`ص${i+1}: ${t}`));
+      if(out&&out.stated_total!=null&&N(out.stated_total)>0)totals.push({page:i+1,n:N(out.stated_total),txt:String(out.stated_total_text||"")});
+    }
+    const count=sum(rows,r=>r.qty);
+    totals.forEach(t=>{const pc=sum(rows.filter(r=>r.page===t.page),r=>r.qty);if(pc!==t.n)flags.unshift(`ص${t.page}: المكتوب في الكشف ${t.n} قطعة${t.txt?` («${t.txt}»)`:""} لكن المستخرج ${pc}. راجع الأسطر الناقصة أو الزائدة.`)});
+    rows.forEach(r=>{if(!r.ref)flags.push(`سطر بدون كود في الصفحة ${r.page} (${r.w}×${r.h}).`)});
+    const res={rows,flags,count,at:new Date().toISOString(),pages:pages.length};
+    S.ex[cid]={busy:false};await write(cid,{measExtract:res});
+    toast(`استُخرج ${rows.length} سطر (${count} قطعة). راجعها قبل الإضافة.`);
+  }catch(e){S.ex[cid]={busy:false,err:sampleErr(e)}}
+  render();
+}
+
+function exRecipeDefault(r){const ids=(S.cfg.recipes||[]).map(x=>x.id);const pick=id=>ids.includes(id)?id:ids[0];
+  if(r.group==="bath_door")return /D|باب/i.test(r.ref)?pick("sar-door1"):pick("sar-case1");
+  return pick("sar-slide2")}
+
+function sheetsCard(c){
+  const sheets=(c.files||{}).measSheets||[];const ex=S.ex[c._id]||{};const X=c.measExtract;
+  const canAI=!!S.sample;
+  let review="";
+  if(X&&X.rows){
+    const byG=k=>X.rows.filter(r=>r.group===k);
+    review=`<div class="exbox">
+      <h3>نتيجة القراءة <span class="small muted"><span class="num">${X.rows.length}</span> سطر · <span class="num">${X.count}</span> قطعة · بالمليمتر</span></h3>
+      ${X.flags&&X.flags.length?`<div class="note"><b>ملاحظات للمراجعة:</b><br>${X.flags.map(esc).join("<br>")}</div>`:`<div class="small ok-badge">لا توجد ملاحظات، ومع ذلك راجع الأرقام مع الكشف الأصلي.</div>`}
+      ${Object.keys(GROUPS).filter(k=>byG(k).length).map(k=>`<h3 style="margin-top:4px">${GROUPS[k]}</h3>
+      <div class="tablebox"><table><thead><tr><th>الكود</th><th>العرض مم</th><th>الارتفاع مم</th><th>العدد</th><th>المجموعة</th><th>قالب الحساب</th><th>ملاحظات</th><th></th></tr></thead><tbody>
+      ${byG(k).map(r=>`<tr class="${r.unclear?"unclear":""}">
+        <td>${exIn(r,"ref","110px")}</td><td>${exIn(r,"w","80px","number")}</td><td>${exIn(r,"h","80px","number")}</td><td>${exIn(r,"qty","55px","number")}</td>
+        <td><select data-ex="${esc(r.id)}|group" ${S.canWrite?"":"disabled"} aria-label="المجموعة">${Object.entries(GROUPS).map(([g,l])=>`<option value="${g}" ${g===r.group?"selected":""}>${l}</option>`).join("")}</select></td>
+        <td><select data-ex="${esc(r.id)}|recipe" ${S.canWrite?"":"disabled"} aria-label="قالب الحساب" style="min-width:190px">${recOpts(r.recipe||exRecipeDefault(r))}</select></td>
+        <td style="white-space:normal;min-width:160px">${exIn(r,"note","160px")}${r.unclear?`<div class="small neg">رقم غير واضح${r.alt?`، قراءة بديلة: <span class="num">${esc(r.alt)}</span>`:""}</div>`:""}${r.pending?`<div class="small" style="color:var(--warn)">بانتظار الاعتماد</div>`:""}</td>
+        <td>${S.canWrite?`<button class="danger ghost" data-act="ex-del" data-id="${esc(r.id)}">حذف</button>`:""}</td></tr>`).join("")}
+      </tbody><tfoot><tr><td>الإجمالي</td><td colspan="2"></td><td class="num">${sum(byG(k),r=>r.qty)}</td><td colspan="4"></td></tr></tfoot></table></div>`).join("")}
+      <div class="toolbar">
+        ${S.canWrite?`<button class="primary" data-act="ex-apply">إضافة إلى مقاسات الألمنيوم</button>`:""}
+        <button data-act="pdf-dl" data-src="ex" ${S.pdfBusy?"disabled":""}>${S.pdfBusy?"جارٍ إنشاء PDF…":"تنزيل PDF"}</button>
+        ${S.canWrite&&S.assets?`<button data-act="pdf-save" data-src="ex" ${S.pdfBusy?"disabled":""}>حفظ PDF في ملف العميل</button>`:""}
+        <span style="flex:1"></span>${S.canWrite?del("exclear:"+c._id,"مسح النتيجة"):""}
+      </div></div>`;
+  }
+  return `<div class="card"><h3>كشف المقاسات اليدوي ${uploader("measSheets","رفع صور الكشف أو PDF","image/*,application/pdf")}</h3>
+    <p class="small muted" style="margin:0">ارفع صور كشف الموقع المكتوب بخط اليد (بالسنتيمتر). يقرأه Claude ويحوّله للمليمتر ويطلع لك ملف PDF مرتّب، مع ملاحظات على الأرقام غير الواضحة والمجاميع.</p>
+    ${fileList(c,"measSheets")}
+    <div class="toolbar">${sheets.length&&S.canWrite?(ex.busy?`<span class="spin" aria-hidden="true"></span><span class="small">${esc(ex.msg||"")}</span><button data-act="ex-stop">إيقاف</button>`:canAI?`<button class="primary" data-act="ex-run">${X?"إعادة قراءة الكشف":"قراءة الكشف وتحويله"}</button>`:`<span class="small muted">قراءة الكشف تعمل عند فتح البرنامج داخل Claude.</span>`):""}
+      ${ex.err?`<span class="small neg">${esc(ex.err)}</span>`:""}</div>
+    ${review}
+    ${fileList(c,"measPdf")!==`<p class="muted small">لا توجد ملفات مرفوعة.</p>`?`<h3 style="margin-top:6px">ملفات PDF المحفوظة</h3>${fileList(c,"measPdf")}`:""}
+  </div>`;
+}
+function exIn(r,f,w,type="text"){return `<input id="ex-${esc(r.id)}-${f}" data-ex="${esc(r.id)}|${f}" type="${type}" value="${esc(r[f]??"")}" style="min-width:${w}" ${type==="number"?'inputmode="numeric" min="0"':""} ${S.canWrite?"":"disabled"} aria-label="${f}">`}
+
+async function exEdit(c,id,f,v){
+  const X=clone(c.measExtract||{rows:[]});const r=X.rows.find(x=>x.id===id);if(!r)return;
+  r[f]=["w","h","qty"].includes(f)?N(v):v;if(f==="w"||f==="h")r.unclear=false;X.count=sum(X.rows,x=>x.qty);
+  await write(c._id,{measExtract:X});
+}
+
+/* ---- PDF builder: typed tables (mm) + original sheet pages ---- */
+async function buildMeasPdf(c,sections,sheetBlobs){
+  const {jsPDF}=await loadJsPdf();
+  try{await document.fonts.load('600 26px "IBM Plex Sans Arabic"');await document.fonts.load('400 22px "IBM Plex Sans Arabic"')}catch(e){}
+  const PW=1240,PH=1754,MX=70;const FONT='"IBM Plex Sans Arabic","Segoe UI",Tahoma,sans-serif';
+  const pdf=new jsPDF({unit:"mm",format:"a4",orientation:"portrait",compress:true});let first=true;
+  const pages=[];let cv,ctx,y,pageNo=0;
+  const cols=[["#",60],["الكود",220],["العرض (مم)",170],["الارتفاع (مم)",170],["العدد",110],["ملاحظات",PW-2*MX-730]];
+  function txt(t,x,yy,{size=22,weight=400,color="#16202a",align="right",maxW}={}){ctx.font=`${weight} ${size}px ${FONT}`;ctx.fillStyle=color;ctx.textAlign=align;ctx.direction="rtl";let s=String(t??"");if(maxW){while(s.length>1&&ctx.measureText(s).width>maxW)s=s.slice(0,-2);if(s!==String(t??""))s+="…"}ctx.fillText(s,x,yy)}
+  function newPage(){cv=document.createElement("canvas");cv.width=PW;cv.height=PH;ctx=cv.getContext("2d");ctx.fillStyle="#fff";ctx.fillRect(0,0,PW,PH);pages.push(cv);pageNo++;
+    ctx.fillStyle="#1d5d78";ctx.fillRect(0,0,PW,10);
+    txt("برج القمة للأعمال المعدنية",PW-MX,70,{size:30,weight:600});
+    txt("كشف مقاسات الموقع · بالمليمتر",PW-MX,112,{size:22,color:"#5a6774"});
+    txt(`العميل: ${c.name||""}`,MX+520,70,{size:22,align:"right"});
+    txt(`رقم الملف: ${c.fileNo||"—"}   ·   التاريخ: ${today()}`,MX+520,112,{size:20,color:"#5a6774"});
+    ctx.fillStyle="#d3dae1";ctx.fillRect(MX,140,PW-2*MX,2);y=180}
+  function headerRow(){let x=PW-MX;ctx.fillStyle="#eef2f5";ctx.fillRect(MX,y-30,PW-2*MX,44);cols.forEach(([l,w])=>{txt(l,x-10,y,{size:19,weight:600,color:"#5a6774"});x-=w});y+=44}
+  function ensure(h){if(y+h>PH-90){footer();newPage();return true}return false}
+  function footer(){txt(`صفحة ${pageNo}`,PW/2,PH-40,{size:18,color:"#8a96a1",align:"center"})}
+  newPage();
+  for(const sec of sections){
+    if(!sec.rows.length)continue;
+    ensure(150);txt(sec.title,PW-MX,y+6,{size:24,weight:600,color:"#1d5d78"});y+=46;headerRow();
+    sec.rows.forEach((r,i)=>{
+      if(ensure(44)){txt(sec.title+" (تابع)",PW-MX,y+6,{size:22,weight:600,color:"#1d5d78"});y+=46;headerRow()}
+      if(r.flag){ctx.fillStyle="#fdf1dc";ctx.fillRect(MX,y-30,PW-2*MX,44)}
+      let x=PW-MX;const vals=[i+1,r.ref,r.w,r.h,r.qty,r.note||""];
+      cols.forEach(([,w],k)=>{txt(vals[k],x-10,y,{size:k===1?22:21,weight:k===1?600:400,maxW:w-20});x-=w});
+      ctx.fillStyle="#e3e8ec";ctx.fillRect(MX,y+13,PW-2*MX,1);y+=44;
+    });
+    ensure(50);ctx.fillStyle="#f5f7f9";ctx.fillRect(MX,y-30,PW-2*MX,44);
+    txt("الإجمالي",PW-MX-70,y,{size:21,weight:600});txt(sum(sec.rows,r=>r.qty),PW-MX-620,y,{size:21,weight:600});y+=70;
+  }
+  ensure(60);txt(`إجمالي القطع: ${sum(sections.flatMap(s=>s.rows),r=>r.qty)}`,PW-MX,y,{size:22,weight:600});
+  txt("المقاسات محوّلة من السنتيمتر إلى المليمتر (×10). الأسطر المظللة تحتاج مراجعة.",PW-MX,y+40,{size:18,color:"#5a6774"});footer();
+  pages.forEach(p=>{if(!first)pdf.addPage("a4","portrait");first=false;pdf.addImage(p.toDataURL("image/jpeg",.92),"JPEG",0,0,210,297)});
+  for(const b of sheetBlobs||[]){
+    const bmp=await createImageBitmap(b);const land=bmp.width>bmp.height;const W=land?297:210,H=land?210:297,m=8;
+    const k=Math.min((W-2*m)/bmp.width,(H-2*m)/bmp.height);const cvi=document.createElement("canvas");cvi.width=bmp.width;cvi.height=bmp.height;const cx=cvi.getContext("2d");cx.fillStyle="#fff";cx.fillRect(0,0,bmp.width,bmp.height);cx.drawImage(bmp,0,0);
+    pdf.addPage("a4",land?"landscape":"portrait");pdf.addImage(cvi.toDataURL("image/jpeg",.85),"JPEG",(W-bmp.width*k)/2,(H-bmp.height*k)/2,bmp.width*k,bmp.height*k);
+  }
+  return pdf.output("blob");
+}
+function pdfSections(c,src){
+  if(src==="ex"){const X=c.measExtract||{rows:[]};return Object.keys(GROUPS).map(k=>({title:GROUPS[k],rows:X.rows.filter(r=>r.group===k).map(r=>({ref:r.ref,w:r.w,h:r.h,qty:r.qty,note:[r.pending?"بانتظار الاعتماد":"",r.unclear?`غير واضح${r.alt?" / بديل "+r.alt:""}`:"",r.note].filter(Boolean).join(" · "),flag:r.unclear||r.pending}))}))}
+  const A=c.alu||[];const secs=Object.keys(GROUPS).map(k=>({title:"الألمنيوم - "+GROUPS[k],rows:A.filter(r=>(r.group||"regular")===k).map(r=>({ref:r.ref,w:r.w,h:r.h,qty:r.qty||1,note:[recipeById(r.recipe)?.name||r.type||"",r.note].filter(Boolean).join(" · ")}))}));
+  secs.push({title:"الزجاج",rows:(c.glass||[]).map(r=>({ref:r.ref,w:r.w,h:r.h,qty:r.qty||1,note:[r.type,r.thick,r.color].filter(Boolean).join(" ")}))});
+  return secs;
+}
+async function makePdf(c,src,mode){
+  if(S.pdfBusy)return;S.pdfBusy=true;render();
+  try{
+    let blobs=[];if(src==="ex"){for(const f of (c.files||{}).measSheets||[]){try{blobs=blobs.concat(await sheetImages(f))}catch(e){}}}
+    const pdf=await buildMeasPdf(c,pdfSections(c,src),blobs);
+    const name=`مقاسات-${(c.fileNo||c.name||"ملف").replace(/[\\/:*?"<>|]/g,"-")}.pdf`;
+    if(mode==="save"){const r=await S.assets.upload(new File([pdf],name,{type:"application/pdf"}));await mutateFiles("measPdf",l=>l.concat([{id:r.id,name,type:"application/pdf",size:r.sizeBytes,at:new Date().toISOString()}]));toast("حُفظ ملف PDF في ملف العميل")}
+    else if(S.downloads){await S.downloads.save({filename:name,data:pdf})}
+    else toast("التنزيل غير متاح هنا، استخدم «حفظ PDF في ملف العميل»");
+  }catch(e){if(!(e&&e.code==="declined"))toast("تعذّر إنشاء ملف PDF")}
+  S.pdfBusy=false;render();
+}
+
 /* ---------- actions ---------- */
 function need(fk,fields){const d=S.draft[fk]||{};for(const[f,l]of fields){if(!String(d[f]??"").trim()){toast("أدخل "+l);const el=document.getElementById(("f-"+fk+"-"+f).replace(/[^a-zA-Z0-9_-]/g,"_"));el&&el.focus();return null}}return d}
 function rowFrom(fk,defaults){return{...defaults,...(S.draft[fk]||{})}}
@@ -746,6 +928,17 @@ async function act(el){
   }
   if(!c)return;
   if(a==="export-calc"){exportCalc(c);return}
+  if(a==="ex-run"){runExtract(c);return}
+  if(a==="ex-stop"){const ex=S.ex[c._id];ex&&ex.ctl&&ex.ctl.abort();return}
+  if(a==="pdf-dl"||a==="pdf-save"){makePdf(c,el.dataset.src,a==="pdf-save"?"save":"dl");return}
+  if(a==="ex-del"){const X=clone(c.measExtract||{rows:[]});X.rows=X.rows.filter(r=>r.id!==el.dataset.id);X.count=sum(X.rows,r=>r.qty);await write(c._id,{measExtract:X});return}
+  if(a==="ex-apply"){
+    const X=c.measExtract;if(!X||!X.rows.length){toast("لا توجد أسطر للإضافة");return}
+    const bad=X.rows.find(r=>!r.ref||!(N(r.w)>0)||!(N(r.h)>0));if(bad){toast("أكمل الكود والمقاس لكل الأسطر أولاً");return}
+    const add=X.rows.map(r=>{const rc=recipeById(r.recipe||exRecipeDefault(r));return{id:uid(),ref:r.ref,w:N(r.w),h:N(r.h),qty:N(r.qty)||1,recipe:rc?rc.id:"",system:rc?rc.system:"",type:rc?rc.name:"",group:r.group,note:[r.pending?"بانتظار الاعتماد":"",r.unclear?"رقم غير واضح":"",r.note].filter(Boolean).join(" · ")}});
+    if(await write(c._id,{alu:[...(c.alu||[]),...add],measExtract:{...X,appliedAt:new Date().toISOString()}}))toast(`أُضيف ${add.length} سطر إلى مقاسات الألمنيوم`);
+    return;
+  }
   if(a==="save-info"){
     const fk="info:"+c._id;const d=S.draft[fk]||{};
     if("name"in d&&!String(d.name).trim()){toast("اسم العميل مطلوب");return}
@@ -806,6 +999,7 @@ async function act(el){
     const key=el.dataset.key;
     if(S.confirm!==key){S.confirm=key;render();clearTimeout(act._t);act._t=setTimeout(()=>{S.confirm=null;render()},4000);return}
     S.confirm=null;const[type,x,y]=key.split(":");
+    if(type==="exclear"){await write(c._id,{measExtract:null});return}
     if(type==="client"){try{await db.collection("clients").doc(c._id).delete();location.hash="";S.id=null;render();toast("حُذف ملف العميل")}catch(e){handleWriteErr(e)}return}
     if(type==="file"){await mutateFiles(x,l=>l.filter(f=>f.id!==y));return}
     const field={pay:"payments",inst:"installs",alu:"alu",glass:"glass",buy:"purchases"}[type];
@@ -846,6 +1040,7 @@ const onField=e=>{const el=e.target;
 document.addEventListener("input",onField);
 document.addEventListener("change",async e=>{
   const el=e.target;onField(e);
+  if(el.dataset.ex&&e.type==="change"){const c=cur();if(!c)return;const i=el.dataset.ex.lastIndexOf("|");await exEdit(c,el.dataset.ex.slice(0,i),el.dataset.ex.slice(i+1),el.value);return}
   if(el.dataset.alurec&&e.type==="change"){const id=el.dataset.alurec,rc=recipeById(el.value);if(!rc)return;await mutateList("alu",l=>l.map(r=>r.id===id?{...r,recipe:rc.id,system:rc.system,type:rc.name}:r));toast("تغيّر قالب الحساب");return}
   if(el.dataset.inst&&e.type==="change"){const id=el.dataset.inst,v=el.value;await mutateList("installs",l=>l.map(r=>r.id===id?{...r,status:v}:r));toast("حُدّثت حالة الموعد");return}
   if(el.dataset.up&&el.files&&el.files.length){
@@ -887,6 +1082,7 @@ fromHash();
   if(user){try{const w=await user.can("data.write");if(w===false){S.canWrite=false;render()}}catch(e){}}
   S.assets=await window.claude.use("assets");render();
   S.downloads=await window.claude.use("downloads");render();
+  S.sample=await window.claude.use("sample");render();
 })();
 })();
 </script>
