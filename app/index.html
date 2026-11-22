@@ -134,6 +134,10 @@ tr.unclear td{background:var(--warn-soft)}
 @keyframes spin{to{transform:rotate(360deg)}}
 .sheet{background:#fff;border:1px solid var(--line);border-radius:8px;overflow:hidden}
 .sheet svg{width:100%;height:auto;display:block}
+.maplink{color:var(--accent);font-weight:600;text-decoration:none}.maplink:hover{text-decoration:underline}
+.checks{display:flex;flex-direction:column;gap:8px;padding:12px;border:1px solid var(--line);border-radius:8px}
+.checks .approve{font-weight:500}
+.ph video{width:100%;aspect-ratio:16/9;background:#000;display:block}
 .kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:.9rem}
 .kv dt{color:var(--muted)}.kv dd{margin:0;font-weight:600}
 @media (prefers-reduced-motion:no-preference){.card,.stat{transition:border-color .15s}}
@@ -150,7 +154,7 @@ const BUY_CATS=["ألمنيوم","زجاج","إكسسوارات","مواد تر�
 const PAY_METHODS=["تحويل بنكي","نقدي","شيك","شبكة"];
 const ALU_SYSTEMS=["سرايا","رويال","كرتن وول","سكوريت","أخرى"];
 const ITEM_TYPES=["شباك سحاب","شباك مفصلي","شباك ثابت","باب سحاب","باب مفصلي","واجهة","أخرى"];
-const TABS=[["info","البيانات"],["docs","العقد والعرض والمخططات"],["colors","اعتماد الألوان"],["pay","الدفعات"],["inst","التركيب"],["meas","المقاسات"],["calc","حساب الكميات"],["shop","المخططات التنفيذية"],["photos","الصور"],["buy","المشتريات والأرباح"]];
+const TABS=[["info","البيانات"],["docs","العقد وعرض السعر"],["pay","الدفعات"],["colors","الاعتمادات"],["meas","المقاسات"],["shop","المخططات Shop Drawings"],["calc","حساب الكميات"],["cut","Cutting List"],["inst","مواعيد التركيب"],["buy","المشتريات والأرباح"],["photos","الصور والفيديو"],["handover","محضر التسليم"]];
 const MAX_BYTES=20*1024*1024;
 const VAT_RATE=0.15;
 const VAT_MODES=["قبل الضريبة","شامل الضريبة"];
@@ -287,11 +291,11 @@ function listView(){
 
 function clientView(c){
   const k=calc(c);
-  const counts={docs:(c.files?.contract?.length||0)+(c.files?.quote?.length||0)+(c.files?.drawings?.length||0),pay:(c.payments||[]).length,inst:(c.installs||[]).length,meas:(c.glass||[]).length+(c.alu||[]).length+((c.files||{}).measSheets||[]).length,photos:(c.files?.photos||[]).length,shop:((c.shop&&c.shop.items)||[]).length,buy:(c.purchases||[]).length};
-  const body={info:tabInfo,docs:tabDocs,colors:tabColors,pay:tabPay,inst:tabInst,meas:tabMeas,calc:tabCalc,shop:tabShop,photos:tabPhotos,buy:tabBuy}[S.tab]||tabInfo;
+  const counts={docs:(c.files?.contract?.length||0)+(c.files?.quote?.length||0)+(c.files?.drawings?.length||0),pay:(c.payments||[]).length,inst:(c.installs||[]).length,meas:(c.glass||[]).length+(c.alu||[]).length+((c.files||{}).measSheets||[]).length,photos:(c.files?.photos||[]).length+(c.files?.photosAfter||[]).length+(c.files?.videos||[]).length,shop:((c.shop&&c.shop.items)||[]).length,buy:(c.purchases||[]).length};
+  const body={info:tabInfo,docs:tabDocs,colors:tabColors,pay:tabPay,inst:tabInst,meas:tabMeas,calc:tabCalc,cut:tabCut,handover:tabHandover,shop:tabShop,photos:tabPhotos,buy:tabBuy}[S.tab]||tabInfo;
   return `<section class="head">
       <div><div class="fileno">ملف رقم <span class="num">${esc(c.fileNo||"—")}</span></div><h2>${esc(c.name||"بدون اسم")}</h2>
-      <div class="small muted">تاريخ التعميد: <span class="num">${esc(c.approvalDate||"—")}</span> ${c.location?"· "+esc(c.location):""} ${c.phone?`· <span class="num">${esc(c.phone)}</span>`:""}</div></div>
+      <div class="small muted">تاريخ التعميد: <span class="num">${esc(c.approvalDate||"—")}</span> ${c.location?"· "+esc(c.location):""} ${locLink(c)} ${c.phone?`· <span class="num">${esc(c.phone)}</span>`:""}</div></div>
       <span class="pill ${STATUS_CLS[c.status]||""}">${esc(c.status||"—")}</span>
     </section>
     <section class="stats">
@@ -315,6 +319,7 @@ function tabInfo(c){
       ${sel(fk,"status","حالة الملف",STATUSES,c.status||"تم التعميد")}
       ${inp(fk,"phone","رقم الجوال",c.phone,"tel")}
       ${inp(fk,"location","الموقع / الحي",c.location)}
+      ${inp(fk,"locationUrl","رابط الموقع (خرائط Google)",c.locationUrl,"url",'placeholder="https://maps.app.goo.gl/…" dir="ltr"')}
       ${inp(fk,"contractNo","رقم العقد",c.contractNo)}
       ${inp(fk,"contractValue","قيمة العقد (ر.س)",c.contractValue,"number",'step="0.01" min="0" inputmode="decimal"')}
       ${inp(fk,"quoteNo","رقم عرض السعر",c.quoteNo)}
@@ -411,12 +416,6 @@ function tabMeas(c){
   </div>`;
 }
 
-function tabPhotos(c){
-  const list=(c.files||{}).photos||[];
-  return `<div class="card"><h3>صور الشبابيك ${uploader("photos","رفع صور","image/*")}</h3>
-    ${list.length?`<div class="gallery">${list.map(p=>`<figure class="ph" style="margin:0"><img src="${blob(p.id)}" alt="${esc(p.name)}" loading="lazy" data-act="zoom" data-id="${esc(p.id)}"><div><span class="small muted num">${esc((p.at||"").slice(0,10))}</span>${del("file:photos:"+p.id)}</div></figure>`).join("")}</div>`:`<p class="muted small">صور الموقع قبل التركيب وبعده وصور الشبابيك المنفّذة.</p>`}
-  </div>`;
-}
 
 function tabBuy(c,k){
   const fk="buy:"+c._id;const list=[...(c.purchases||[])].sort((a,b)=>String(a.date).localeCompare(String(b.date)));
@@ -460,7 +459,7 @@ const P={
   dFrame:"حلق 10.5سم مفصلات سرايا بوكس 1.8مم (باب)", dSash:"درفة 6سم سرايا 1.8مم (باب)", dKick:"قاطع كعب 12سم 1.3مم", bead1:"بركلوز سرايا سنجل 1.3مم"
 };
 const DEFAULT_CFG={
-  barLen:6000, trim:20, kerf:5, aluPrice:0, paintRate:0, glassPrice:0,
+  barLen:6000, trim:20, kerf:5, aluPrice:0, paintRate:0, glassPrice:0, tapeFactor:1, tapeRoll:100, tapePrice:0,
   profiles:[[P.sFrame,1.10],[P.sSash,0.95],[P.sScreen,0.45],[P.sInter,0.40],[P.rFrame,1.65],[P.rSash,1.20],[P.rInter,0.45],[P.rScreen,0.42],[P.cFrame,1.25],[P.cSash,1.05],[P.bead24,0.25],[P.dFrame,1.50],[P.dSash,1.30],[P.dKick,1.10],[P.bead1,0.22]].map(([name,kg])=>({name,kg})),
   recipes:[
     {id:"sar-slide2",name:"شباك سحاب سرايا 10سم - درفتين",system:"سرايا",
@@ -486,6 +485,7 @@ const DEFAULT_CFG={
   ]
 };
 const clone=o=>JSON.parse(JSON.stringify(o));
+{const sc={"sar-slide2":24,"roy-slide2":24,"sar-case1":16,"sar-fix":8,"sar-door1":16};DEFAULT_CFG.recipes.forEach(r=>{r.acc.push({name:"مسامير تجميع",unit:"حبة",q:String(sc[r.id]||16),price:0,cat:"screw"},{name:"براغي تثبيت مع فيشر",unit:"حبة",q:r.id==="sar-door1"?"(2*H+W)/400":"2*(W+H)/400",price:0,cat:"screw"})})}
 S.cfg=clone(DEFAULT_CFG);S.cfgSaved=false;S.settings=false;S.cfgDraft=null;
 const recipeById=id=>(S.cfg.recipes||[]).find(r=>r.id===id)||null;
 
@@ -540,7 +540,7 @@ function takeoff(c,cfg){
     }
     for(const a of r.acc||[]){
       const v=ev(a.q,W,H);if(!isFinite(v)){warn.push(`كمية «${a.name}» غير صحيحة في ${r.name}.`);continue}
-      const k=a.name+"|"+a.unit;(acc[k]=acc[k]||{name:a.name,unit:a.unit,price:N(a.price),qty:0}).qty+=v*q;
+      const k=a.name+"|"+a.unit;(acc[k]=acc[k]||{name:a.name,unit:a.unit,price:N(a.price),qty:0,cat:accCat(a)}).qty+=v*q;
     }
     perUnit.push(det);
   }
@@ -553,64 +553,17 @@ function takeoff(c,cfg){
   const accList=Object.values(acc).map(a=>({...a,qty:a.unit==="حبة"||a.unit==="طقم"?Math.ceil(a.qty-1e-9):Math.round(a.qty*100)/100})).map(a=>({...a,total:a.qty*a.price}));
   glass.forEach(x=>x.m2=x.w*x.h*x.qty/1e6);
   const kg=sum(profiles,p=>p.kg),bars=sum(profiles,p=>p.nb),m2=sum(glass,x=>x.m2);
-  const cost={alu:sum(profiles,p=>p.cost),paint:kg*N(cfg.paintRate),acc:sum(accList,a=>a.total),glass:m2*N(cfg.glassPrice)};
-  cost.total=cost.alu+cost.paint+cost.acc+cost.glass;
-  return{profiles,acc:accList,glass,warn,perUnit,units,kg,bars,m2,cost};
+  const aluM=sum(profiles,p=>p.net)/1000,tf=N(cfg.tapeFactor??1),roll=N(cfg.tapeRoll)||100;
+  const tape={aluM,factor:tf,m:aluM*tf,roll,rolls:Math.ceil(aluM*tf/roll-1e-9),cost:0};tape.cost=tape.rolls*N(cfg.tapePrice);
+  const cc=k=>sum(accList.filter(a=>a.cat===k),a=>a.total);
+  const cost={alu:sum(profiles,p=>p.cost),paint:kg*N(cfg.paintRate),acc:cc("acc"),screw:cc("screw"),rubber:cc("rubber"),tape:tape.cost+cc("tape"),glass:m2*N(cfg.glassPrice)};
+  cost.total=cost.alu+cost.paint+cost.acc+cost.screw+cost.rubber+cost.tape+cost.glass;
+  return{profiles,acc:accList,glass,warn,perUnit,units,kg,bars,m2,cost,tape};
 }
 
 function groupBar(b){
   const m=new Map();b.pieces.forEach(p=>{const e=m.get(p.len)||{len:p.len,n:0,refs:new Set()};e.n++;e.refs.add(p.ref);m.set(p.len,e)});
   return [...m.values()];
-}
-
-function tabCalc(c){
-  const cfg=S.cfg;const T=takeoff(c,cfg);const alu=c.colors?.alu||{};
-  const colorTxt=[alu.color,alu.code].filter(Boolean).join(" · ")||"لم يُحدد اللون";
-  if(!(c.alu||[]).length&&!(c.glass||[]).length)return `<div class="card empty"><h2>لا توجد مقاسات بعد</h2><p class="muted" style="max-width:50ch">أضف الشبابيك والأبواب من تبويب «المقاسات» واختر لكل واحد قالب الحساب، وهنا يطلع حصر الألمنيوم والـ Cutting List والدهان والإكسسوارات والزجاج تلقائياً.</p><button data-act="tab" data-tab="meas">← الذهاب للمقاسات</button></div>`;
-  const priced=n=>n?M(n):`<span class="muted small">أدخل السعر</span>`;
-  const head=`<div class="card"><div class="head"><div><h3 style="display:block">ملخص الحصر</h3>
-    <div class="small muted">طول العود <span class="num">${money(cfg.barLen)}</span> مم · قص المنشار <span class="num">${cfg.kerf}</span> مم · تشذيب الأطراف <span class="num">${cfg.trim}</span> مم · لون الألمنيوم: ${esc(colorTxt)}</div></div>
-    <div class="toolbar">${S.downloads?`<button data-act="export-calc">تنزيل Excel (CSV)</button>`:""}<button data-act="open-settings">قوالب الحساب والأسعار</button></div></div>
-    ${!c.measFinal?`<div class="note">المقاسات غير معتمدة نهائياً بعد. راجعها قبل إرسال الطلبية للتصنيع.</div>`:""}
-    ${T.warn.length?`<div class="note">${T.warn.map(esc).join("<br>")}</div>`:""}
-    ${!S.cfgSaved?`<div class="note">الحساب يستخدم القوالب الافتراضية (خصومات وأوزان تقريبية). راجعها من «قوالب الحساب والأسعار» واحفظها لتطابق قطاعات المصنع.</div>`:""}
-    <div class="stats"><div class="stat"><span>الوحدات</span><b class="num">${T.units}</b></div><div class="stat"><span>عيدان الألمنيوم</span><b class="num">${T.bars}</b></div><div class="stat"><span>وزن الألمنيوم</span><b><span class="num">${money(Math.round(T.kg*10)/10)}</span><span class="cur">كجم</span></b></div><div class="stat"><span>مساحة الزجاج</span><b><span class="num">${T.m2.toFixed(2)}</span><span class="cur">م²</span></b></div><div class="stat"><span>تكلفة المواد التقديرية</span><b>${M(T.cost.total)}</b></div></div></div>`;
-
-  const s1=`<div class="card"><h3><span><span class="step">١</span> حصر الألمنيوم</span></h3>
-    <div class="tablebox"><table><thead><tr><th>القطاع</th><th>اللون</th><th>عدد القطع</th><th>الطول الصافي م</th><th>عدد العيدان</th><th>الهدر</th><th>الوزن كجم</th><th>التكلفة</th></tr></thead><tbody>
-    ${T.profiles.map(p=>`<tr><td><b>${esc(p.name)}</b></td><td>${esc(alu.code||alu.color||"—")}</td><td class="num">${p.pieces}</td><td class="num">${(p.net/1000).toFixed(2)}</td><td class="num"><b>${p.nb}</b>${p.over.length?` <span class="pill bad">${p.over.length} أطول من العود</span>`:""}</td><td class="num">${(p.waste*100).toFixed(0)}%</td><td class="num">${p.kgm?p.kg.toFixed(1):"—"}</td><td>${p.kgm?priced(p.cost):"—"}</td></tr>`).join("")||`<tr><td colspan="8" class="muted">لا توجد قطع.</td></tr>`}
-    </tbody><tfoot><tr><td colspan="4">الإجمالي</td><td class="num">${T.bars}</td><td></td><td class="num">${T.kg.toFixed(1)}</td><td>${priced(T.cost.alu)}</td></tr></tfoot></table></div>
-    <h3 style="margin-top:6px">Cutting List · خطة القص على العيدان</h3>
-    ${T.profiles.map(p=>`<details class="cut"><summary><b>${esc(p.name)}</b> <span class="muted small">· <span class="num">${p.nb}</span> عود · <span class="num">${p.pieces}</span> قطعة</span></summary>
-      <div class="tablebox"><table><thead><tr><th>العود</th><th>القطع (الطول مم × العدد)</th><th>المستخدم</th><th>المتبقي</th></tr></thead><tbody>
-      ${p.bars.map((b,i)=>`<tr><td class="num">${i+1}</td><td style="white-space:normal">${groupBar(b).map(e=>`<span class="cutpc"><b class="num">${e.len}</b> × <span class="num">${e.n}</span> <span class="muted small">${esc([...e.refs].join("، "))}</span></span>`).join("")}</td><td class="num">${money(b.used)}</td><td class="num ${b.off<300?"muted":""}">${money(b.off)}</td></tr>`).join("")}
-      ${p.over.map(o=>`<tr><td><span class="pill bad">طويل</span></td><td class="num">${o.len} (${esc(o.ref)})</td><td colspan="2" class="small">أطول من العود، يحتاج وصلة أو عود خاص</td></tr>`).join("")}
-      </tbody></table></div></details>`).join("")}
-    <details class="cut"><summary><b>تفصيل القطع لكل شباك / باب</b></summary>
-      <div class="tablebox"><table><thead><tr><th>المرجع</th><th>القالب</th><th>المقاس</th><th>العدد</th><th>القطع للوحدة</th></tr></thead><tbody>
-      ${T.perUnit.map(d=>`<tr><td><b>${esc(d.ref)}</b></td><td>${esc(d.recipe)}</td><td class="num">${d.W}×${d.H}</td><td class="num">${d.q}</td><td style="white-space:normal;min-width:260px">${d.pcs.map(x=>`<div class="small">${esc(x.p)}: <b class="num">${x.len}</b> × <span class="num">${x.n/d.q}</span></div>`).join("")}</td></tr>`).join("")}
-      </tbody></table></div></details>
-  </div>`;
-
-  const s2=`<div class="card"><h3><span><span class="step">٢</span> الدهان</span></h3>
-    <dl class="kv"><dt>اللون</dt><dd>${esc(colorTxt)}${alu.finish?" · "+esc(alu.finish):""}</dd><dt>عدد العيدان للدهان</dt><dd class="num">${T.bars}</dd><dt>الوزن الإجمالي</dt><dd><span class="num">${T.kg.toFixed(1)}</span> كجم</dd><dt>سعر الدهان للكيلو</dt><dd>${cfg.paintRate?M(cfg.paintRate):`<span class="muted small">أدخل السعر</span>`}</dd><dt>تكلفة الدهان</dt><dd>${priced(T.cost.paint)}</dd></dl></div>`;
-
-  const s3=`<div class="card"><h3><span><span class="step">٣</span> الإكسسوارات</span></h3>
-    <div class="tablebox"><table><thead><tr><th>الصنف</th><th>الكمية</th><th>الوحدة</th><th>سعر الوحدة</th><th>الإجمالي</th></tr></thead><tbody>
-    ${T.acc.map(a=>`<tr><td><b>${esc(a.name)}</b></td><td class="num">${a.qty}</td><td>${esc(a.unit)}</td><td>${a.price?M(a.price):"—"}</td><td>${a.price?M(a.total):"—"}</td></tr>`).join("")||`<tr><td colspan="5" class="muted">لا توجد إكسسوارات.</td></tr>`}
-    </tbody><tfoot><tr><td colspan="4">الإجمالي</td><td>${priced(T.cost.acc)}</td></tr></tfoot></table></div></div>`;
-
-  const s4=`<div class="card"><h3><span><span class="step">٤</span> مقاسات الزجاج</span></h3>
-    <div class="tablebox"><table><thead><tr><th>المرجع</th><th>المواصفة</th><th>العرض مم</th><th>الارتفاع مم</th><th>العدد</th><th>المساحة م²</th><th></th></tr></thead><tbody>
-    ${T.glass.map(x=>`<tr><td><b>${esc(x.ref)}</b></td><td>${esc(x.spec)}</td><td class="num">${x.w}</td><td class="num">${x.h}</td><td class="num">${x.qty}</td><td class="num">${x.m2.toFixed(2)}</td><td class="small muted">${x.src==="manual"?"يدوي":""}</td></tr>`).join("")||`<tr><td colspan="7" class="muted">لا يوجد زجاج.</td></tr>`}
-    </tbody><tfoot><tr><td colspan="4">الإجمالي</td><td class="num">${sum(T.glass,x=>x.qty)}</td><td class="num">${T.m2.toFixed(2)}</td><td>${priced(T.cost.glass)}</td></tr></tfoot></table></div></div>`;
-
-  const k=calc(c);const net=N(c.quoteNet)||k.contract;
-  const s5=`<div class="card"><h3>التكلفة التقديرية للمواد</h3>
-    <dl class="kv"><dt>الألمنيوم</dt><dd>${M(T.cost.alu)}</dd><dt>الدهان</dt><dd>${M(T.cost.paint)}</dd><dt>الإكسسوارات</dt><dd>${M(T.cost.acc)}</dd><dt>الزجاج</dt><dd>${M(T.cost.glass)}</dd><dt>إجمالي المواد</dt><dd style="font-size:1.1rem">${M(T.cost.total)}</dd>
-    ${net?`<dt>${c.quoteNet?"قيمة العرض قبل الضريبة":"قيمة العقد"}</dt><dd>${M(net)}</dd><dt>الفرق قبل العمالة والتركيب</dt><dd class="${net-T.cost.total>=0?"pos":"neg"}">${M(net-T.cost.total)}</dd>`:""}</dl>
-    <p class="small muted" style="margin:0">التكلفة تقديرية من أسعار الإعدادات. الربح الفعلي يُحسب من فواتير المشتريات في تبويب «المشتريات والأرباح».</p></div>`;
-  return head+s1+s2+s3+s4+s5;
 }
 
 function csvCell(v){v=String(v??"");return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}
@@ -622,8 +575,10 @@ async function exportCalc(c){
   rows.push(["الإجمالي","","",T.bars,T.kg.toFixed(1)],[],["Cutting List"],["القطاع","العود","القطع (طول×عدد)","المستخدم مم","المتبقي مم"]);
   T.profiles.forEach(p=>{p.bars.forEach((b,i)=>rows.push([p.name,i+1,groupBar(b).map(e=>`${e.len}×${e.n} (${[...e.refs].join("/")})`).join(" + "),b.used,b.off]));p.over.forEach(o=>rows.push([p.name,"أطول من العود",`${o.len} (${o.ref})`,"",""]))});
   rows.push([],["٢ - الدهان"],["عدد العيدان",T.bars],["الوزن كجم",T.kg.toFixed(1)],["التكلفة",T.cost.paint.toFixed(2)],[]);
-  rows.push(["٣ - الإكسسوارات"],["الصنف","الكمية","الوحدة","سعر الوحدة","الإجمالي"]);T.acc.forEach(a=>rows.push([a.name,a.qty,a.unit,a.price,a.total.toFixed(2)]));
-  rows.push([],["٤ - مقاسات الزجاج"],["المرجع","المواصفة","العرض مم","الارتفاع مم","العدد","المساحة م²"]);T.glass.forEach(x=>rows.push([x.ref,x.spec,x.w,x.h,x.qty,x.m2.toFixed(2)]));
+  [["acc","٣ - الإكسسوارات"],["screw","٤ - المسامير والزوايا"]].forEach(([k,t])=>{rows.push([t],["الصنف","الكمية","الوحدة","سعر الوحدة","الإجمالي"]);T.acc.filter(a=>a.cat===k).forEach(a=>rows.push([a.name,a.qty,a.unit,a.price,a.total.toFixed(2)]));rows.push([])});
+  rows.push(["٥ - تيب الحماية"],["طول التيب م",T.tape.m.toFixed(1)],["عدد الرولات",T.tape.rolls],[]);
+  rows.push(["٦ - الربل"],["الصنف","الكمية","الوحدة","سعر الوحدة","الإجمالي"]);T.acc.filter(a=>a.cat==="rubber").forEach(a=>rows.push([a.name,a.qty,a.unit,a.price,a.total.toFixed(2)]));
+  rows.push([],["٧ - مقاسات الزجاج"],["المرجع","المواصفة","العرض مم","الارتفاع مم","العدد","المساحة م²"]);T.glass.forEach(x=>rows.push([x.ref,x.spec,x.w,x.h,x.qty,x.m2.toFixed(2)]));
   rows.push(["الإجمالي","","","",sum(T.glass,x=>x.qty),T.m2.toFixed(2)]);
   const text="﻿"+rows.map(r=>r.map(csvCell).join(",")).join("\r\n");
   try{await S.downloads.save({filename:`حساب-كميات-${(c.fileNo||c.name||"ملف").replace(/[\\/:*?"<>|]/g,"-")}.csv`,data:text})}
@@ -645,7 +600,7 @@ function settingsView(){
     <div class="toolbar">${S.canWrite?`<button class="primary" data-act="save-settings">حفظ الإعدادات</button>${S.confirm==="reset-cfg"?`<button class="danger armed" data-act="reset-settings">تأكيد الاسترجاع</button>`:`<button class="danger ghost" data-act="reset-settings">استرجاع الافتراضي</button>`}`:""}</div></section>
   <div class="card"><h3>عام</h3><div class="grid">
     ${sIn("barLen","طول عود الألمنيوم (مم)","number")}${sIn("trim","تشذيب أطراف العود (مم)","number")}${sIn("kerf","سماكة قص المنشار (مم)","number")}
-    ${sIn("aluPrice","سعر الألمنيوم (ر.س / كجم)","number")}${sIn("paintRate","سعر الدهان (ر.س / كجم)","number")}${sIn("glassPrice","سعر الزجاج (ر.س / م²)","number")}
+    ${sIn("aluPrice","سعر الألمنيوم (ر.س / كجم)","number")}${sIn("paintRate","سعر الدهان (ر.س / كجم)","number")}${sIn("glassPrice","سعر الزجاج (ر.س / م²)","number")}${sIn("tapeFactor","تيب الحماية (م لكل م ألمنيوم)","number")}${sIn("tapeRoll","طول رول التيب (م)","number")}${sIn("tapePrice","سعر رول التيب (ر.س)","number")}
   </div></div>
   <div class="card"><h3>القطاعات ووزن المتر ${sBtn("cfg-add","profiles","+ قطاع")}</h3>
     <div class="tablebox"><table><thead><tr><th>اسم القطاع (كما في الطلبية)</th><th>الاسم بالإنجليزي (للمخططات)</th><th>السماكة مم</th><th>الوزن كجم / م</th><th></th></tr></thead><tbody>
@@ -662,8 +617,8 @@ function settingsView(){
     ${r.glass.map((g,i)=>`<tr><td>${sCell(`recipes.${ri}.glass.${i}.n`,"number",false,"60px")}</td><td>${sCell(`recipes.${ri}.glass.${i}.w`,"text",true,"110px")}</td><td>${sCell(`recipes.${ri}.glass.${i}.h`,"text",true,"110px")}</td><td class="num">${fmtEv(g.w)} × ${fmtEv(g.h)}</td><td>${sBtn("cfg-del",`recipes.${ri}.glass.${i}`,"حذف","danger ghost")}</td></tr>`).join("")}
     </tbody></table></div>
     <h3>الإكسسوارات للوحدة ${sBtn("cfg-add",`recipes.${ri}.acc`,"+ صنف")}</h3>
-    <div class="tablebox"><table><thead><tr><th>الصنف</th><th>الوحدة</th><th>معادلة الكمية</th><th>مثال</th><th>سعر الوحدة</th><th></th></tr></thead><tbody>
-    ${r.acc.map((a,i)=>`<tr><td>${sCell(`recipes.${ri}.acc.${i}.name`,"text",false,"150px")}</td><td>${sCell(`recipes.${ri}.acc.${i}.unit`,"text",false,"60px")}</td><td>${sCell(`recipes.${ri}.acc.${i}.q`,"text",true,"170px")}</td><td class="num">${fmtEv(a.q,2)}</td><td>${sCell(`recipes.${ri}.acc.${i}.price`,"number",false,"80px")}</td><td>${sBtn("cfg-del",`recipes.${ri}.acc.${i}`,"حذف","danger ghost")}</td></tr>`).join("")}
+    <div class="tablebox"><table><thead><tr><th>الصنف</th><th>التصنيف</th><th>الوحدة</th><th>معادلة الكمية</th><th>مثال</th><th>سعر الوحدة</th><th></th></tr></thead><tbody>
+    ${r.acc.map((a,i)=>`<tr><td>${sCell(`recipes.${ri}.acc.${i}.name`,"text",false,"150px")}</td><td><select id="${sid(`recipes.${ri}.acc.${i}.cat`)}" data-s="recipes.${ri}.acc.${i}.cat" ${S.canWrite?"":"disabled"} aria-label="التصنيف">${Object.entries(ACC_CATS).map(([k,l])=>`<option value="${k}" ${k===accCat(a)?"selected":""}>${l}</option>`).join("")}</select></td><td>${sCell(`recipes.${ri}.acc.${i}.unit`,"text",false,"60px")}</td><td>${sCell(`recipes.${ri}.acc.${i}.q`,"text",true,"170px")}</td><td class="num">${fmtEv(a.q,2)}</td><td>${sCell(`recipes.${ri}.acc.${i}.price`,"number",false,"80px")}</td><td>${sBtn("cfg-del",`recipes.${ri}.acc.${i}`,"حذف","danger ghost")}</td></tr>`).join("")}
     </tbody></table></div>
     <div class="toolbar">${sBtn("cfg-dup",`recipes.${ri}`,"نسخ القالب")}<span style="flex:1"></span>${sBtn("cfg-del",`recipes`+"."+ri,"حذف القالب","danger ghost")}</div>
   </details>`).join("")}
@@ -930,7 +885,7 @@ function newShopItem(c,o){const kind=KINDS[o.kind]?o.kind:"sliding2";return{id:u
 const SF="Tahoma, 'Segoe UI', Arial, sans-serif";
 const iso=v=>"\u2066"+String(v??"")+"\u2069";
 const sx=n=>Math.round(n*10)/10;
-function T(x,y,s,{size=10,anchor="start",weight=400,fill="#111",rot}={}){return `<text x="${sx(x)}" y="${sx(y)}" font-size="${size}" font-weight="${weight}" fill="${fill}" text-anchor="${anchor}" font-family="${SF}"${rot?` transform="rotate(${rot} ${sx(x)} ${sx(y)})"`:""}>${esc(s)}</text>`}
+function T(x,y,s,{size=10,anchor="start",weight=400,fill="#111",rot}={}){const ar=/[؀-ۿ]/.test(String(s));const dir=ar&&anchor!=="start"?' direction="rtl"':"";const an=ar&&anchor==="end"?"start":anchor;return `<text x="${sx(x)}" y="${sx(y)}" font-size="${size}" font-weight="${weight}" fill="${fill}" text-anchor="${an}"${dir} font-family="${SF}"${rot?` transform="rotate(${rot} ${sx(x)} ${sx(y)})"`:""}>${esc(s)}</text>`}
 function R(x,y,w,h,{stroke="#111",sw=1,fill="none",dash}={}){return `<rect x="${sx(x)}" y="${sx(y)}" width="${sx(Math.max(0,w))}" height="${sx(Math.max(0,h))}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"${dash?` stroke-dasharray="${dash}"`:""}/>`}
 function L(x1,y1,x2,y2,{stroke="#111",sw=1,dash}={}){return `<line x1="${sx(x1)}" y1="${sx(y1)}" x2="${sx(x2)}" y2="${sx(y2)}" stroke="${stroke}" stroke-width="${sw}"${dash?` stroke-dasharray="${dash}"`:""}/>`}
 function glassPane(x,y,w,h){let g=R(x,y,w,h,{fill:"#e6f1f6",stroke:"#555",sw:.8});const d=Math.min(w,h);if(d>30){const o=Math.min(w,h)*.18;g+=L(x+o,y+o*2.2,x+o*2.2,y+o,{stroke:"#8fb3c4",sw:.8})+L(x+o,y+o*3,x+o*3,y+o,{stroke:"#8fb3c4",sw:.8})}return g}
@@ -1021,10 +976,10 @@ function sheetSVG(c,it,idx,total){
   return s+"</svg>";
 }
 
-async function svgToJpeg(svg,scale=2.5){
+async function svgToJpeg(svg,scale=2.5,VW=1190,VH=842){
   const url=URL.createObjectURL(new Blob([svg],{type:"image/svg+xml;charset=utf-8"}));
   try{const img=new Image();await new Promise((res,rej)=>{img.onload=res;img.onerror=rej;img.src=url});
-    const cv=document.createElement("canvas");cv.width=1190*scale;cv.height=842*scale;const ctx=cv.getContext("2d");ctx.fillStyle="#fff";ctx.fillRect(0,0,cv.width,cv.height);ctx.drawImage(img,0,0,cv.width,cv.height);
+    const cv=document.createElement("canvas");cv.width=VW*scale;cv.height=VH*scale;const ctx=cv.getContext("2d");ctx.fillStyle="#fff";ctx.fillRect(0,0,cv.width,cv.height);ctx.drawImage(img,0,0,cv.width,cv.height);
     return cv.toDataURL("image/jpeg",.92)}finally{URL.revokeObjectURL(url)}
 }
 async function shopPdf(c,mode){
@@ -1109,6 +1064,143 @@ function tabShop(c){
 }
 async function shopMutate(c,fn){const sh=clone(c.shop||{items:[]});sh.items=fn(sh.items)||sh.items;return write(c._id,{shop:sh})}
 
+/* ---------- quantity sections, cutting list tab, photos, handover ---------- */
+const ACC_CATS={acc:"إكسسوارات",screw:"مسامير وزوايا",tape:"تيب حماية",rubber:"ربل وفرش"};
+function accCat(a){if(a.cat&&ACC_CATS[a.cat])return a.cat;const n=a.name||"";
+  if(/زاوية|زوايا|مسمار|مسامير|برغي|براغي|فيشر|برشام/.test(n))return"screw";if(/تيب|شريط حماية/.test(n))return"tape";if(/جلدة|ربل|فرشة|فرش|كاوتش|جوان/.test(n))return"rubber";return"acc"}
+function locLink(c){const u=String(c.locationUrl||"").trim();return /^https?:\/\//i.test(u)?`<a class="maplink" href="${esc(u)}" target="_blank" rel="noopener">فتح الموقع على الخريطة ↗</a>`:""}
+
+function accTable(list,empty,priced){return `<div class="tablebox"><table><thead><tr><th>الصنف</th><th>الكمية</th><th>الوحدة</th><th>سعر الوحدة</th><th>الإجمالي</th></tr></thead><tbody>
+  ${list.map(a=>`<tr><td><b>${esc(a.name)}</b></td><td class="num">${a.qty}</td><td>${esc(a.unit)}</td><td>${a.price?M(a.price):"—"}</td><td>${a.price?M(a.total):"—"}</td></tr>`).join("")||`<tr><td colspan="5" class="muted">${empty}</td></tr>`}
+  </tbody><tfoot><tr><td colspan="4">الإجمالي</td><td>${priced(sum(list,a=>a.total))}</td></tr></tfoot></table></div>`}
+
+function calcHead(c,T,cfg,extra=""){const alu=c.colors?.alu||{};const colorTxt=[alu.color,alu.code].filter(Boolean).join(" · ")||"لم يُحدد اللون";
+  return `<div class="card"><div class="head"><div><h3 style="display:block">ملخص الحصر</h3>
+    <div class="small muted">طول العود <span class="num">${money(cfg.barLen)}</span> مم · قص المنشار <span class="num">${cfg.kerf}</span> مم · تشذيب الأطراف <span class="num">${cfg.trim}</span> مم · لون الألمنيوم: ${esc(colorTxt)}</div></div>
+    <div class="toolbar">${S.downloads?`<button data-act="export-calc">تنزيل Excel (CSV)</button>`:""}<button data-act="open-settings">قوالب الحساب والأسعار</button></div></div>
+    ${!c.measFinal?`<div class="note">المقاسات غير معتمدة نهائياً بعد. راجعها قبل إرسال الطلبية للتصنيع.</div>`:""}
+    ${T.warn.length?`<div class="note">${T.warn.map(esc).join("<br>")}</div>`:""}
+    ${!S.cfgSaved?`<div class="note">الحساب يستخدم القوالب الافتراضية (خصومات وأوزان تقريبية). راجعها من «قوالب الحساب والأسعار» واحفظها لتطابق قطاعات المصنع.</div>`:""}
+    ${extra}</div>`}
+const noMeas=`<div class="card empty"><h2>لا توجد مقاسات بعد</h2><p class="muted" style="max-width:50ch">أضف الشبابيك والأبواب من تبويب «المقاسات» واختر لكل واحد قالب الحساب، وهنا تطلع الحسابات تلقائياً.</p><button data-act="tab" data-tab="meas">← الذهاب للمقاسات</button></div>`;
+
+function tabCalc(c){
+  const cfg=S.cfg;const T=takeoff(c,cfg);const alu=c.colors?.alu||{};
+  const colorTxt=[alu.color,alu.code].filter(Boolean).join(" · ")||"لم يُحدد اللون";
+  if(!(c.alu||[]).length&&!(c.glass||[]).length)return noMeas;
+  const priced=n=>n?M(n):`<span class="muted small">أدخل السعر</span>`;
+  const byCat=k=>T.acc.filter(a=>a.cat===k);
+  const head=calcHead(c,T,cfg,`<div class="stats"><div class="stat"><span>الوحدات</span><b class="num">${T.units}</b></div><div class="stat"><span>عيدان الألمنيوم</span><b class="num">${T.bars}</b></div><div class="stat"><span>وزن الألمنيوم</span><b><span class="num">${money(Math.round(T.kg*10)/10)}</span><span class="cur">كجم</span></b></div><div class="stat"><span>مساحة الزجاج</span><b><span class="num">${T.m2.toFixed(2)}</span><span class="cur">م²</span></b></div><div class="stat"><span>تكلفة المواد التقديرية</span><b>${M(T.cost.total)}</b></div></div>`);
+  const sec=(n,t,body)=>`<div class="card"><h3><span><span class="step">${n}</span> ${t}</span></h3>${body}</div>`;
+  const s1=sec("١","حساب الألمنيوم",`<div class="tablebox"><table><thead><tr><th>القطاع</th><th>اللون</th><th>عدد القطع</th><th>الطول الصافي م</th><th>عدد العيدان</th><th>الهدر</th><th>الوزن كجم</th><th>التكلفة</th></tr></thead><tbody>
+    ${T.profiles.map(p=>`<tr><td><b>${esc(p.name)}</b></td><td>${esc(alu.code||alu.color||"—")}</td><td class="num">${p.pieces}</td><td class="num">${(p.net/1000).toFixed(2)}</td><td class="num"><b>${p.nb}</b>${p.over.length?` <span class="pill bad">${p.over.length} أطول من العود</span>`:""}</td><td class="num">${(p.waste*100).toFixed(0)}%</td><td class="num">${p.kgm?p.kg.toFixed(1):"—"}</td><td>${p.kgm?priced(p.cost):"—"}</td></tr>`).join("")||`<tr><td colspan="8" class="muted">لا توجد قطع.</td></tr>`}
+    </tbody><tfoot><tr><td colspan="4">الإجمالي</td><td class="num">${T.bars}</td><td></td><td class="num">${T.kg.toFixed(1)}</td><td>${priced(T.cost.alu)}</td></tr></tfoot></table></div>
+    <div><button data-act="tab" data-tab="cut">عرض خطة القص Cutting List ←</button></div>`);
+  const s2=sec("٢","حساب الدهان",`<dl class="kv"><dt>اللون</dt><dd>${esc(colorTxt)}${alu.finish?" · "+esc(alu.finish):""}</dd><dt>عدد العيدان للدهان</dt><dd class="num">${T.bars}</dd><dt>الوزن الإجمالي</dt><dd><span class="num">${T.kg.toFixed(1)}</span> كجم</dd><dt>سعر الدهان للكيلو</dt><dd>${cfg.paintRate?M(cfg.paintRate):`<span class="muted small">أدخل السعر</span>`}</dd><dt>تكلفة الدهان</dt><dd>${priced(T.cost.paint)}</dd></dl>`);
+  const s3=sec("٣","حساب الإكسسوارات",accTable(byCat("acc"),"لا توجد إكسسوارات.",priced));
+  const s4=sec("٤","حساب المسامير والزوايا",accTable(byCat("screw"),"لا توجد مسامير أو زوايا في القوالب. أضفها من «قوالب الحساب».",priced));
+  const tp=T.tape;
+  const s5=sec("٥","حساب تيب الحماية",`<dl class="kv"><dt>طول قطاعات الألمنيوم الصافي</dt><dd><span class="num">${tp.aluM.toFixed(1)}</span> م</dd><dt>معامل التيب</dt><dd class="num">${tp.factor} م تيب / م ألمنيوم</dd><dt>طول التيب المطلوب</dt><dd><span class="num">${tp.m.toFixed(1)}</span> م</dd><dt>عدد الرولات</dt><dd><b class="num">${tp.rolls}</b> رول (<span class="num">${tp.roll}</span> م للرول)</dd><dt>التكلفة</dt><dd>${priced(tp.cost)}</dd></dl>${byCat("tape").length?accTable(byCat("tape"),"",priced):""}`);
+  const s6=sec("٦","حساب الزجاج",`<div class="tablebox"><table><thead><tr><th>المرجع</th><th>المواصفة</th><th>العرض مم</th><th>الارتفاع مم</th><th>العدد</th><th>المساحة م²</th><th></th></tr></thead><tbody>
+    ${T.glass.map(x=>`<tr><td><b>${esc(x.ref)}</b></td><td>${esc(x.spec)}</td><td class="num">${x.w}</td><td class="num">${x.h}</td><td class="num">${x.qty}</td><td class="num">${x.m2.toFixed(2)}</td><td class="small muted">${x.src==="manual"?"يدوي":""}</td></tr>`).join("")||`<tr><td colspan="7" class="muted">لا يوجد زجاج.</td></tr>`}
+    </tbody><tfoot><tr><td colspan="4">الإجمالي</td><td class="num">${sum(T.glass,x=>x.qty)}</td><td class="num">${T.m2.toFixed(2)}</td><td>${priced(T.cost.glass)}</td></tr></tfoot></table></div>`);
+  const s7=sec("٧","حساب الربل",accTable(byCat("rubber"),"لا يوجد ربل في القوالب.",priced));
+  const k=calc(c);const net=N(c.quoteNet)||k.contract;const C=T.cost;
+  const s8=`<div class="card"><h3>التكلفة التقديرية للمواد</h3>
+    <dl class="kv"><dt>الألمنيوم</dt><dd>${M(C.alu)}</dd><dt>الدهان</dt><dd>${M(C.paint)}</dd><dt>الإكسسوارات</dt><dd>${M(C.acc)}</dd><dt>المسامير والزوايا</dt><dd>${M(C.screw)}</dd><dt>تيب الحماية</dt><dd>${M(C.tape)}</dd><dt>الزجاج</dt><dd>${M(C.glass)}</dd><dt>الربل</dt><dd>${M(C.rubber)}</dd><dt>إجمالي المواد</dt><dd style="font-size:1.1rem">${M(C.total)}</dd>
+    ${net?`<dt>${c.quoteNet?"قيمة العرض قبل الضريبة":"قيمة العقد"}</dt><dd>${M(net)}</dd><dt>الفرق قبل العمالة والتركيب</dt><dd class="${net-C.total>=0?"pos":"neg"}">${M(net-C.total)}</dd>`:""}</dl>
+    <p class="small muted" style="margin:0">التكلفة تقديرية من أسعار الإعدادات. الربح الفعلي يُحسب من فواتير المشتريات في تبويب «المشتريات والأرباح».</p></div>`;
+  return head+s1+s2+s3+s4+s5+s6+s7+s8;
+}
+
+function tabCut(c){
+  const cfg=S.cfg;const T=takeoff(c,cfg);
+  if(!(c.alu||[]).length)return noMeas;
+  return calcHead(c,T,cfg,`<div class="stats"><div class="stat"><span>القطاعات</span><b class="num">${T.profiles.length}</b></div><div class="stat"><span>عدد القطع</span><b class="num">${sum(T.profiles,p=>p.pieces)}</b></div><div class="stat"><span>عدد العيدان</span><b class="num">${T.bars}</b></div><div class="stat"><span>متوسط الهدر</span><b class="num">${T.bars?((1-sum(T.profiles,p=>p.net)/(T.bars*N(cfg.barLen)))*100).toFixed(0):0}%</b></div></div>`)+
+  `<div class="card"><h3>Cutting List · خطة القص على العيدان</h3>
+    ${T.profiles.map((p,pi)=>`<details class="cut" ${pi===0?"open":""}><summary><b>${esc(p.name)}</b> <span class="muted small">· <span class="num">${p.nb}</span> عود · <span class="num">${p.pieces}</span> قطعة · هدر <span class="num">${(p.waste*100).toFixed(0)}%</span></span></summary>
+      <div class="tablebox"><table><thead><tr><th>العود</th><th>القطع (الطول مم × العدد)</th><th>المستخدم</th><th>المتبقي</th></tr></thead><tbody>
+      ${p.bars.map((b,i)=>`<tr><td class="num">${i+1}</td><td style="white-space:normal">${groupBar(b).map(e=>`<span class="cutpc"><b class="num">${e.len}</b> × <span class="num">${e.n}</span> <span class="muted small">${esc([...e.refs].join("، "))}</span></span>`).join("")}</td><td class="num">${money(b.used)}</td><td class="num ${b.off<300?"muted":""}">${money(b.off)}</td></tr>`).join("")}
+      ${p.over.map(o=>`<tr><td><span class="pill bad">طويل</span></td><td class="num">${o.len} (${esc(o.ref)})</td><td colspan="2" class="small">أطول من العود، يحتاج وصلة أو عود خاص</td></tr>`).join("")}
+      </tbody></table></div></details>`).join("")||`<p class="muted small">لا توجد قطع.</p>`}
+  </div>
+  <div class="card"><h3>تفصيل القطع لكل شباك / باب</h3>
+    <div class="tablebox"><table><thead><tr><th>المرجع</th><th>القالب</th><th>المقاس</th><th>العدد</th><th>القطع للوحدة</th></tr></thead><tbody>
+    ${T.perUnit.map(d=>`<tr><td><b>${esc(d.ref)}</b></td><td>${esc(d.recipe)}</td><td class="num">${d.W}×${d.H}</td><td class="num">${d.q}</td><td style="white-space:normal;min-width:260px">${d.pcs.map(x=>`<div class="small">${esc(x.p)}: <b class="num">${x.len}</b> × <span class="num">${x.n/d.q}</span></div>`).join("")}</td></tr>`).join("")}
+    </tbody></table></div></div>`;
+}
+
+function gallery(c,cat,label,hint){const list=(c.files||{})[cat]||[];
+  return `<div class="card"><h3>${label} ${uploader(cat,"رفع صور","image/*")}</h3>
+    ${list.length?`<div class="gallery">${list.map(p=>`<figure class="ph" style="margin:0"><img src="${blob(p.id)}" alt="${esc(p.name)}" loading="lazy" data-act="zoom" data-id="${esc(p.id)}"><div><span class="small muted num">${esc((p.at||"").slice(0,10))}</span>${del("file:"+cat+":"+p.id)}</div></figure>`).join("")}</div>`:`<p class="muted small">${hint}</p>`}</div>`}
+function tabPhotos(c){
+  const vids=(c.files||{}).videos||[];
+  return gallery(c,"photos","الصور الأولية","صور الموقع قبل التركيب وأثناء العمل.")+
+    gallery(c,"photosAfter","صور بعد التسليم","صور الأعمال المنفّذة بعد التسليم النهائي.")+
+    `<div class="card"><h3>فيديوهات الموقع ${uploader("videos","رفع فيديو","video/*")}</h3>
+      <p class="small muted" style="margin:0">الحد الأقصى لكل فيديو 20 ميجابايت. صوّر مقاطع قصيرة أو بجودة 720p.</p>
+      ${vids.length?`<div class="gallery">${vids.map(v=>`<figure class="ph" style="margin:0"><video src="${blob(v.id)}" controls preload="metadata" playsinline></video><div><span class="small muted" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(v.name)}</span>${del("file:videos:"+v.id)}</div></figure>`).join("")}</div>`:`<p class="muted small">لا توجد فيديوهات.</p>`}</div>`;
+}
+
+/* --- final handover certificate --- */
+const HO_CHECKS=["تم توريد وتركيب جميع الأعمال حسب العقد والمخططات المعتمدة","الزجاج سليم وخالٍ من الكسور والخدوش","الإكسسوارات (الأقفال والمقابض والعجلات والمفصلات) تعمل بشكل سليم","تم اختبار الفتح والإغلاق والإحكام","تم إزالة تيب الحماية وتنظيف الأعمال","تم تسليم الموقع نظيفاً وخالياً من المخلفات","تم تسليم العميل شهادة الضمان"];
+function hoWorks(c){const m=new Map();(c.alu||[]).forEach(r=>{const n=recipeById(r.recipe)?.name||r.type||"أعمال ألمنيوم";m.set(n,(m.get(n)||0)+(N(r.qty)||1))});return [...m.entries()]}
+function tabHandover(c){
+  const fk="ho:"+c._id;const h=c.handover||{};const works=hoWorks(c);
+  return `<div class="card"><h3>محضر التسليم النهائي ${h.done?`<span class="ok-badge">✓ تم التسليم ${h.date?`<span class="num">${esc(h.date)}</span>`:""}</span>`:`<span class="pill s2">لم يتم التسليم</span>`}</h3>
+    <div class="grid">
+      ${inp(fk,"date","تاريخ التسليم",h.date||today(),"date")}${inp(fk,"receiver","اسم المستلم",h.receiver||c.name)}${inp(fk,"role","صفة المستلم",h.role||"المالك")}${inp(fk,"phone","جوال المستلم",h.phone||c.phone,"tel")}
+      ${inp(fk,"engineer","مندوب المصنع",h.engineer)}${inp(fk,"warranty","مدة الضمان (سنوات)",h.warranty??"1","number",'min="0" inputmode="numeric"')}
+    </div>
+    <div class="card" style="background:var(--surface-2)"><h3>الأعمال المسلّمة</h3>
+      ${works.length?`<dl class="kv">${works.map(([n,q])=>`<dt>${esc(n)}</dt><dd class="num">${q}</dd>`).join("")}<dt>الإجمالي</dt><dd class="num">${sum(works,w=>w[1])}</dd></dl>`:`<p class="small muted" style="margin:0">لا توجد مقاسات مسجّلة. تُسحب الأعمال من تبويب «المقاسات».</p>`}</div>
+    <div class="checks">${HO_CHECKS.map((t,i)=>chk(fk,"c"+i,t,(h.checks||{})["c"+i])).join("")}</div>
+    ${area_(fk,"notes","ملاحظات معلقة (إن وجدت)",h.notes)}
+    ${chk(fk,"done","تم التسليم النهائي واستلام العميل",h.done)}
+    <div class="toolbar">${S.canWrite?`<button class="primary" data-act="save-ho">حفظ المحضر</button>`:""}
+      <button data-act="ho-pdf" ${S.pdfBusy?"disabled":""}>${S.pdfBusy?"جارٍ إنشاء PDF…":"تنزيل المحضر PDF"}</button>
+      ${S.canWrite&&S.assets?`<button data-act="ho-save" ${S.pdfBusy?"disabled":""}>حفظ PDF في ملف العميل</button>`:""}</div>
+  </div>
+  <div class="card"><h3>المحضر الموقّع ${uploader("handover","رفع المحضر الموقّع")}</h3><p class="small muted" style="margin:0">نزّل المحضر، اطبعه ووقّعه مع العميل، ثم ارفع صورته أو نسخته الممسوحة هنا.</p>${fileList(c,"handover")}</div>`;
+}
+function wrapText(t,max){const out=[];String(t||"").split(/\n/).forEach(par=>{let line="";par.split(/\s+/).forEach(w=>{if((line+" "+w).trim().length>max){if(line)out.push(line);line=w}else line=(line+" "+w).trim()});if(line)out.push(line)});return out}
+function hoMerged(c){const d=S.draft["ho:"+c._id]||{};const h=clone(c.handover||{});h.checks={...(h.checks||{})};
+  for(const[k,v]of Object.entries(d)){if(/^c\d+$/.test(k))h.checks[k]=!!v;else h[k]=v}
+  if(!h.date)h.date=today();if(h.receiver==null)h.receiver=c.name||"";if(h.role==null)h.role="المالك";if(h.phone==null)h.phone=c.phone||"";if(h.warranty==null)h.warranty=1;return h}
+function handoverSVG(c){
+  const h=hoMerged(c);const works=hoWorks(c);let y;
+  let s=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 595 842" width="595" height="842"><rect width="595" height="842" fill="#fff"/>`;
+  s+=`<rect x="0" y="0" width="595" height="8" fill="#1d5d78"/>`+R(20,20,555,802,{sw:.8});
+  s+=T(560,52,"برج القمة للأعمال المعدنية",{size:15,anchor:"end",weight:700})+T(35,52,"BURJ AL-QIMMA METAL WORKS",{size:10,weight:700})+T(35,66,"Aluminium & Glass Works",{size:8.5,fill:"#555"});
+  s+=`<rect x="35" y="82" width="525" height="38" fill="#eef3f6"/>`+T(560-8,106,"محضر تسليم نهائي",{size:16,anchor:"end",weight:700,fill:"#1d5d78"})+T(43,106,"FINAL HANDOVER CERTIFICATE",{size:11,weight:700,fill:"#1d5d78"});
+  y=146;const kv=(ar,v,en)=>{s+=T(560,y,ar+":",{size:10,anchor:"end",fill:"#555"})+T(470,y,v||"—",{size:10.5,anchor:"end",weight:600})+T(35,y,en,{size:8.5,fill:"#888"});y+=20};
+  kv("العميل",c.name,"Client");kv("الموقع",c.location,"Location");kv("رقم الملف",iso(c.fileNo||"—"),"File No.");kv("رقم العقد",iso(c.contractNo||"—"),"Contract No.");kv("تاريخ التسليم",iso(h.date||today()),"Handover date");
+  y+=6;s+=T(560,y,"الأعمال المسلّمة",{size:11.5,anchor:"end",weight:700,fill:"#1d5d78"})+T(35,y,"Delivered works",{size:9,fill:"#1d5d78"});y+=8;
+  s+=`<rect x="35" y="${y}" width="525" height="20" fill="#f3f5f7"/>`+T(552,y+14,"البند",{size:9.5,anchor:"end",weight:700})+T(110,y+14,"العدد",{size:9.5,anchor:"end",weight:700});y+=20;
+  (works.length?works:[["أعمال الألمنيوم والزجاج حسب العقد","—"]]).slice(0,10).forEach(([n,q])=>{s+=T(552,y+14,n,{size:10,anchor:"end"})+T(110,y+14,String(q),{size:10,anchor:"end"})+L(35,y+20,560,y+20,{stroke:"#ddd",sw:.5});y+=20});
+  if(works.length){s+=T(552,y+14,"الإجمالي",{size:10,anchor:"end",weight:700})+T(110,y+14,String(sum(works,w=>w[1])),{size:10,anchor:"end",weight:700});y+=22}
+  y+=14;s+=T(560,y,"بنود الاستلام",{size:11.5,anchor:"end",weight:700,fill:"#1d5d78"})+T(35,y,"Inspection checklist",{size:9,fill:"#1d5d78"});y+=10;
+  HO_CHECKS.forEach((t,i)=>{const ok=!!(h.checks||{})["c"+i];s+=R(545,y+4,11,11,{sw:.9})+(ok?`<path d="M547 ${y+10} l3 3 l5 -7" fill="none" stroke="#1d5d78" stroke-width="1.8"/>`:"")+T(538,y+14,t,{size:10,anchor:"end"});y+=19});
+  y+=12;s+=T(560,y,"ملاحظات معلقة",{size:11.5,anchor:"end",weight:700,fill:"#1d5d78"})+T(35,y,"Outstanding remarks",{size:9,fill:"#1d5d78"});y+=6;
+  const notes=wrapText(h.notes||"لا توجد",95).slice(0,6);s+=R(35,y,525,Math.max(30,notes.length*16+12),{stroke:"#bbb",sw:.6});notes.forEach((l,i)=>{s+=T(552,y+18+i*16,l,{size:10,anchor:"end"})});y+=Math.max(30,notes.length*16+12)+20;
+  s+=T(560,y,`مدة الضمان: ${N(h.warranty??1)} ${N(h.warranty??1)===1?"سنة":"سنوات"} من تاريخ التسليم على أعمال الألمنيوم والإكسسوارات حسب شروط العقد.`,{size:10,anchor:"end"})+T(35,y+14,`Warranty: ${N(h.warranty??1)} year(s) from handover date.`,{size:8.5,fill:"#666"});y+=36;
+  wrapText("يقر العميل باستلام الأعمال المذكورة أعلاه بحالة جيدة ومطابقة للمواصفات والمخططات المعتمدة، باستثناء الملاحظات المدونة في هذا المحضر.",95).forEach(l=>{s+=T(560,y,l,{size:10,anchor:"end"});y+=16});
+  const sy=Math.max(y+20,690);
+  [[300,560,"المصنع - برج القمة","Factory representative",h.engineer||""],[35,285,"العميل / المستلم","Client / Receiver",[h.receiver,h.role].filter(Boolean).join(" - ")]].forEach(([x1,x2,ar,en,name])=>{
+    s+=R(x1,sy,x2-x1,110,{stroke:"#999",sw:.7})+T(x2-8,sy+18,ar,{size:10.5,anchor:"end",weight:700})+T(x1+8,sy+18,en,{size:8.5,fill:"#777"})+T(x2-8,sy+42,"الاسم: "+(name||""),{size:10,anchor:"end"})+T(x2-8,sy+70,"التوقيع:",{size:10,anchor:"end"})+L(x1+10,sy+72,x2-60,sy+72,{stroke:"#bbb",sw:.6,dash:"3 3"})+T(x2-8,sy+96,x2===560?"الختم:":"الجوال: "+iso(h.phone||""),{size:10,anchor:"end"})});
+  return s+"</svg>";
+}
+async function handoverPdf(c,mode){
+  if(S.pdfBusy)return;S.pdfBusy=true;render();
+  try{const {jsPDF}=await loadJsPdf();const pdf=new jsPDF({unit:"mm",format:"a4",orientation:"portrait",compress:true});
+    pdf.addImage(await svgToJpeg(handoverSVG(c),3.5,595,842),"JPEG",0,0,210,297);
+    const blobPdf=pdf.output("blob");const name=`محضر-تسليم-${(c.fileNo||c.name||"ملف").replace(/[\\/:*?"<>|]/g,"-")}.pdf`;
+    if(mode==="save"){const r=await S.assets.upload(new File([blobPdf],name,{type:"application/pdf"}));await mutateFiles("handover",l=>l.concat([{id:r.id,name,type:"application/pdf",size:r.sizeBytes,at:new Date().toISOString()}]));toast("حُفظ المحضر في ملف العميل")}
+    else if(S.downloads)await S.downloads.save({filename:name,data:blobPdf});else toast("التنزيل غير متاح هنا، استخدم «حفظ PDF في ملف العميل»");
+  }catch(e){if(!(e&&e.code==="declined"))toast("تعذّر إنشاء ملف PDF")}
+  S.pdfBusy=false;render();
+}
+
 /* ---------- actions ---------- */
 function need(fk,fields){const d=S.draft[fk]||{};for(const[f,l]of fields){if(!String(d[f]??"").trim()){toast("أدخل "+l);const el=document.getElementById(("f-"+fk+"-"+f).replace(/[^a-zA-Z0-9_-]/g,"_"));el&&el.focus();return null}}return d}
 function rowFrom(fk,defaults){return{...defaults,...(S.draft[fk]||{})}}
@@ -1120,7 +1212,7 @@ async function act(el){
   if(a==="open-settings"){S.cfgDraft=clone(S.cfg);S.settings=true;S.confirm=null;render();window.scrollTo(0,0);return}
   if(a==="save-settings"){
     if(!db||!S.canWrite)return;
-    const d=S.cfgDraft;d.recipes.forEach(r=>{r.pieces.forEach(x=>x.n=N(x.n));r.glass.forEach(x=>x.n=N(x.n));r.acc.forEach(x=>x.price=N(x.price))});d.profiles.forEach(x=>x.kg=N(x.kg));["barLen","trim","kerf","aluPrice","paintRate","glassPrice"].forEach(k=>d[k]=N(d[k]));
+    const d=S.cfgDraft;d.recipes.forEach(r=>{r.pieces.forEach(x=>x.n=N(x.n));r.glass.forEach(x=>x.n=N(x.n));r.acc.forEach(x=>x.price=N(x.price))});d.profiles.forEach(x=>x.kg=N(x.kg));["barLen","trim","kerf","aluPrice","paintRate","glassPrice","tapeFactor","tapeRoll","tapePrice"].forEach(k=>d[k]=N(d[k]));
     if(d.barLen<=0){toast("طول العود يجب أن يكون أكبر من صفر");return}
     try{await db.doc("settings/takeoff").set({...d,updatedAt:new Date().toISOString()});S.everWrote=true;toast("حُفظت قوالب الحساب")}catch(e){handleWriteErr(e)}
     return;
@@ -1149,6 +1241,9 @@ async function act(el){
   if(a==="export-calc"){exportCalc(c);return}
   if(a==="ex-run"){runExtract(c);return}
   if(a==="shop-quote"){readQuote(c);return}
+  if(a==="ho-pdf"||a==="ho-save"){handoverPdf(c,a==="ho-save"?"save":"dl");return}
+  if(a==="save-ho"){const h=hoMerged(c);const patch={handover:{...h,updatedAt:new Date().toISOString()}};if(h.done&&c.status!=="مكتمل")patch.status="مكتمل";
+    if(await write(c._id,patch)){delete S.draft["ho:"+c._id];render();toast(h.done?"حُفظ المحضر وتحوّلت حالة الملف إلى «مكتمل»":"حُفظ المحضر")}return}
   if(a==="shop-stop"){const st=S.ex["shop:"+c._id];st&&st.ctl&&st.ctl.abort();return}
   if(a==="shop-pdf"||a==="shop-save"){shopPdf(c,a==="shop-save"?"save":"dl");return}
   if(a==="shop-meas"){const A=c.alu||[];if(!A.length){toast("لا توجد مقاسات ألمنيوم");return}
