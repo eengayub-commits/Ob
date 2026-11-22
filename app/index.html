@@ -1,0 +1,552 @@
+<title>ملفات عملاء برج القمة</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Readex+Pro:wght@500;600;700&display=swap">
+<style>
+/* Layout: sticky steel top bar, summary strip, then a file register table; a client opens as a folder with tabbed sections. */
+:root{
+  --bg:#eceff2; --surface:#ffffff; --surface-2:#f5f7f9; --ink:#16202a; --muted:#5a6774; --line:#d3dae1;
+  --accent:#1d5d78; --accent-soft:#dcebf2; --accent-ink:#ffffff; --bronze:#8f6234;
+  --ok:#2b7a4b; --ok-soft:#dff1e6; --warn:#a96300; --warn-soft:#fbecd5; --bad:#b0281f; --bad-soft:#f8dedb;
+  --f-body:"IBM Plex Sans Arabic","Segoe UI",Tahoma,sans-serif; --f-head:"Readex Pro","IBM Plex Sans Arabic",Tahoma,sans-serif;
+  --r:10px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0e1418; --surface:#161f26; --surface-2:#1b262e; --ink:#e4eaef; --muted:#93a2ae; --line:#2a3741;
+  --accent:#5eb0d1; --accent-soft:#183746; --accent-ink:#06141b; --bronze:#d3a26e;
+  --ok:#62c48f; --ok-soft:#173527; --warn:#e5a54a; --warn-soft:#3a2b14; --bad:#f07b72; --bad-soft:#3d1c1a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e1418; --surface:#161f26; --surface-2:#1b262e; --ink:#e4eaef; --muted:#93a2ae; --line:#2a3741;
+  --accent:#5eb0d1; --accent-soft:#183746; --accent-ink:#06141b; --bronze:#d3a26e;
+  --ok:#62c48f; --ok-soft:#173527; --warn:#e5a54a; --warn-soft:#3a2b14; --bad:#f07b72; --bad-soft:#3d1c1a; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.6}
+h1,h2,h3{font-family:var(--f-head);text-wrap:balance;margin:0;line-height:1.3}
+.wrap{max-width:1200px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface);border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;align-items:center;gap:12px;padding-block:12px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
+.mark{width:34px;height:34px;border-radius:8px;background:linear-gradient(135deg,var(--accent),var(--bronze));flex:none;position:relative}
+.mark::after{content:"";position:absolute;inset:7px;border:2px solid var(--surface);border-radius:3px}
+.brand h1{font-size:1.1rem}.brand small{display:block;color:var(--muted);font-size:.78rem;font-weight:400;font-family:var(--f-body)}
+main{padding-block:20px 60px;display:flex;flex-direction:column;gap:20px}
+button,.btn{font:inherit;font-weight:600;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:8px 14px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;text-decoration:none;font-size:.9rem}
+button:hover,.btn:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+button.danger{color:var(--bad)}button.danger.armed{background:var(--bad);color:#fff;border-color:var(--bad)}
+button.ghost{border-color:transparent;background:transparent;padding:4px 8px}
+button:disabled{opacity:.5;cursor:not-allowed}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:7px 10px;width:100%;min-width:0}
+textarea{min-height:70px;resize:vertical}
+input[type=checkbox]{width:18px;height:18px;accent-color:var(--accent)}
+label.fld{display:flex;flex-direction:column;gap:4px;font-size:.82rem;color:var(--muted);font-weight:500;min-width:0}
+.grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(190px,1fr))}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.card h3{font-size:1rem;display:flex;align-items:center;gap:8px;justify-content:space-between;flex-wrap:wrap}
+.muted{color:var(--muted)}.small{font-size:.82rem}
+.num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum";direction:ltr;unicode-bidi:isolate}
+.stats{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px}
+.stat b{display:block;font-family:var(--f-head);font-size:1.35rem;font-weight:600}
+.stat span{font-size:.8rem;color:var(--muted)}
+.cur{font-size:.75rem;color:var(--muted);margin-inline-start:4px;font-weight:400}
+.pos{color:var(--ok)}.neg{color:var(--bad)}
+.tablebox{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:.88rem}
+th,td{padding:9px 12px;text-align:start;border-bottom:1px solid var(--line);white-space:nowrap;vertical-align:middle}
+th{background:var(--surface-2);color:var(--muted);font-weight:600;font-size:.78rem;letter-spacing:.02em}
+tbody tr:last-child td{border-bottom:0}
+tr.click{cursor:pointer}tr.click:hover td{background:var(--accent-soft)}
+tfoot td{font-weight:700;background:var(--surface-2);border-top:1px solid var(--line);border-bottom:0}
+.pill{display:inline-block;padding:2px 10px;border-radius:99px;font-size:.76rem;font-weight:600;background:var(--surface-2);color:var(--muted);border:1px solid var(--line)}
+.pill.s1{background:var(--accent-soft);color:var(--accent);border-color:transparent}
+.pill.s2{background:var(--warn-soft);color:var(--warn);border-color:transparent}
+.pill.s3{background:var(--ok-soft);color:var(--ok);border-color:transparent}
+.pill.bad{background:var(--bad-soft);color:var(--bad);border-color:transparent}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.toolbar input{flex:1;min-width:180px}.toolbar select{width:auto}
+.split{display:grid;gap:20px;grid-template-columns:minmax(0,2.2fr) minmax(0,1fr)}
+@media (max-width:860px){.split{grid-template-columns:1fr}}
+.inst-list{display:flex;flex-direction:column;gap:8px;margin:0;padding:0;list-style:none}
+.inst-list li{display:flex;gap:12px;align-items:center;padding:8px 0;border-bottom:1px dashed var(--line);cursor:pointer}
+.inst-list li:last-child{border-bottom:0}
+.date-chip{flex:none;width:52px;text-align:center;border:1px solid var(--line);border-radius:8px;padding:3px 0;line-height:1.2;background:var(--surface-2)}
+.date-chip b{display:block;font-family:var(--f-head);font-size:1.1rem}.date-chip span{font-size:.7rem;color:var(--muted)}
+.head{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-start;justify-content:space-between}
+.head h2{font-size:1.5rem}
+.fileno{font-family:var(--f-head);color:var(--bronze);font-weight:600;font-size:.9rem}
+.tabs{display:flex;gap:4px;overflow-x:auto;border-bottom:1px solid var(--line);scrollbar-width:thin}
+.tabs button{border:0;border-bottom:3px solid transparent;border-radius:0;background:none;white-space:nowrap;color:var(--muted);padding:10px 12px}
+.tabs button[aria-selected="true"]{color:var(--accent);border-bottom-color:var(--accent)}
+.tabs .cnt{font-size:.72rem;background:var(--surface-2);border-radius:99px;padding:0 7px;border:1px solid var(--line)}
+.bar{height:8px;border-radius:99px;background:var(--surface-2);overflow:hidden;border:1px solid var(--line)}
+.bar i{display:block;height:100%;background:var(--ok)}
+.files{display:flex;flex-direction:column;gap:6px}
+.file{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);min-width:0}
+.file a{color:var(--ink);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;text-decoration:none}
+.file a:hover{color:var(--accent);text-decoration:underline}
+.ext{font-size:.68rem;font-weight:700;padding:2px 6px;border-radius:4px;background:var(--accent-soft);color:var(--accent);flex:none;direction:ltr}
+.upl{position:relative;overflow:hidden}
+.upl input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.gallery{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(170px,1fr))}
+.ph{border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:var(--surface);display:flex;flex-direction:column}
+.ph img{width:100%;aspect-ratio:4/3;object-fit:cover;cursor:zoom-in;background:var(--surface-2);display:block}
+.ph div{padding:6px 10px;display:flex;gap:6px;align-items:center;justify-content:space-between;font-size:.82rem}
+.lb{position:fixed;inset:0;background:rgba(5,10,14,.86);z-index:50;display:flex;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));cursor:zoom-out}
+.lb img{max-height:100%;max-width:100%;border-radius:6px}
+.empty{text-align:center;padding:40px 16px;display:flex;flex-direction:column;gap:10px;align-items:center}
+.empty h2{font-size:1.2rem}
+.note{padding:10px 14px;border-radius:8px;background:var(--warn-soft);color:var(--warn);font-size:.88rem}
+.addrow{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));align-items:end;padding:12px;border:1px dashed var(--line);border-radius:8px;background:var(--surface-2)}
+.approve{display:flex;align-items:center;gap:8px;font-weight:600;font-size:.9rem;color:var(--ink)}
+.ok-badge{color:var(--ok);font-size:.8rem;font-weight:600}
+.toast{position:fixed;bottom:calc(16px + env(safe-area-inset-bottom,0px));inset-inline-start:max(16px,env(safe-area-inset-left,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;z-index:60;font-size:.9rem;max-width:calc(100% - 32px)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:.9rem}
+.kv dt{color:var(--muted)}.kv dd{margin:0;font-weight:600}
+@media (prefers-reduced-motion:no-preference){.card,.stat{transition:border-color .15s}}
+</style>
+
+<div id="app"></div>
+
+<script>
+(function(){
+"use strict";
+const STATUSES=["عرض سعر","تم التعميد","تحت التصنيع","جاهز للتركيب","قيد التركيب","مكتمل","ملغي"];
+const STATUS_CLS={"تم التعميد":"s1","تحت التصنيع":"s2","جاهز للتركيب":"s2","قيد التركيب":"s2","مكتمل":"s3","ملغي":"bad"};
+const BUY_CATS=["ألمنيوم","زجاج","إكسسوارات","مواد تركيب","عمالة","نقل","أخرى"];
+const PAY_METHODS=["تحويل بنكي","نقدي","شيك","شبكة"];
+const ALU_SYSTEMS=["سرايا","رويال","كرتن وول","سكوريت","أخرى"];
+const ITEM_TYPES=["شباك سحاب","شباك مفصلي","شباك ثابت","باب سحاب","باب مفصلي","واجهة","أخرى"];
+const TABS=[["info","البيانات"],["docs","العقد والعرض والمخططات"],["colors","اعتماد الألوان"],["pay","الدفعات"],["inst","التركيب"],["meas","المقاسات"],["photos","الصور"],["buy","المشتريات والأرباح"]];
+const MAX_BYTES=20*1024*1024;
+
+const S={clients:[],loaded:false,slow:false,err:null,id:null,tab:"info",q:"",status:"",canWrite:true,assets:null,draft:{},confirm:null,lightbox:null,busy:{}};
+let db=null;
+const app=document.getElementById("app");
+
+/* ---------- helpers ---------- */
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const N=v=>{const n=parseFloat(String(v??"").replace(/,/g,""));return isFinite(n)?n:0};
+const money=n=>N(n).toLocaleString("en-US",{maximumFractionDigits:2});
+const M=n=>`<span class="num">${money(n)}</span><span class="cur">ر.س</span>`;
+const uid=()=>Math.random().toString(36).slice(2,9)+Date.now().toString(36).slice(-5);
+const today=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
+const sum=(a,f)=>(a||[]).reduce((t,x)=>t+N(f(x)),0);
+const area=(w,h,q)=>N(w)*N(h)*(N(q)||1)/1e6;
+const AR_MONTHS=["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"];
+const AR_DAYS=["الأحد","الإثنين","الثلاثاء","الأربعاء","الخميس","الجمعة","السبت"];
+function dayInfo(iso){const d=new Date(iso+"T00:00:00");if(isNaN(d))return null;return{d:d.getDate(),m:AR_MONTHS[d.getMonth()],w:AR_DAYS[d.getDay()]}}
+const blob=id=>"/_blob/"+encodeURIComponent(id);
+const extOf=n=>{const m=/\.([a-z0-9]{1,5})$/i.exec(n||"");return m?m[1].toUpperCase():"ملف"};
+const isImg=f=>/^image\//.test(f.type||"")||/\.(png|jpe?g|webp|gif|heic)$/i.test(f.name||"");
+
+function calc(c){
+  const contract=N(c.contractValue);
+  const paid=sum(c.payments,p=>p.amount);
+  const cost=sum(c.purchases,p=>p.amount);
+  const upcoming=(c.installs||[]).filter(i=>i.status!=="تم"&&i.date>=today()).sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time))[0]||null;
+  return{contract,paid,remaining:contract-paid,cost,profit:contract-cost,margin:contract?((contract-cost)/contract*100):0,pct:contract?Math.min(100,paid/contract*100):0,upcoming};
+}
+const cur=()=>S.clients.find(c=>c._id===S.id)||null;
+
+/* drafts: form inputs keep their text across live re-renders */
+function val(fk,f,def){const d=S.draft[fk];return d&&f in d?d[f]:(def??"")}
+function F(fk,f){return `id="f-${(fk+"-"+f).replace(/[^a-zA-Z0-9_-]/g,"_")}" data-f="${esc(fk)}|${esc(f)}"`}
+const inp=(fk,f,label,def,type="text",extra="")=>`<label class="fld">${label}<input ${F(fk,f)} type="${type}" value="${esc(val(fk,f,def))}" ${extra} ${S.canWrite?"":"disabled"}></label>`;
+const sel=(fk,f,label,opts,def)=>{const v=val(fk,f,def);return `<label class="fld">${label}<select ${F(fk,f)} ${S.canWrite?"":"disabled"}>${opts.map(o=>`<option ${o===v?"selected":""}>${esc(o)}</option>`).join("")}</select></label>`};
+const area_=(fk,f,label,def)=>`<label class="fld">${label}<textarea ${F(fk,f)} ${S.canWrite?"":"disabled"}>${esc(val(fk,f,def))}</textarea></label>`;
+const chk=(fk,f,label,def)=>`<label class="approve"><input type="checkbox" ${F(fk,f)} ${val(fk,f,def)?"checked":""} ${S.canWrite?"":"disabled"}>${label}</label>`;
+function del(key,label="حذف"){if(!S.canWrite)return"";const armed=S.confirm===key;return `<button class="danger ghost ${armed?"armed":""}" data-act="del" data-key="${esc(key)}">${armed?"تأكيد الحذف":label}</button>`}
+
+let toastT;function toast(msg){let t=document.querySelector(".toast");if(!t){t=document.createElement("div");t.className="toast";t.setAttribute("role","status");document.body.appendChild(t)}t.textContent=msg;clearTimeout(toastT);toastT=setTimeout(()=>t.remove(),3200)}
+
+/* ---------- writes: one at a time per client ---------- */
+const queues={};
+function write(id,patch){
+  if(!db||!S.canWrite){toast("لا تملك صلاحية التعديل على هذا الملف");return Promise.resolve(false)}
+  const run=()=>db.collection("clients").doc(id).update({...patch,updatedAt:new Date().toISOString()}).then(()=>true);
+  queues[id]=(queues[id]||Promise.resolve()).then(run).catch(e=>{
+    if(e&&e.code==="unavailable")return new Promise(r=>setTimeout(r,600+Math.random()*600)).then(run);
+    throw e;
+  }).catch(e=>{handleWriteErr(e);return false});
+  return queues[id];
+}
+function handleWriteErr(e){
+  const c=e&&e.code;
+  if(c==="invalid_argument"&&!S.everWrote){S.canWrite=false;render();toast("صلاحيتك للعرض فقط");return}
+  toast(c==="quota_exceeded"?"امتلأت مساحة التخزين، احذف ملفات قديمة":"تعذّر الحفظ، حاول مرة أخرى");
+}
+function mutateList(field,fn){const c=cur();if(!c)return;const list=[...(c[field]||[])];const next=fn(list)||list;return write(c._id,{[field]:next})}
+function mutateFiles(cat,fn){const c=cur();if(!c)return;const files={...(c.files||{})};files[cat]=fn([...(files[cat]||[])])||[];return write(c._id,{files})}
+
+/* ---------- views ---------- */
+function topbar(){
+  const c=cur();
+  return `<header class="top"><div class="wrap">
+    <div class="brand"><div class="mark" aria-hidden="true"></div><h1>برج القمة للأعمال المعدنية<small>سجل ملفات العملاء والمشاريع</small></h1></div>
+    ${c?`<button data-act="back">→ كل الملفات</button>`:""}
+    ${S.canWrite&&db&&!c?`<button class="primary" data-act="new">+ عميل جديد</button>`:""}
+  </div></header>`;
+}
+
+function listView(){
+  if(!db&&S.err==="nodb")return `<div class="card empty"><h2>تعذّر الاتصال بقاعدة البيانات</h2><p class="muted">افتح البرنامج من حسابك في Claude لتظهر ملفات العملاء.</p></div>`;
+  if(S.err)return `<div class="card empty"><h2>تعذّر تحميل الملفات</h2><p class="muted">أعد فتح الصفحة بعد قليل.</p></div>`;
+  const all=S.clients;
+  const active=all.filter(c=>c.status!=="ملغي");
+  const tot=active.reduce((t,c)=>{const k=calc(c);t.contract+=k.contract;t.paid+=k.paid;t.rem+=k.remaining;t.profit+=k.profit;t.cost+=k.cost;return t},{contract:0,paid:0,rem:0,profit:0,cost:0});
+  const q=S.q.trim();
+  const rows=all.filter(c=>(!S.status||c.status===S.status)&&(!q||[c.name,c.fileNo,c.phone,c.location].some(v=>String(v||"").includes(q))))
+    .sort((a,b)=>String(b.approvalDate||b.createdAt||"").localeCompare(String(a.approvalDate||a.createdAt||"")));
+  const installs=[];all.forEach(c=>(c.installs||[]).forEach(i=>{if(i.status!=="تم"&&i.date&&i.date>=today())installs.push({...i,c})}));
+  installs.sort((a,b)=>(a.date+(a.time||"")).localeCompare(b.date+(b.time||"")));
+
+  const stats=`<section class="stats" aria-label="ملخص">
+    <div class="stat"><span>ملفات نشطة</span><b class="num">${active.length}</b></div>
+    <div class="stat"><span>قيمة العقود</span><b>${M(tot.contract)}</b></div>
+    <div class="stat"><span>المحصّل</span><b class="pos">${M(tot.paid)}</b></div>
+    <div class="stat"><span>المتبقي عند العملاء</span><b class="${tot.rem>0?"neg":""}">${M(tot.rem)}</b></div>
+    <div class="stat"><span>صافي الربح (العقود − المشتريات)</span><b class="${tot.profit>=0?"pos":"neg"}">${M(tot.profit)}</b></div>
+  </section>`;
+
+  let table;
+  if(!S.loaded&&!all.length){
+    table=`<div class="card empty"><p class="muted">${S.slow?"لا يمكن الوصول إلى البيانات حالياً، تحقق من الاتصال.":"جارٍ تحميل ملفات العملاء…"}</p></div>`;
+  }else if(!all.length){
+    table=`<div class="card empty"><h2>لا توجد ملفات عملاء بعد</h2>
+      <p class="muted" style="max-width:52ch">كل عميل له ملف واحد يجمع: رقم الملف وتاريخ التعميد، العقد وعرض السعر والمخططات، اعتماد ألوان الزجاج والألمنيوم والإكسسوارات، الدفعات والمتبقي، مواعيد التركيب، مقاسات التصنيع النهائية، صور الشبابيك، وفواتير المشتريات مع حساب الربح.</p>
+      ${S.canWrite?`<button class="primary" data-act="new">+ أضف أول عميل</button>`:""}</div>`;
+  }else{
+    table=`<div class="tablebox"><table><thead><tr><th>رقم الملف</th><th>العميل</th><th>تاريخ التعميد</th><th>الحالة</th><th>قيمة العقد</th><th>المدفوع</th><th>المتبقي</th><th>الربح</th><th>التركيب القادم</th></tr></thead><tbody>
+    ${rows.map(c=>{const k=calc(c);return `<tr class="click" data-act="open" data-id="${esc(c._id)}" tabindex="0">
+      <td class="fileno num">${esc(c.fileNo||"—")}</td><td><b>${esc(c.name||"بدون اسم")}</b></td>
+      <td class="num">${esc(c.approvalDate||"—")}</td><td><span class="pill ${STATUS_CLS[c.status]||""}">${esc(c.status||"—")}</span></td>
+      <td>${M(k.contract)}</td><td>${M(k.paid)}</td><td class="${k.remaining>0?"neg":"pos"}">${M(k.remaining)}</td>
+      <td class="${k.profit>=0?"pos":"neg"}">${M(k.profit)}</td><td class="num">${k.upcoming?esc(k.upcoming.date):"—"}</td></tr>`}).join("")||`<tr><td colspan="9" class="muted">لا توجد نتائج مطابقة</td></tr>`}
+    </tbody></table></div>`;
+  }
+
+  return `${stats}
+  <div class="split">
+    <section style="display:flex;flex-direction:column;gap:12px;min-width:0">
+      <div class="toolbar">
+        <input id="q" type="search" placeholder="ابحث بالاسم أو رقم الملف أو الجوال أو الموقع" value="${esc(S.q)}" aria-label="بحث">
+        <select id="statusFilter" aria-label="الحالة"><option value="">كل الحالات</option>${STATUSES.map(s=>`<option ${s===S.status?"selected":""}>${s}</option>`).join("")}</select>
+      </div>
+      ${table}
+    </section>
+    <aside class="card"><h3>مواعيد التركيب القادمة <span class="pill">${installs.length}</span></h3>
+      ${installs.length?`<ul class="inst-list">${installs.slice(0,10).map(i=>{const d=dayInfo(i.date)||{d:"?",m:"",w:""};return `<li data-act="open" data-id="${esc(i.c._id)}" data-tab="inst" tabindex="0"><div class="date-chip"><b class="num">${d.d}</b><span>${d.m}</span></div><div style="min-width:0"><b>${esc(i.c.name)}</b><div class="small muted">${d.w} ${i.time?`· <span class="num">${esc(i.time)}</span>`:""} ${i.team?"· "+esc(i.team):""}</div></div></li>`}).join("")}</ul>`:`<p class="muted small">لا توجد مواعيد مجدولة. أضف موعداً من تبويب «التركيب» داخل ملف العميل.</p>`}
+    </aside>
+  </div>`;
+}
+
+function clientView(c){
+  const k=calc(c);
+  const counts={docs:(c.files?.contract?.length||0)+(c.files?.quote?.length||0)+(c.files?.drawings?.length||0),pay:(c.payments||[]).length,inst:(c.installs||[]).length,meas:(c.glass||[]).length+(c.alu||[]).length,photos:(c.files?.photos||[]).length,buy:(c.purchases||[]).length};
+  const body={info:tabInfo,docs:tabDocs,colors:tabColors,pay:tabPay,inst:tabInst,meas:tabMeas,photos:tabPhotos,buy:tabBuy}[S.tab]||tabInfo;
+  return `<section class="head">
+      <div><div class="fileno">ملف رقم <span class="num">${esc(c.fileNo||"—")}</span></div><h2>${esc(c.name||"بدون اسم")}</h2>
+      <div class="small muted">تاريخ التعميد: <span class="num">${esc(c.approvalDate||"—")}</span> ${c.location?"· "+esc(c.location):""} ${c.phone?`· <span class="num">${esc(c.phone)}</span>`:""}</div></div>
+      <span class="pill ${STATUS_CLS[c.status]||""}">${esc(c.status||"—")}</span>
+    </section>
+    <section class="stats">
+      <div class="stat"><span>قيمة العقد</span><b>${M(k.contract)}</b></div>
+      <div class="stat"><span>المدفوع · <span class="num">${k.pct.toFixed(0)}%</span></span><b class="pos">${M(k.paid)}</b><div class="bar" aria-hidden="true"><i style="width:${k.pct}%"></i></div></div>
+      <div class="stat"><span>المتبقي</span><b class="${k.remaining>0?"neg":"pos"}">${M(k.remaining)}</b></div>
+      <div class="stat"><span>المشتريات</span><b>${M(k.cost)}</b></div>
+      <div class="stat"><span>الربح · <span class="num">${k.margin.toFixed(1)}%</span></span><b class="${k.profit>=0?"pos":"neg"}">${M(k.profit)}</b></div>
+    </section>
+    <nav class="tabs" role="tablist">${TABS.map(([id,l])=>`<button role="tab" aria-selected="${S.tab===id}" data-act="tab" data-tab="${id}">${l}${counts[id]?` <span class="cnt num">${counts[id]}</span>`:""}</button>`).join("")}</nav>
+    ${body(c,k)}`;
+}
+
+function tabInfo(c){
+  const fk="info:"+c._id;
+  return `<div class="card"><h3>بيانات العميل والملف</h3>
+    <div class="grid">
+      ${inp(fk,"name","اسم العميل",c.name)}
+      ${inp(fk,"fileNo","رقم الملف",c.fileNo)}
+      ${inp(fk,"approvalDate","تاريخ التعميد",c.approvalDate,"date")}
+      ${sel(fk,"status","حالة الملف",STATUSES,c.status||"تم التعميد")}
+      ${inp(fk,"phone","رقم الجوال",c.phone,"tel")}
+      ${inp(fk,"location","الموقع / الحي",c.location)}
+      ${inp(fk,"contractNo","رقم العقد",c.contractNo)}
+      ${inp(fk,"contractValue","قيمة العقد (ر.س)",c.contractValue,"number",'step="0.01" min="0" inputmode="decimal"')}
+      ${inp(fk,"quoteNo","رقم عرض السعر",c.quoteNo)}
+      ${inp(fk,"quoteValue","قيمة عرض السعر (ر.س)",c.quoteValue,"number",'step="0.01" min="0" inputmode="decimal"')}
+    </div>
+    ${area_(fk,"notes","ملاحظات",c.notes)}
+    <div class="toolbar">${S.canWrite?`<button class="primary" data-act="save-info">حفظ البيانات</button>`:""}<span style="flex:1"></span>${del("client:"+c._id,"حذف ملف العميل")}</div>
+  </div>`;
+}
+
+function fileList(c,cat){
+  const list=(c.files||{})[cat]||[];
+  if(!list.length)return `<p class="muted small">لا توجد ملفات مرفوعة.</p>`;
+  return `<div class="files">${list.map(f=>`<div class="file"><span class="ext">${esc(extOf(f.name))}</span><a href="${blob(f.id)}" target="_blank" rel="noopener">${esc(f.name)}</a><span class="small muted num">${esc((f.at||"").slice(0,10))}</span>${del("file:"+cat+":"+f.id)}</div>`).join("")}</div>`;
+}
+function uploader(cat,label="رفع ملف",accept=""){
+  if(!S.canWrite)return"";
+  if(!S.assets)return `<span class="small muted">رفع الملفات متاح لمن يملك صلاحية «محرر».</span>`;
+  const busy=S.busy[cat];
+  return `<span class="btn upl">${busy?"جارٍ الرفع…":label}<input type="file" multiple data-up="${cat}" ${accept?`accept="${accept}"`:""} ${busy?"disabled":""} aria-label="${esc(label)}"></span>`;
+}
+function tabDocs(c){
+  const block=(cat,title,hint)=>`<div class="card"><h3>${title} ${uploader(cat)}</h3><p class="small muted" style="margin:0">${hint}</p>${fileList(c,cat)}</div>`;
+  return `<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(280px,1fr))">
+    ${block("contract","العقد","العقد الموقّع وأي ملاحق له (PDF أو صورة).")}
+    ${block("quote","عرض السعر","عرض السعر المعتمد ونسخه السابقة.")}
+    ${block("drawings","المخططات","المخططات المعمارية ومخططات الورشة (Shop Drawings).")}
+  </div>`;
+}
+
+function tabColors(c){
+  const fk="colors:"+c._id;const co=c.colors||{};
+  const g=(p,f)=>(co[p]||{})[f];
+  const sec=(p,title,fields)=>`<div class="card"><h3>${title} ${g(p,"approved")?`<span class="ok-badge">✓ معتمد ${g(p,"date")?`<span class="num">${esc(g(p,"date"))}</span>`:""}</span>`:`<span class="pill s2">بانتظار الاعتماد</span>`}</h3>
+    <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(150px,1fr))">${fields.map(([f,l])=>inp(fk,p+"."+f,l,g(p,f))).join("")}</div>
+    <div class="toolbar">${chk(fk,p+".approved","اعتمد العميل",g(p,"approved"))}${inp(fk,p+".date","تاريخ الاعتماد",g(p,"date"),"date")}</div></div>`;
+  return `<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(280px,1fr))">
+    ${sec("alu","لون الألمنيوم",[["color","اللون"],["code","كود اللون (RAL)"],["finish","نوع الدهان / الأنودايز"],["system","النظام / القطاع"]])}
+    ${sec("glass","الزجاج",[["type","نوع الزجاج"],["color","اللون"],["thickness","السماكة"],["spec","المواصفة (دبل / سكوريت…)"]])}
+    ${sec("acc","الإكسسوارات",[["brand","الماركة / النوع"],["color","اللون"],["handles","المقابض والأقفال"]])}
+  </div>
+  <div class="card">${area_(fk,"notes","ملاحظات الاعتماد",co.notes)}
+    <div class="toolbar">${S.canWrite?`<button class="primary" data-act="save-colors">حفظ الاعتماد</button>`:""}</div></div>
+  <div class="card"><h3>نماذج وتوقيع الاعتماد ${uploader("colors","رفع صورة أو مستند")}</h3><p class="small muted" style="margin:0">صورة العيّنات المعتمدة أو نموذج الاعتماد موقّعاً من العميل.</p>${fileList(c,"colors")}</div>`;
+}
+
+function tabPay(c,k){
+  const fk="pay:"+c._id;const list=[...(c.payments||[])].sort((a,b)=>String(a.date).localeCompare(String(b.date)));
+  return `<div class="card"><h3>الدفعات المحوّلة</h3>
+    <div class="tablebox"><table><thead><tr><th>التاريخ</th><th>المبلغ</th><th>الطريقة</th><th>البيان</th><th></th></tr></thead><tbody>
+      ${list.map(p=>`<tr><td class="num">${esc(p.date)}</td><td>${M(p.amount)}</td><td>${esc(p.method||"")}</td><td>${esc(p.note||"")}</td><td>${del("pay:"+p.id)}</td></tr>`).join("")||`<tr><td colspan="5" class="muted">لم تُسجّل دفعات بعد.</td></tr>`}
+    </tbody><tfoot><tr><td>إجمالي المدفوع</td><td class="pos">${M(k.paid)}</td><td>المتبقي</td><td class="${k.remaining>0?"neg":"pos"}" colspan="2">${M(k.remaining)}</td></tr></tfoot></table></div>
+    ${S.canWrite?`<div class="addrow">${inp(fk,"date","تاريخ التحويل",today(),"date")}${inp(fk,"amount","المبلغ (ر.س)","","number",'step="0.01" min="0" inputmode="decimal"')}${sel(fk,"method","الطريقة",PAY_METHODS,"تحويل بنكي")}${inp(fk,"note","البيان (دفعة أولى…)","")}<button class="primary" data-act="add-pay">+ إضافة دفعة</button></div>`:""}
+  </div>
+  <div class="card"><h3>إيصالات التحويل ${uploader("receipts","رفع إيصال")}</h3>${fileList(c,"receipts")}</div>`;
+}
+
+function tabInst(c){
+  const fk="inst:"+c._id;const list=[...(c.installs||[])].sort((a,b)=>(String(a.date)+(a.time||"")).localeCompare(String(b.date)+(b.time||"")));
+  const cls={"مجدول":"s1","تم":"s3","مؤجل":"s2"};
+  return `<div class="card"><h3>مواعيد التركيب</h3>
+    <div class="tablebox"><table><thead><tr><th>التاريخ</th><th>اليوم</th><th>الوقت</th><th>الفريق</th><th>الأعمال</th><th>الحالة</th><th></th></tr></thead><tbody>
+    ${list.map(i=>{const d=dayInfo(i.date);return `<tr><td class="num">${esc(i.date)}</td><td>${d?d.w:""}</td><td class="num">${esc(i.time||"")}</td><td>${esc(i.team||"")}</td><td style="white-space:normal;min-width:180px">${esc(i.note||"")}</td>
+      <td>${S.canWrite?`<select data-inst="${esc(i.id)}" aria-label="حالة الموعد" style="width:auto">${["مجدول","تم","مؤجل"].map(s=>`<option ${s===(i.status||"مجدول")?"selected":""}>${s}</option>`).join("")}</select>`:`<span class="pill ${cls[i.status]||"s1"}">${esc(i.status||"مجدول")}</span>`}</td><td>${del("inst:"+i.id)}</td></tr>`}).join("")||`<tr><td colspan="7" class="muted">لا توجد مواعيد.</td></tr>`}
+    </tbody></table></div>
+    ${S.canWrite?`<div class="addrow">${inp(fk,"date","التاريخ",today(),"date")}${inp(fk,"time","الوقت","","time")}${inp(fk,"team","فريق التركيب","")}${inp(fk,"note","الأعمال (الدور الأول…)","")}<button class="primary" data-act="add-inst">+ إضافة موعد</button></div>`:""}
+  </div>`;
+}
+
+function tabMeas(c){
+  const gk="glass:"+c._id,ak="alu:"+c._id,mk="mfin:"+c._id;
+  const G=c.glass||[],A=c.alu||[];
+  const gQty=sum(G,r=>N(r.qty)||1),gArea=sum(G,r=>area(r.w,r.h,r.qty));
+  const aQty=sum(A,r=>N(r.qty)||1),aArea=sum(A,r=>area(r.w,r.h,r.qty));
+  return `<div class="card"><div class="toolbar">${chk(mk,"final","المقاسات نهائية ومعتمدة للتصنيع",c.measFinal)}${inp(mk,"date","تاريخ الاعتماد",c.measFinalDate,"date")}${S.canWrite?`<button data-act="save-mfin">حفظ</button>`:""}${c.measFinal?`<span class="ok-badge">✓ معتمدة للتصنيع</span>`:`<span class="note">مقاسات أولية، لا تُرسل للتصنيع قبل الاعتماد</span>`}</div></div>
+  <div class="card"><h3>مقاسات الألمنيوم النهائية <span class="small muted">بالمليمتر</span></h3>
+    <div class="tablebox"><table><thead><tr><th>المرجع</th><th>النظام</th><th>النوع</th><th>العرض</th><th>الارتفاع</th><th>العدد</th><th>المساحة م²</th><th>ملاحظة</th><th></th></tr></thead><tbody>
+    ${A.map(r=>`<tr><td><b>${esc(r.ref)}</b></td><td>${esc(r.system||"")}</td><td>${esc(r.type||"")}</td><td class="num">${esc(r.w)}</td><td class="num">${esc(r.h)}</td><td class="num">${esc(r.qty||1)}</td><td class="num">${area(r.w,r.h,r.qty).toFixed(2)}</td><td>${esc(r.note||"")}</td><td>${del("alu:"+r.id)}</td></tr>`).join("")||`<tr><td colspan="9" class="muted">أضف مقاسات الشبابيك والأبواب.</td></tr>`}
+    </tbody><tfoot><tr><td colspan="5">الإجمالي</td><td class="num">${aQty}</td><td class="num">${aArea.toFixed(2)}</td><td colspan="2"></td></tr></tfoot></table></div>
+    ${S.canWrite?`<div class="addrow">${inp(ak,"ref","المرجع (W1…)","")}${sel(ak,"system","النظام",ALU_SYSTEMS,"سرايا")}${sel(ak,"type","النوع",ITEM_TYPES,"شباك سحاب")}${inp(ak,"w","العرض مم","","number",'min="0" inputmode="numeric"')}${inp(ak,"h","الارتفاع مم","","number",'min="0" inputmode="numeric"')}${inp(ak,"qty","العدد","1","number",'min="1" inputmode="numeric"')}${inp(ak,"note","ملاحظة","")}<button class="primary" data-act="add-alu">+ إضافة</button></div>`:""}
+  </div>
+  <div class="card"><h3>مقاسات الزجاج النهائية <span class="small muted">بالمليمتر</span></h3>
+    <div class="tablebox"><table><thead><tr><th>المرجع</th><th>النوع</th><th>السماكة</th><th>اللون</th><th>العرض</th><th>الارتفاع</th><th>العدد</th><th>المساحة م²</th><th></th></tr></thead><tbody>
+    ${G.map(r=>`<tr><td><b>${esc(r.ref)}</b></td><td>${esc(r.type||"")}</td><td>${esc(r.thick||"")}</td><td>${esc(r.color||"")}</td><td class="num">${esc(r.w)}</td><td class="num">${esc(r.h)}</td><td class="num">${esc(r.qty||1)}</td><td class="num">${area(r.w,r.h,r.qty).toFixed(2)}</td><td>${del("glass:"+r.id)}</td></tr>`).join("")||`<tr><td colspan="9" class="muted">أضف مقاسات ألواح الزجاج.</td></tr>`}
+    </tbody><tfoot><tr><td colspan="6">الإجمالي</td><td class="num">${gQty}</td><td class="num">${gArea.toFixed(2)}</td><td></td></tr></tfoot></table></div>
+    ${S.canWrite?`<div class="addrow">${inp(gk,"ref","المرجع","")}${inp(gk,"type","النوع (دبل / سنجل)",val(gk,"type","دبل"))}${inp(gk,"thick","السماكة","6مم")}${inp(gk,"color","اللون",(c.colors?.glass?.color)||"")}${inp(gk,"w","العرض مم","","number",'min="0" inputmode="numeric"')}${inp(gk,"h","الارتفاع مم","","number",'min="0" inputmode="numeric"')}${inp(gk,"qty","العدد","1","number",'min="1" inputmode="numeric"')}<button class="primary" data-act="add-glass">+ إضافة</button></div>`:""}
+  </div>`;
+}
+
+function tabPhotos(c){
+  const list=(c.files||{}).photos||[];
+  return `<div class="card"><h3>صور الشبابيك ${uploader("photos","رفع صور","image/*")}</h3>
+    ${list.length?`<div class="gallery">${list.map(p=>`<figure class="ph" style="margin:0"><img src="${blob(p.id)}" alt="${esc(p.name)}" loading="lazy" data-act="zoom" data-id="${esc(p.id)}"><div><span class="small muted num">${esc((p.at||"").slice(0,10))}</span>${del("file:photos:"+p.id)}</div></figure>`).join("")}</div>`:`<p class="muted small">صور الموقع قبل التركيب وبعده وصور الشبابيك المنفّذة.</p>`}
+  </div>`;
+}
+
+function tabBuy(c,k){
+  const fk="buy:"+c._id;const list=[...(c.purchases||[])].sort((a,b)=>String(a.date).localeCompare(String(b.date)));
+  const byCat=BUY_CATS.map(cat=>[cat,sum(list.filter(p=>p.category===cat),p=>p.amount)]).filter(x=>x[1]>0);
+  return `<div class="split">
+  <div class="card"><h3>فواتير المشتريات</h3>
+    <div class="tablebox"><table><thead><tr><th>التاريخ</th><th>المورد</th><th>رقم الفاتورة</th><th>البند</th><th>المبلغ</th><th>الفاتورة</th><th></th></tr></thead><tbody>
+    ${list.map(p=>`<tr><td class="num">${esc(p.date)}</td><td>${esc(p.supplier||"")}</td><td class="num">${esc(p.invoiceNo||"")}</td><td>${esc(p.category||"")}${p.note?`<div class="small muted">${esc(p.note)}</div>`:""}</td><td>${M(p.amount)}</td>
+      <td>${p.fileId?`<a href="${blob(p.fileId)}" target="_blank" rel="noopener">عرض</a>`:(S.canWrite&&S.assets?`<span class="btn upl" style="padding:3px 8px">${S.busy["inv:"+p.id]?"…":"إرفاق"}<input type="file" data-inv="${esc(p.id)}" aria-label="إرفاق الفاتورة"></span>`:"—")}</td><td>${del("buy:"+p.id)}</td></tr>`).join("")||`<tr><td colspan="7" class="muted">لم تُسجّل مشتريات بعد.</td></tr>`}
+    </tbody><tfoot><tr><td colspan="4">إجمالي المشتريات</td><td colspan="3">${M(k.cost)}</td></tr></tfoot></table></div>
+    ${S.canWrite?`<div class="addrow">${inp(fk,"date","التاريخ",today(),"date")}${inp(fk,"supplier","المورد","")}${inp(fk,"invoiceNo","رقم الفاتورة","")}${sel(fk,"category","البند",BUY_CATS,"ألمنيوم")}${inp(fk,"amount","المبلغ شامل الضريبة","","number",'step="0.01" min="0" inputmode="decimal"')}${inp(fk,"note","ملاحظة","")}<button class="primary" data-act="add-buy">+ إضافة فاتورة</button></div>`:""}
+  </div>
+  <aside class="card"><h3>حساب الربح</h3>
+    <dl class="kv"><dt>قيمة العقد</dt><dd>${M(k.contract)}</dd>
+    ${byCat.map(([cat,v])=>`<dt>${esc(cat)}</dt><dd class="neg">− ${M(v)}</dd>`).join("")}
+    <dt>إجمالي التكاليف</dt><dd>${M(k.cost)}</dd>
+    <dt>صافي الربح</dt><dd class="${k.profit>=0?"pos":"neg"}" style="font-size:1.15rem">${M(k.profit)}</dd>
+    <dt>نسبة الربح</dt><dd class="num">${k.margin.toFixed(1)}%</dd>
+    <dt>المحصّل فعلياً</dt><dd>${M(k.paid)}</dd>
+    <dt>الربح النقدي الحالي</dt><dd class="${k.paid-k.cost>=0?"pos":"neg"}">${M(k.paid-k.cost)}</dd></dl>
+    <p class="small muted" style="margin:0">الربح النقدي = المحصّل حتى الآن ناقص المشتريات المدفوعة.</p>
+  </aside></div>`;
+}
+
+function render(){
+  const a=document.activeElement;const aid=a&&a.id;let ss=null,se=null;try{ss=a.selectionStart;se=a.selectionEnd}catch(e){}
+  const c=S.id?cur():null;
+  if(S.id&&!c&&S.loaded){S.id=null}
+  let main;
+  if(S.id&&!c)main=`<div class="card empty"><p class="muted">جارٍ فتح الملف…</p></div>`;
+  else main=c?clientView(c):listView();
+  app.innerHTML=topbar()+`<main class="wrap">${!S.canWrite&&db?`<div class="note">صلاحيتك للعرض فقط. اطلب من مالك البرنامج صلاحية «مساهم» أو «محرر» للتعديل.</div>`:""}${main}</main>`+(S.lightbox?`<div class="lb" data-act="unzoom"><img src="${blob(S.lightbox)}" alt="صورة مكبرة"></div>`:"");
+  if(aid){const n=document.getElementById(aid);if(n){n.focus({preventScroll:true});try{if(ss!=null)n.setSelectionRange(ss,se)}catch(e){}}}
+}
+
+/* ---------- actions ---------- */
+function need(fk,fields){const d=S.draft[fk]||{};for(const[f,l]of fields){if(!String(d[f]??"").trim()){toast("أدخل "+l);const el=document.getElementById(("f-"+fk+"-"+f).replace(/[^a-zA-Z0-9_-]/g,"_"));el&&el.focus();return null}}return d}
+function rowFrom(fk,defaults){return{...defaults,...(S.draft[fk]||{})}}
+
+async function act(el){
+  const a=el.dataset.act;const c=cur();
+  if(a==="open"){go(el.dataset.id,el.dataset.tab||"info");return}
+  if(a==="back"){location.hash="";S.id=null;render();window.scrollTo(0,0);return}
+  if(a==="tab"){S.tab=el.dataset.tab;S.confirm=null;render();return}
+  if(a==="zoom"){S.lightbox=el.dataset.id;render();return}
+  if(a==="unzoom"){S.lightbox=null;render();return}
+  if(a==="new"){
+    if(!db)return;
+    const y=new Date().getFullYear();const nums=S.clients.map(x=>{const m=/(\d+)$/.exec(x.fileNo||"");return m?+m[1]:0});
+    const next=`${y}-${String((Math.max(0,...nums)||0)+1).padStart(3,"0")}`;
+    const ref=db.collection("clients").doc();
+    try{await ref.set({name:"عميل جديد",fileNo:next,approvalDate:today(),status:"تم التعميد",contractValue:0,files:{},payments:[],installs:[],glass:[],alu:[],purchases:[],colors:{},createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()});S.everWrote=true}
+    catch(e){handleWriteErr(e);return}
+    go(ref.id,"info");toast("أُنشئ ملف رقم "+next+"، أكمل بيانات العميل");
+    setTimeout(()=>{const n=document.getElementById(("f-info:"+ref.id+"-name").replace(/[^a-zA-Z0-9_-]/g,"_"));n&&(n.focus(),n.select&&n.select())},60);
+    return;
+  }
+  if(!c)return;
+  if(a==="save-info"){
+    const fk="info:"+c._id;const d=S.draft[fk]||{};
+    if("name"in d&&!String(d.name).trim()){toast("اسم العميل مطلوب");return}
+    const patch={...d};["contractValue","quoteValue"].forEach(f=>{if(f in patch)patch[f]=N(patch[f])});
+    if(!Object.keys(patch).length){toast("لا توجد تغييرات");return}
+    if(await write(c._id,patch)){delete S.draft[fk];S.everWrote=true;render();toast("حُفظت البيانات")}
+    return;
+  }
+  if(a==="save-colors"){
+    const fk="colors:"+c._id;const d=S.draft[fk]||{};const colors=JSON.parse(JSON.stringify(c.colors||{}));
+    for(const[key,v]of Object.entries(d)){const parts=key.split(".");if(parts.length===2){colors[parts[0]]=colors[parts[0]]||{};colors[parts[0]][parts[1]]=v;if(parts[1]==="approved"&&v&&!colors[parts[0]].date)colors[parts[0]].date=today()}else colors[key]=v}
+    if(await write(c._id,{colors})){delete S.draft[fk];render();toast("حُفظ اعتماد الألوان")}
+    return;
+  }
+  if(a==="save-mfin"){
+    const fk="mfin:"+c._id;const d=S.draft[fk]||{};const final="final"in d?!!d.final:!!c.measFinal;
+    const date=d.date??c.measFinalDate??"";
+    if(await write(c._id,{measFinal:final,measFinalDate:final&&!date?today():date})){delete S.draft[fk];render();toast("حُفظ")}
+    return;
+  }
+  if(a==="add-pay"){
+    const fk="pay:"+c._id;const d=need(fk,[["amount","المبلغ"]]);if(!d)return;
+    if(N(d.amount)<=0){toast("المبلغ يجب أن يكون أكبر من صفر");return}
+    const r=rowFrom(fk,{date:today(),method:"تحويل بنكي",note:""});
+    if(await mutateList("payments",l=>{l.push({id:uid(),date:r.date,amount:N(r.amount),method:r.method,note:r.note})})){delete S.draft[fk];render();toast("سُجّلت الدفعة")}
+    return;
+  }
+  if(a==="add-inst"){
+    const fk="inst:"+c._id;const r=rowFrom(fk,{date:today(),time:"",team:"",note:""});if(!r.date){toast("أدخل التاريخ");return}
+    if(await mutateList("installs",l=>{l.push({id:uid(),date:r.date,time:r.time,team:r.team,note:r.note,status:"مجدول"})})){delete S.draft[fk];render();toast("أُضيف موعد التركيب")}
+    return;
+  }
+  if(a==="add-alu"||a==="add-glass"){
+    const kind=a==="add-alu"?"alu":"glass";const fk=kind+":"+c._id;
+    const d=need(fk,[["ref","المرجع"],["w","العرض"],["h","الارتفاع"]]);if(!d)return;
+    const r=kind==="alu"?rowFrom(fk,{system:"سرايا",type:"شباك سحاب",qty:"1",note:""}):rowFrom(fk,{type:"دبل",thick:"6مم",color:(c.colors?.glass?.color)||"",qty:"1"});
+    const row={id:uid(),...r,w:N(r.w),h:N(r.h),qty:N(r.qty)||1};
+    if(await mutateList(kind,l=>{l.push(row)})){const keep={};if(kind==="alu"){keep.system=r.system;keep.type=r.type}else{keep.type=r.type;keep.thick=r.thick;keep.color=r.color}S.draft[fk]=keep;render();toast("أُضيف "+row.ref);
+      const n=document.getElementById(("f-"+fk+"-ref").replace(/[^a-zA-Z0-9_-]/g,"_"));n&&n.focus()}
+    return;
+  }
+  if(a==="add-buy"){
+    const fk="buy:"+c._id;const d=need(fk,[["amount","المبلغ"]]);if(!d)return;
+    const r=rowFrom(fk,{date:today(),supplier:"",invoiceNo:"",category:"ألمنيوم",note:""});
+    if(await mutateList("purchases",l=>{l.push({id:uid(),date:r.date,supplier:r.supplier,invoiceNo:r.invoiceNo,category:r.category,amount:N(r.amount),note:r.note})})){delete S.draft[fk];render();toast("أُضيفت الفاتورة، يمكنك إرفاق صورتها من الجدول")}
+    return;
+  }
+  if(a==="del"){
+    const key=el.dataset.key;
+    if(S.confirm!==key){S.confirm=key;render();clearTimeout(act._t);act._t=setTimeout(()=>{S.confirm=null;render()},4000);return}
+    S.confirm=null;const[type,x,y]=key.split(":");
+    if(type==="client"){try{await db.collection("clients").doc(c._id).delete();location.hash="";S.id=null;render();toast("حُذف ملف العميل")}catch(e){handleWriteErr(e)}return}
+    if(type==="file"){await mutateFiles(x,l=>l.filter(f=>f.id!==y));return}
+    const field={pay:"payments",inst:"installs",alu:"alu",glass:"glass",buy:"purchases"}[type];
+    if(field)await mutateList(field,l=>l.filter(r=>r.id!==x));
+    return;
+  }
+}
+
+async function upload(files){
+  const out=[];
+  for(const f of files){
+    if(f.size>MAX_BYTES){toast(`«${f.name}» أكبر من 20 ميجابايت`);continue}
+    try{const r=await S.assets.upload(f);out.push({id:r.id,name:f.name,type:r.contentType||f.type,size:r.sizeBytes,at:new Date().toISOString()})}
+    catch(e){toast(e&&e.code==="unsupported_type"?`نوع الملف «${f.name}» غير مدعوم`:e&&e.code==="quota_exceeded"?"امتلأت مساحة الملفات":`تعذّر رفع «${f.name}»`)}
+  }
+  return out;
+}
+
+function go(id,tab){S.id=id;S.tab=tab||"info";S.confirm=null;try{history.replaceState(null,"","#c-"+id)}catch(e){location.hash="c-"+id}render();window.scrollTo(0,0)}
+function fromHash(){const m=/^#c-([A-Za-z0-9_.~:@+-]+)$/.exec(location.hash);S.id=m?m[1]:null;if(!m)S.tab="info";render()}
+
+/* ---------- events ---------- */
+document.addEventListener("click",e=>{const el=e.target.closest("[data-act]");if(!el||el.tagName==="SELECT")return;if(el.tagName==="INPUT")return;e.preventDefault&&el.tagName!=="A"&&e.preventDefault();act(el)});
+document.addEventListener("keydown",e=>{
+  if(e.key==="Escape"&&S.lightbox){S.lightbox=null;render();return}
+  if(e.key==="Enter"){const el=e.target.closest("tr[data-act],li[data-act]");if(el){act(el);return}
+    const row=e.target.closest(".addrow");if(row&&e.target.tagName==="INPUT"){const b=row.querySelector("button[data-act]");if(b){e.preventDefault();act(b)}}}
+});
+const onField=e=>{const el=e.target;
+  if(el.dataset&&el.dataset.f){const i=el.dataset.f.indexOf("|");const fk=el.dataset.f.slice(0,i),f=el.dataset.f.slice(i+1);(S.draft[fk]=S.draft[fk]||{})[f]=el.type==="checkbox"?el.checked:el.value;return}
+  if(el.id==="q"){S.q=el.value;render();return}
+  if(el.id==="statusFilter"&&e.type==="change"){S.status=el.value;render();return}
+};
+document.addEventListener("input",onField);
+document.addEventListener("change",async e=>{
+  const el=e.target;onField(e);
+  if(el.dataset.inst&&e.type==="change"){const id=el.dataset.inst,v=el.value;await mutateList("installs",l=>l.map(r=>r.id===id?{...r,status:v}:r));toast("حُدّثت حالة الموعد");return}
+  if(el.dataset.up&&el.files&&el.files.length){
+    const cat=el.dataset.up;const files=[...el.files];const cid=S.id;S.busy[cat]=true;render();
+    const got=await upload(files);S.busy[cat]=false;
+    if(got.length&&cid===S.id){if(await mutateFiles(cat,l=>l.concat(got)))toast(got.length===1?"رُفع الملف":"رُفعت "+got.length+" ملفات")}
+    render();return;
+  }
+  if(el.dataset.inv&&el.files&&el.files[0]){
+    const pid=el.dataset.inv;S.busy["inv:"+pid]=true;render();
+    const got=await upload([el.files[0]]);S.busy["inv:"+pid]=false;
+    if(got[0])await mutateList("purchases",l=>l.map(r=>r.id===pid?{...r,fileId:got[0].id,fileName:got[0].name}:r));
+    render();return;
+  }
+});
+window.addEventListener("hashchange",fromHash);
+
+/* ---------- boot ---------- */
+fromHash();
+(async()=>{
+  const use=window.claude&&window.claude.use;
+  if(!use){S.err="nodb";render();return}
+  db=await window.claude.use("db");
+  if(!db){S.err="nodb";render();return}
+  S.err=null;
+  const t=setTimeout(()=>{if(!S.loaded){S.slow=true;render()}},10000);
+  db.collection("clients").onSnapshot(snap=>{
+    S.clients=snap.docs.map(d=>({...d.data(),_id:d.id}));
+    if(!snap.metadata.fromCache){S.loaded=true;S.slow=false;clearTimeout(t)}
+    render();
+  },err=>{clearTimeout(t);S.loaded=true;S.err=err.code||"error";render()});
+  render();
+  const user=await window.claude.use("user");
+  if(user){try{const w=await user.can("data.write");if(w===false){S.canWrite=false;render()}}catch(e){}}
+  S.assets=await window.claude.use("assets");render();
+})();
+})();
+</script>
