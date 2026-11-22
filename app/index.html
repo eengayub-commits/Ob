@@ -103,6 +103,10 @@ tfoot td{font-weight:700;background:var(--surface-2);border-top:1px solid var(--
 .approve{display:flex;align-items:center;gap:8px;font-weight:600;font-size:.9rem;color:var(--ink)}
 .ok-badge{color:var(--ok);font-size:.8rem;font-weight:600}
 .toast{position:fixed;bottom:calc(16px + env(safe-area-inset-bottom,0px));inset-inline-start:max(16px,env(safe-area-inset-left,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;z-index:60;font-size:.9rem;max-width:calc(100% - 32px)}
+.vatbox{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding:12px 14px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2)}
+.vatrows{display:flex;flex-wrap:wrap;gap:8px 28px}
+.vatrows div{display:flex;flex-direction:column}.vatrows span{font-size:.78rem;color:var(--muted)}.vatrows b{font-family:var(--f-head);font-weight:600;font-size:1.05rem}
+.vatrows .tot b{color:var(--accent)}
 .kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:.9rem}
 .kv dt{color:var(--muted)}.kv dd{margin:0;font-weight:600}
 @media (prefers-reduced-motion:no-preference){.card,.stat{transition:border-color .15s}}
@@ -121,6 +125,8 @@ const ALU_SYSTEMS=["سرايا","رويال","كرتن وول","سكوريت","�
 const ITEM_TYPES=["شباك سحاب","شباك مفصلي","شباك ثابت","باب سحاب","باب مفصلي","واجهة","أخرى"];
 const TABS=[["info","البيانات"],["docs","العقد والعرض والمخططات"],["colors","اعتماد الألوان"],["pay","الدفعات"],["inst","التركيب"],["meas","المقاسات"],["photos","الصور"],["buy","المشتريات والأرباح"]];
 const MAX_BYTES=20*1024*1024;
+const VAT_RATE=0.15;
+const VAT_MODES=["قبل الضريبة","شامل الضريبة"];
 
 const S={clients:[],loaded:false,slow:false,err:null,id:null,tab:"info",q:"",status:"",canWrite:true,assets:null,draft:{},confirm:null,lightbox:null,busy:{}};
 let db=null;
@@ -150,6 +156,14 @@ function calc(c){
   return{contract,paid,remaining:contract-paid,cost,profit:contract-cost,margin:contract?((contract-cost)/contract*100):0,pct:contract?Math.min(100,paid/contract*100):0,upcoming};
 }
 const cur=()=>S.clients.find(c=>c._id===S.id)||null;
+const r2=n=>Math.round(n*100)/100;
+function quoteOf(fk,c){
+  const amount=N(val(fk,"quoteValue",c.quoteValue));const mode=val(fk,"quoteVatMode",c.quoteVatMode||VAT_MODES[0]);
+  let net,total;
+  if(mode==="شامل الضريبة"){total=r2(amount);net=r2(amount/(1+VAT_RATE))}else{net=r2(amount);total=r2(amount*(1+VAT_RATE))}
+  return{amount,mode,net,vat:r2(total-net),total};
+}
+function quoteCalcHtml(fk,c){const q=quoteOf(fk,c);return `<div><span>قبل الضريبة</span><b>${M(q.net)}</b></div><div><span>ضريبة القيمة المضافة <span class="num">15%</span></span><b>${M(q.vat)}</b></div><div class="tot"><span>الإجمالي شامل الضريبة</span><b>${M(q.total)}</b></div>`}
 
 /* drafts: form inputs keep their text across live re-renders */
 function val(fk,f,def){const d=S.draft[fk];return d&&f in d?d[f]:(def??"")}
@@ -276,8 +290,11 @@ function tabInfo(c){
       ${inp(fk,"contractNo","رقم العقد",c.contractNo)}
       ${inp(fk,"contractValue","قيمة العقد (ر.س)",c.contractValue,"number",'step="0.01" min="0" inputmode="decimal"')}
       ${inp(fk,"quoteNo","رقم عرض السعر",c.quoteNo)}
+      ${sel(fk,"quoteVatMode","المبلغ المدخل لعرض السعر",VAT_MODES,c.quoteVatMode||VAT_MODES[0])}
       ${inp(fk,"quoteValue","قيمة عرض السعر (ر.س)",c.quoteValue,"number",'step="0.01" min="0" inputmode="decimal"')}
     </div>
+    <div class="vatbox"><div id="quote-calc" class="vatrows">${quoteCalcHtml(fk,c)}</div>
+      ${S.canWrite?`<button data-act="quote-to-contract">اعتماد الإجمالي كقيمة العقد</button>`:""}</div>
     ${area_(fk,"notes","ملاحظات",c.notes)}
     <div class="toolbar">${S.canWrite?`<button class="primary" data-act="save-info">حفظ البيانات</button>`:""}<span style="flex:1"></span>${del("client:"+c._id,"حذف ملف العميل")}</div>
   </div>`;
@@ -430,8 +447,16 @@ async function act(el){
     const fk="info:"+c._id;const d=S.draft[fk]||{};
     if("name"in d&&!String(d.name).trim()){toast("اسم العميل مطلوب");return}
     const patch={...d};["contractValue","quoteValue"].forEach(f=>{if(f in patch)patch[f]=N(patch[f])});
+    if("quoteValue"in patch||"quoteVatMode"in patch){const q=quoteOf(fk,c);patch.quoteNet=q.net;patch.quoteVat=q.vat;patch.quoteTotal=q.total;patch.quoteVatMode=q.mode}
     if(!Object.keys(patch).length){toast("لا توجد تغييرات");return}
     if(await write(c._id,patch)){delete S.draft[fk];S.everWrote=true;render();toast("حُفظت البيانات")}
+    return;
+  }
+  if(a==="quote-to-contract"){
+    const fk="info:"+c._id;const q=quoteOf(fk,c);
+    if(!q.total){toast("أدخل قيمة عرض السعر أولاً");return}
+    const patch={contractValue:q.total,quoteValue:q.amount,quoteVatMode:q.mode,quoteNet:q.net,quoteVat:q.vat,quoteTotal:q.total};
+    if(await write(c._id,patch)){const d=S.draft[fk];if(d){delete d.contractValue;delete d.quoteValue;delete d.quoteVatMode}render();toast("قيمة العقد الآن "+money(q.total)+" ر.س شامل الضريبة")}
     return;
   }
   if(a==="save-colors"){
@@ -506,7 +531,9 @@ document.addEventListener("keydown",e=>{
     const row=e.target.closest(".addrow");if(row&&e.target.tagName==="INPUT"){const b=row.querySelector("button[data-act]");if(b){e.preventDefault();act(b)}}}
 });
 const onField=e=>{const el=e.target;
-  if(el.dataset&&el.dataset.f){const i=el.dataset.f.indexOf("|");const fk=el.dataset.f.slice(0,i),f=el.dataset.f.slice(i+1);(S.draft[fk]=S.draft[fk]||{})[f]=el.type==="checkbox"?el.checked:el.value;return}
+  if(el.dataset&&el.dataset.f){const i=el.dataset.f.indexOf("|");const fk=el.dataset.f.slice(0,i),f=el.dataset.f.slice(i+1);(S.draft[fk]=S.draft[fk]||{})[f]=el.type==="checkbox"?el.checked:el.value;
+    if(fk.startsWith("info:")&&(f==="quoteValue"||f==="quoteVatMode")){const box=document.getElementById("quote-calc");const c=cur();if(box&&c)box.innerHTML=quoteCalcHtml(fk,c)}
+    return}
   if(el.id==="q"){S.q=el.value;render();return}
   if(el.id==="statusFilter"&&e.type==="change"){S.status=el.value;render();return}
 };
