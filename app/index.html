@@ -1388,7 +1388,7 @@ const Q_TERMS=`الأسعار بالريال السعودي وغير شاملة 
 أي أعمال إضافية أو تعديلات خارج نطاق هذا العرض تُسعّر بشكل منفصل.
 لا يشمل العرض أعمال السقالات أو الرافعات أو الأعمال المدنية ما لم يُذكر صراحة.
 الضمان على أعمال الألمنيوم والإكسسوارات حسب شروط الضمان المعتمدة لدى المصنع.`;
-const Q_PAY=[{label:"دفعة مقدمة عند التعميد",pct:50},{label:"عند توريد الأعمال للموقع",pct:40},{label:"بعد التركيب والتسليم النهائي",pct:10}];
+const Q_PAY=[{label:"الدفعة الأولى - عند التعميد",pct:50},{label:"الدفعة الثانية - بعد توريد وتركيب حلوق الألمنيوم",pct:25},{label:"الدفعة الثالثة - بعد توريد الزجاج للموقع قبل بدء التركيب",pct:20},{label:"الدفعة الرابعة - بعد التشطيب والتسليم النهائي",pct:5}];
 
 function nextQuoteNo(){const y=new Date().getFullYear();let mx=1600;S.quotes.forEach(q=>{const m=new RegExp("^QTG-"+y+"-(\\d+)").exec(q.no||"");if(m)mx=Math.max(mx,+m[1])});return `QTG-${y}-${mx+1}`}
 function newQuote(){const co=CO();return{no:nextQuoteNo(),rev:0,date:today(),validDays:15,status:"مسودة",client:{name:"",phone:"",email:"",project:"",location:"الرياض - حي ",attn:""},
@@ -1445,7 +1445,7 @@ The client shall prepare the openings in their final condition (plastering and l
 Any additional works or changes outside the scope of this quotation will be priced separately.
 Scaffolding, cranes and civil works are not included unless explicitly stated.
 Warranty on aluminium works and accessories is as per the factory's approved warranty terms.`;
-const PAY_EN={"دفعة مقدمة عند التعميد":"Advance payment upon approval","عند توريد الأعمال للموقع":"Upon delivery of works to site","بعد التركيب والتسليم النهائي":"After installation and final handover"};
+const PAY_EN={"دفعة مقدمة عند التعميد":"Advance payment upon approval","عند توريد الأعمال للموقع":"Upon delivery of works to site","بعد التركيب والتسليم النهائي":"After installation and final handover","الدفعة الأولى - عند التعميد":"First payment - upon approval","الدفعة الثانية - بعد توريد وتركيب حلوق الألمنيوم":"Second payment - after supply and installation of aluminium frames","الدفعة الثالثة - بعد توريد الزجاج للموقع قبل بدء التركيب":"Third payment - after delivery of glass to site, before installation","الدفعة الرابعة - بعد التشطيب والتسليم النهائي":"Fourth payment - after finishing and final handover"};
 const TITLE_EN={"الأستاذ":"Mr.","الأستاذة":"Ms.","المهندس":"Eng.","المهندسة":"Eng.","الدكتور":"Dr.","الدكتورة":"Dr.","السادة":"Messrs."};
 const hasAr=v=>/[؀-ۿ]/.test(String(v||""));
 const enOf=(v,vEn)=>{v=String(v||"").trim();if(vEn&&String(vEn).trim())return String(vEn).trim();if(!v)return"";if(!hasAr(v))return v;const par=/\(([A-Za-z][^)]*)\)/.exec(v);if(par)return par[1].trim();return enVal(v)||""};
@@ -1583,7 +1583,7 @@ function quoteSVGs(q,logo){
     y+=14}
   const pays=(q.payTerms||[]).filter(p=>N(p.pct)>0);
   if(pays.length){ensure(44+pays.length*27);secTitle("جدول الدفعات","PAYMENT SCHEDULE");
-    pays.forEach((p,i)=>{s+=`<rect x="${X1}" y="${y}" width="${W}" height="27" fill="${i%2?"#fff":QC.soft}"/>`+T(X2-8,y+12,`${i+1}. ${p.label||""}`,{size:9,anchor:"end"})+EN(X2-8,y+22,qPayEn(p),{size:7.2})+T(X1+170,y+16,`${N(p.pct)}%`,{size:9,anchor:"end",weight:700})+T(X1+8,y+16,`${m2f(r2(t.total*N(p.pct)/100))} SAR`,{size:9,weight:600});y+=27});
+    pays.forEach((p,i)=>{s+=`<rect x="${X1}" y="${y}" width="${W}" height="27" fill="${i%2?"#fff":QC.soft}"/>`+T(X2-8,y+12,`${p.label||""}`,{size:9,anchor:"end"})+EN(X2-8,y+22,qPayEn(p),{size:7.2})+T(X1+170,y+16,`${N(p.pct)}%`,{size:9,anchor:"end",weight:700})+T(X1+8,y+16,`${m2f(r2(t.total*N(p.pct)/100))} SAR`,{size:9,weight:600});y+=27});
     const sp2=sum(pays,p=>N(p.pct));if(sp2!==100){s+=T(X2,y+12,`تنبيه: مجموع نسب الدفعات ${sp2}%`,{size:8,anchor:"end",fill:"#b0281f"});y+=6}y+=16}
   const terms=String(q.terms||"").split(/\n+/).map(x=>x.trim()).filter(Boolean);const termsE=qTermsEn(q).split(/\n+/).map(x=>x.trim()).filter(Boolean);
   if(terms.length){ensure(50);secTitle("الشروط والأحكام","TERMS & CONDITIONS");y+=6;
