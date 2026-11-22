@@ -1416,12 +1416,17 @@ const Q_TERMS_OLD=`الأسعار بالريال السعودي وغير شام�
 أي أعمال إضافية أو تعديلات خارج نطاق هذا العرض تُسعّر بشكل منفصل.
 لا يشمل العرض أعمال السقالات أو الرافعات أو الأعمال المدنية ما لم يُذكر صراحة.
 الضمان على أعمال الألمنيوم والإكسسوارات حسب شروط الضمان المعتمدة لدى المصنع.`;
-const Q_TERMS=`الأسعار بالريال السعودي وغير شاملة ضريبة القيمة المضافة 15% ما لم يُذكر خلاف ذلك.
+const Q_TERMS_V2=`الأسعار بالريال السعودي وغير شاملة ضريبة القيمة المضافة 15% ما لم يُذكر خلاف ذلك.
 المقاسات الواردة تقريبية، والمحاسبة النهائية حسب المقاسات الفعلية بعد الرفع المساحي في الموقع.
 تبدأ مدة التنفيذ من تاريخ استلام الدفعة المقدمة واعتماد المخططات والألوان والعينات.
 يلتزم العميل بتجهيز الفتحات بشكل نهائي (لياسة وتسوية) قبل موعد التركيب.
 أي أعمال إضافية أو تعديلات خارج نطاق هذا العرض تُسعّر بشكل منفصل.
 لا يشمل العرض أعمال السقالات أو الرافعات أو الأعمال المدنية ما لم يُذكر صراحة.`;
+const Q_TERMS=`المقاسات الواردة تقريبية، والمحاسبة النهائية حسب المقاسات الفعلية على الطبيعة، ويتم التمتير النهائي بعد التشطيب والتسليم.
+تبدأ مدة التنفيذ من تاريخ استلام الدفعة المقدمة واعتماد المخططات والألوان والعينات.
+يلتزم العميل بتجهيز الفتحات بشكل نهائي (لياسة ومعجون) قبل موعد رفع المقاسات النهائية للتصنيع.
+الضمان على أعمال الألمنيوم والزجاج والإكسسوارات حسب شروط الضمان المعتمدة لدى المصنع.
+أي أعمال إضافية أو تعديلات خارج نطاق هذا العرض تُسعّر بشكل منفصل.`;
 const Q_PAY=[{label:"الدفعة الأولى - عند التعميد",pct:50},{label:"الدفعة الثانية - بعد توريد وتركيب حلوق الألمنيوم",pct:25},{label:"الدفعة الثالثة - بعد توريد الزجاج للموقع قبل بدء التركيب",pct:20},{label:"الدفعة الرابعة - بعد التشطيب والتسليم النهائي",pct:5}];
 
 function nextQuoteNo(){const y=new Date().getFullYear();let mx=1600;S.quotes.forEach(q=>{const m=new RegExp("^QTG-"+y+"-(\\d+)").exec(q.no||"");if(m)mx=Math.max(mx,+m[1])});return `QTG-${y}-${mx+1}`}
@@ -1479,12 +1484,17 @@ The client shall prepare the openings in their final condition (plastering and l
 Any additional works or changes outside the scope of this quotation will be priced separately.
 Scaffolding, cranes and civil works are not included unless explicitly stated.
 Warranty on aluminium works and accessories is as per the factory's approved warranty terms.`;
-const Q_TERMS_EN=`Prices are in Saudi Riyals and exclude 15% VAT unless stated otherwise.
+const Q_TERMS_EN_V2=`Prices are in Saudi Riyals and exclude 15% VAT unless stated otherwise.
 Sizes are approximate; final billing is based on actual dimensions measured on site.
 Execution period starts from receipt of the advance payment and approval of drawings, colours and samples.
 The client shall prepare the openings in their final condition (plastering and levelling) before installation.
 Any additional works or changes outside the scope of this quotation will be priced separately.
 Scaffolding, cranes and civil works are not included unless explicitly stated.`;
+const Q_TERMS_EN=`Sizes are approximate; final billing is based on actual site dimensions, with the final measurement taken after finishing and handover.
+Execution period starts from receipt of the advance payment and approval of drawings, colours and samples.
+The client shall prepare the openings in their final condition (plastering and putty) before the final measurements for manufacturing are taken.
+Warranty on aluminium, glass and accessories works is as per the factory's approved warranty terms.
+Any additional works or changes outside the scope of this quotation will be priced separately.`;
 const PAY_EN={"دفعة مقدمة عند التعميد":"Advance payment upon approval","عند توريد الأعمال للموقع":"Upon delivery of works to site","بعد التركيب والتسليم النهائي":"After installation and final handover","الدفعة الأولى - عند التعميد":"First payment - upon approval","الدفعة الثانية - بعد توريد وتركيب حلوق الألمنيوم":"Second payment - after supply and installation of aluminium frames","الدفعة الثالثة - بعد توريد الزجاج للموقع قبل بدء التركيب":"Third payment - after delivery of glass to site, before installation","الدفعة الرابعة - بعد التشطيب والتسليم النهائي":"Fourth payment - after finishing and final handover"};
 const TITLE_EN={"الأستاذ":"Mr.","الأستاذة":"Ms.","المهندس":"Eng.","المهندسة":"Eng.","الدكتور":"Dr.","الدكتورة":"Dr.","السادة":"Messrs."};
 const hasAr=v=>/[؀-ۿ]/.test(String(v||""));
@@ -1492,7 +1502,7 @@ const enOf=(v,vEn)=>{v=String(v||"").trim();if(vEn&&String(vEn).trim())return St
 const BANK_EN=[[/الراجحي/,"Al Rajhi Bank"],[/الأهلي|الاهلي/,"Saudi National Bank (SNB)"],[/الرياض/,"Riyad Bank"],[/الإنماء|الانماء/,"Alinma Bank"],[/البلاد/,"Bank Albilad"],[/ساب|البريطاني/,"SAB"],[/العربي/,"Arab National Bank"],[/الجزيرة/,"Bank AlJazira"],[/الفرنسي/,"Banque Saudi Fransi"],[/الاستثمار/,"Saudi Investment Bank"]];
 const bankEn=v=>{v=String(v||"");if(!hasAr(v))return v;const m=BANK_EN.find(([r])=>r.test(v));return m?m[1]:""};
 const qSaluteEn=q=>{const n=enOf(q.client?.name,q.client?.nameEn);return n?`${TITLE_EN[qTitle(q)]||""} ${n}`.trim():""};
-const qTermsEn=q=>{if(q.termsEn&&String(q.termsEn).trim())return String(q.termsEn);const t=String(q.terms||"").trim();if(t===Q_TERMS.trim())return Q_TERMS_EN;if(t===Q_TERMS_OLD.trim())return Q_TERMS_EN_OLD;return""};
+const qTermsEn=q=>{if(q.termsEn&&String(q.termsEn).trim())return String(q.termsEn);const t=String(q.terms||"").trim();if(t===Q_TERMS.trim())return Q_TERMS_EN;if(t===Q_TERMS_OLD.trim())return Q_TERMS_EN_OLD;if(t===Q_TERMS_V2.trim())return Q_TERMS_EN_V2;return""};
 const qPayEn=p=>p.labelEn||PAY_EN[String(p.label||"").trim()]||(hasAr(p.label)?"":p.label||"");
 const EN1=["","One","Two","Three","Four","Five","Six","Seven","Eight","Nine","Ten","Eleven","Twelve","Thirteen","Fourteen","Fifteen","Sixteen","Seventeen","Eighteen","Nineteen"];
 const EN10=["","","Twenty","Thirty","Forty","Fifty","Sixty","Seventy","Eighty","Ninety"];
