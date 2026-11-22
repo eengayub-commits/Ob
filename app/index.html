@@ -319,6 +319,8 @@ function tabInfo(c){
       ${sel(fk,"status","حالة الملف",STATUSES,c.status||"تم التعميد")}
       ${inp(fk,"phone","رقم الجوال",c.phone,"tel")}
       ${inp(fk,"location","الموقع / الحي",c.location)}
+      ${inp(fk,"nameEn","اسم العميل بالإنجليزي (للمخططات)",c.nameEn,"text",'dir="ltr"')}
+      ${inp(fk,"locationEn","الموقع بالإنجليزي (للمخططات)",c.locationEn,"text",'dir="ltr"')}
       ${inp(fk,"locationUrl","رابط الموقع (خرائط Google)",c.locationUrl,"url",'placeholder="https://maps.app.goo.gl/…" dir="ltr"')}
       ${inp(fk,"clientVat","الرقم الضريبي للعميل (إن وجد)",c.clientVat)}
       ${inp(fk,"contractNo","رقم العقد",c.contractNo)}
@@ -914,8 +916,8 @@ function elevation(it,X0,Y0,AW,AH){
     const n=kind==="sliding3"?3:2;const swd=(iw+(n-1)*ov)/n;
     for(let i=0;i<n;i++){const sxp=ix+i*(swd-ov);g+=sashBox(sxp,iy,swd,ih,s);sashes.push([sxp,swd])}
     sashes.forEach(([sxp,swd],i)=>{const cy=iy+ih/2,a=Math.min(swd*.3,60);g+=i%2===0?arrowH(sxp+swd/2-a/2,sxp+swd/2+a/2,cy):arrowH(sxp+swd/2+a/2,sxp+swd/2-a/2,cy)});
-    g+=T(ix+iw/2,iy+ih-8,kind==="slidingdoor"?"SLIDING DOOR":"SL",{size:9,anchor:"middle",fill:"#555"});
-  }else if(kind==="fixed"){g+=glassPane(ix,iy,iw,ih)+T(ix+iw/2,iy+ih/2+5,"F / ثابت",{size:13,anchor:"middle",fill:"#555",weight:600})}
+    
+  }else if(kind==="fixed"){g+=glassPane(ix,iy,iw,ih)+T(ix+iw/2,iy+ih/2+5,"F (FIXED)",{size:13,anchor:"middle",fill:"#555",weight:600})}
   else{
     const leaves=kind==="casement2"||kind==="door2"?2:1;const gap=2,lw=(iw-(leaves-1)*gap)/leaves;
     for(let i=0;i<leaves;i++){
@@ -935,49 +937,45 @@ function elevation(it,X0,Y0,AW,AH){
 }
 const sashesSplit=k=>k==="sliding2"||k==="sliding3"||k==="slidingdoor"||k==="casement2"||k==="door2";
 
+function enOnly(v){v=String(v||"").trim();if(!v)return"";const m=v.split(/\s+\/\s+/);if(m.length===2&&/[؀-ۿ]/.test(m[0])&&!/[؀-ۿ]/.test(m[1]))return m[1];if(!/[؀-ۿ]/.test(v))return v;
+  const lat=v.match(/[A-Za-z][A-Za-z0-9 .,+()\-\/]*[A-Za-z0-9)]/g);const t=enVal(v);if(t)return t;if(lat&&lat.join(" ").length>=3)return lat.join(" ").trim();return v}
 function sheetSVG(c,it,idx,total){
-  const kd=KINDS[it.kind]||KINDS.sliding2;const P=itemProfiles(it);
+  const kd=KINDS[it.kind]||KINDS.sliding2;const P=itemProfiles(it);const U=x=>String(x||"").toUpperCase();
   let s=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1190 842" width="1190" height="842"><rect x="0" y="0" width="1190" height="842" fill="#fff"/>`;
   s+=R(14,14,1162,814,{sw:1.4})+R(22,22,1146,798,{sw:.6});
-  // drawing area
-  s+=T(40,52,it.ref||"—",{size:24,weight:700})+T(40,72,`${kd[1]}`,{size:11,fill:"#444"});
-  s+=T(756,52,it.ref?`${kd[0]}`:"",{size:14,anchor:"end",weight:600})+T(756,72,"منظر من الخارج - VIEW FROM OUTSIDE",{size:9.5,anchor:"end",fill:"#666"});
+  s+=T(40,52,it.ref||"-",{size:24,weight:700})+T(40,72,U(kd[1])+(it.title&&enOnly(it.title)?`  |  ${U(enOnly(it.title))}`:""),{size:11,fill:"#444"});
+  s+=T(756,52,"ELEVATION",{size:13,anchor:"end",weight:700})+T(756,72,"VIEW FROM OUTSIDE",{size:9.5,anchor:"end",fill:"#666"});
   s+=elevation(it,70,105,600,480);
-  s+=T(40,676,"جميع المقاسات بالمليمتر - ALL DIMENSIONS IN MM",{size:9.5,fill:"#444"})+T(40,690,"المقاسات النهائية تُعتمد بعد رفع مقاسات الموقع - FINAL SIZES SUBJECT TO SITE MEASUREMENT",{size:9.5,fill:"#444"});
-  // spec panel
-  const PX=772,PR=1160,PW=PR-PX;let y=22;
+  s+=T(40,676,"ALL DIMENSIONS ARE IN MILLIMETRES (MM)",{size:9.5,fill:"#444"})+T(40,690,"FINAL SIZES SUBJECT TO SITE MEASUREMENT",{size:9.5,fill:"#444"});
+  const PX=772,PR=1160;let y=22;
   s+=L(PX-6,22,PX-6,700,{sw:1});
-  s+=`<rect x="${PX-6}" y="22" width="${PR-PX+14}" height="30" fill="#1d5d78"/>`+T(PR,42,"المواصفات",{size:13,anchor:"end",weight:700,fill:"#fff"})+T(PX+2,42,"SPECIFICATIONS",{size:12,weight:700,fill:"#fff"});y=52;
-  const row=(ar,en,var_,ven,h=33)=>{let r=T(PR,y+13,ar,{size:9.5,anchor:"end",weight:700,fill:"#1d5d78"})+T(PX+2,y+13,en,{size:9,weight:700,fill:"#1d5d78"});
-    r+=T(PR,y+27,var_||"—",{size:10.5,anchor:"end"})+(ven?T(PX+2,y+27,ven,{size:10}):"");r+=L(PX-6,y+h,PR+8,y+h,{stroke:"#ccc",sw:.6});y+=h;return r};
-  s+=row("النوع","TYPE",kd[0]+(it.title?` - ${it.title}`:""),kd[1]);
-  s+=row("المقاس (عرض × ارتفاع)","SIZE (W x H)",`عرض ${N(it.w)} × ارتفاع ${N(it.h)} مم`,`${N(it.w)} x ${N(it.h)} mm`);
-  s+=row("العدد / الموقع","QTY / LOCATION",`${N(it.qty)||1}${it.location?" - "+it.location:""}`,`${N(it.qty)||1} No.${it.location&&enVal(it.location)?" - "+enVal(it.location):""}`);
-  const bi=v=>{v=String(v||"");const m=v.split(/\s+\/\s+/);if(m.length===2&&!/[\u0600-\u06FF]/.test(m[1]))return[m[0],m[1]];return[v,enVal(v)]};
-  const rowV=(ar,en,v)=>{const[a,e]=bi(v);return row(ar,en,a,e)};
-  s+=rowV("نظام الألمنيوم","ALUMINIUM SYSTEM",it.system);
-  // profiles
-  s+=`<rect x="${PX-6}" y="${y}" width="${PR-PX+14}" height="20" fill="#eef3f6"/>`+T(PR,y+14,"القطاعات والسماكة",{size:9.5,anchor:"end",weight:700,fill:"#1d5d78"})+T(PX+2,y+14,"PROFILES & WALL THICKNESS",{size:9,weight:700,fill:"#1d5d78"});y+=20;
-  (P.length?P:[{ar:"—",en:"",thk:""}]).slice(0,8).forEach(p=>{s+=T(PR,y+13,p.ar.replace(/\s*\d+(?:\.\d+)?\s*مم\s*$/,"")+(p.thk?` · سماكة ${p.thk} مم`:""),{size:9,anchor:"end"})+T(PX+2,y+25,`${p.en}${p.thk?` - t = ${p.thk} mm`:""}`,{size:8.6,fill:"#333"})+L(PX-6,y+30,PR+8,y+30,{stroke:"#e2e2e2",sw:.5});y+=30});
-  const pc=[it.paintColor,it.paintCode,it.paintFinish].filter(Boolean).map(bi);
-  s+=row("لون الدهان","PAINT COLOUR",pc.map(x=>x[0]).join(" - "),pc.map(x=>x[1]).filter(Boolean).join(" - "));
-  s+=rowV("نوع الإكسسوارات","ACCESSORIES TYPE",it.accType);
-  s+=rowV("لون الإكسسوارات","ACCESSORIES COLOUR",it.accColor);
-  s+=rowV("نوع الزجاج","GLASS TYPE",it.glassType);
-  {const[a,e]=bi(it.glassThk);s+=row("سماكة الزجاج","GLASS THICKNESS",a,e||String(a||"").replace(/\s*مم/,"mm"))}
-  s+=rowV("لون الزجاج","GLASS COLOUR",it.glassColor);
-  if(it.note&&y<668)s+=rowV("ملاحظات","NOTES",it.note);
-  // title block
+  s+=`<rect x="${PX-6}" y="22" width="${PR-PX+14}" height="30" fill="#1d5d78"/>`+T(PX+2,42,"SPECIFICATIONS",{size:12.5,weight:700,fill:"#fff"});y=52;
+  const row=(label,val)=>{const lines=wrapText(val||"-",64).slice(0,3);const h=20+lines.length*13;let r=T(PX+2,y+13,label,{size:9,weight:700,fill:"#1d5d78"});
+    lines.forEach((l,i)=>{r+=T(PX+2,y+27+i*13,l,{size:10})});r+=L(PX-6,y+h,PR+8,y+h,{stroke:"#ccc",sw:.6});y+=h;return r};
+  s+=row("TYPE",U(kd[1]));
+  s+=row("SIZE (W x H)",`${N(it.w)} x ${N(it.h)} MM`);
+  s+=row("QTY / LOCATION",`${N(it.qty)||1} NO.${it.location?" - "+U(enOnly(it.location)):""}`);
+  s+=row("ALUMINIUM SYSTEM",U(enOnly(it.system)));
+  s+=`<rect x="${PX-6}" y="${y}" width="${PR-PX+14}" height="20" fill="#eef3f6"/>`+T(PX+2,y+14,"PROFILES & WALL THICKNESS",{size:9,weight:700,fill:"#1d5d78"});y+=20;
+  (P.length?P:[{en:"-",thk:""}]).slice(0,8).forEach(p=>{const t=it.profileThk||p.thk;s+=T(PX+2,y+15,U(p.en),{size:9.2})+(t?T(PR,y+15,`t = ${t} MM`,{size:9.2,anchor:"end",weight:600}):"")+L(PX-6,y+22,PR+8,y+22,{stroke:"#e2e2e2",sw:.5});y+=22});
+  s+=row("PAINT COLOUR / FINISH",[enOnly(it.paintColor),it.paintCode,enOnly(it.paintFinish)].filter(Boolean).map(U).join(" - "));
+  s+=row("ACCESSORIES TYPE",U(enOnly(it.accType)));
+  s+=row("ACCESSORIES COLOUR",U(enOnly(it.accColor)));
+  s+=row("GLASS TYPE",U(enOnly(it.glassType)));
+  s+=row("GLASS THICKNESS",U(enOnly(it.glassThk).replace(/\s*مم|ملم/g," MM")));
+  s+=row("GLASS COLOUR",U(enOnly(it.glassColor)));
+  if(it.note&&y<660)s+=row("NOTES",U(enOnly(it.note)));
   const TY=700;s+=L(22,TY,1168,TY,{sw:1.2});
-  const cols=[[22,250],[250,560],[560,800],[800,960],[960,1168]];cols.slice(1).forEach(([a])=>{s+=L(a,TY,a,820,{sw:.8})});
+  [[250],[560],[800],[960]].forEach(([a])=>{s+=L(a,TY,a,820,{sw:.8})});
   s+=`<rect x="34" y="${TY+14}" width="26" height="26" rx="5" fill="#1d5d78"/><rect x="40" y="${TY+20}" width="14" height="14" fill="none" stroke="#fff" stroke-width="2"/>`;
-  s+=T(240,TY+28,"برج القمة للأعمال المعدنية",{size:12,anchor:"end",weight:700})+T(68,TY+48,"BURJ AL-QIMMA METAL WORKS",{size:9.5,weight:700})+T(34,TY+68,"Aluminium & Glass Works",{size:9,fill:"#555"})+T(34,TY+86,"أعمال الألمنيوم والزجاج",{size:9,fill:"#555"});
-  s+=T(550,TY+20,"العميل / المشروع",{size:8.5,anchor:"end",fill:"#666"})+T(260,TY+20,"CLIENT / PROJECT",{size:8.5,fill:"#666"})+T(550,TY+40,c.name||"—",{size:12,anchor:"end",weight:700})+T(550,TY+60,c.location||"",{size:10,anchor:"end"})+T(260,TY+80,`File No. ${c.fileNo||"—"}`,{size:10})+T(550,TY+80,`ملف رقم ${iso(c.fileNo||"—")}`,{size:10,anchor:"end"});
-  s+=T(790,TY+20,"عنوان المخطط",{size:8.5,anchor:"end",fill:"#666"})+T(570,TY+20,"DRAWING TITLE",{size:8.5,fill:"#666"})+T(790,TY+42,`مخطط تنفيذي مبدئي - ${it.ref||""}`,{size:11.5,anchor:"end",weight:700})+T(570,TY+62,`PRELIMINARY SHOP DRAWING - ${it.ref||""}`,{size:10,weight:700})+T(570,TY+82,kd[1],{size:9,fill:"#444"});
-  const info=[["DATE / التاريخ",today()],["SCALE / المقياس","N.T.S"],["REV / المراجعة",String(it.rev||0)],["SHEET / اللوحة",`${idx} / ${total}`]];
-  info.forEach(([l,v],i)=>{const yy=TY+22+i*25;s+=T(810,yy,l,{size:8.5,fill:"#666"})+T(950,yy,iso(v),{size:10,anchor:"end",weight:600})});
-  s+=`<rect x="970" y="${TY+10}" width="188" height="24" fill="#fbecd5" stroke="#a96300" stroke-width=".8"/>`+T(1064,TY+27,"للاعتماد - FOR APPROVAL",{size:10.5,anchor:"middle",weight:700,fill:"#a96300"});
-  s+=T(1158,TY+54,"اعتماد العميل:",{size:9,anchor:"end"})+T(972,TY+54,"Client approval:",{size:9})+L(972,TY+78,1158,TY+78,{sw:.6,dash:"3 3"})+T(1158,TY+96,"التوقيع والتاريخ",{size:8.5,anchor:"end",fill:"#666"})+T(972,TY+96,"Signature & date",{size:8.5,fill:"#666"});
+  s+=T(68,TY+26,"BURJ AL-QIMMA",{size:11.5,weight:700})+T(68,TY+42,"METAL WORKS",{size:10,weight:700})+T(34,TY+66,"ALUMINIUM & GLASS WORKS",{size:9,fill:"#555"});
+  const cn=c.nameEn||enOnly(c.name)||c.name,cl=c.locationEn||enOnly(c.location)||"";
+  s+=T(260,TY+20,"CLIENT / PROJECT",{size:8.5,fill:"#666"})+T(260,TY+42,U(cn)||"-",{size:12,weight:700})+T(260,TY+60,U(cl),{size:10})+T(260,TY+82,`FILE NO. ${c.fileNo||"-"}${c.contractNo&&!/[؀-ۿ]/.test(c.contractNo)?`   |   CONTRACT NO. ${c.contractNo}`:""}`,{size:9.5});
+  s+=T(570,TY+20,"DRAWING TITLE",{size:8.5,fill:"#666"})+T(570,TY+42,"PRELIMINARY SHOP DRAWING",{size:11,weight:700})+T(570,TY+60,`ITEM ${it.ref||""}`,{size:11,weight:700})+T(570,TY+80,U(kd[1]),{size:9,fill:"#444"});
+  const info=[["DATE",today()],["SCALE","N.T.S"],["REVISION",String(it.rev||0)],["SHEET",`${idx} OF ${total}`]];
+  info.forEach(([l,v],i)=>{const yy=TY+22+i*25;s+=T(810,yy,l,{size:8.5,fill:"#666"})+T(950,yy,v,{size:10,anchor:"end",weight:600})});
+  s+=`<rect x="970" y="${TY+10}" width="188" height="24" fill="#fbecd5" stroke="#a96300" stroke-width=".8"/>`+T(1064,TY+27,"FOR APPROVAL",{size:10.5,anchor:"middle",weight:700,fill:"#a96300"});
+  s+=T(972,TY+54,"CLIENT APPROVAL:",{size:9})+L(972,TY+78,1158,TY+78,{sw:.6,dash:"3 3"})+T(972,TY+96,"SIGNATURE & DATE",{size:8.5,fill:"#666"});
   return s+"</svg>";
 }
 
@@ -1042,7 +1040,7 @@ function shF(it,f,label,w="",type="text"){return `<label class="fld">${label}<in
 function tabShop(c){
   const items=(c.shop&&c.shop.items)||[];const st=S.ex["shop:"+c._id]||{};
   const bar=`<div class="card"><h3>المخططات التنفيذية المبدئية (Shop Drawings)</h3>
-    <p class="small muted" style="margin:0">لوحة A3 لكل شباك أو باب: الواجهة بالمقاسات ورمز الفتح، وجدول مواصفات عربي وإنجليزي (القطاعات وسماكتها، لون الدهان، الإكسسوارات ولونها، نوع الزجاج وسماكته ولونه). المواصفات تُؤخذ من «اعتماد الألوان» ومن قالب الحساب، وتقدر تعدّل كل لوحة.</p>
+    <p class="small muted" style="margin:0">لوحة A3 بالإنجليزي لكل شباك أو باب: الواجهة بالمقاسات ورمز الفتح، وجدول مواصفات (القطاعات وسماكتها، لون الدهان، الإكسسوارات ولونها، نوع الزجاج وسماكته ولونه). المواصفات تُؤخذ من «اعتماد الألوان» ومن قالب الحساب، وتقدر تعدّل كل لوحة.</p>
     <div class="toolbar">
       ${S.canWrite?(st.busy?`<span class="spin" aria-hidden="true"></span><span class="small">${esc(st.msg||"")}</span><button data-act="shop-stop">إيقاف</button>`:`${S.sample?`<button class="primary" data-act="shop-quote">إنشاء من عرض السعر</button>`:""}<button data-act="shop-meas">إنشاء من المقاسات</button><button data-act="shop-add">+ لوحة فارغة</button>${items.length?`<button data-act="shop-apply">تطبيق مواصفات الاعتماد على الكل</button>`:""}`):""}
       ${items.length?`<button data-act="shop-pdf" ${S.pdfBusy?"disabled":""}>${S.pdfBusy?"جارٍ إنشاء PDF…":"تنزيل PDF"}</button>${S.canWrite&&S.assets?`<button data-act="shop-save" ${S.pdfBusy?"disabled":""}>حفظ PDF في ملف العميل</button>`:""}`:""}
@@ -1062,9 +1060,9 @@ function tabShop(c){
         <label class="fld">قطاعات القالب<select data-sh="${esc(it.id)}|recipe" ${S.canWrite?"":"disabled"}>${recOpts(it.recipe)}</select></label>
         ${shF(it,"system","نظام الألمنيوم")}${shF(it,"paintColor","لون الدهان")}${shF(it,"paintCode","كود اللون RAL")}${shF(it,"paintFinish","نوع الدهان")}
         ${shF(it,"accType","نوع الإكسسوارات")}${shF(it,"accColor","لون الإكسسوارات")}${shF(it,"glassType","نوع الزجاج")}${shF(it,"glassThk","سماكة الزجاج")}${shF(it,"glassColor","لون الزجاج")}
-        ${shF(it,"rev","رقم المراجعة","","number")}${shF(it,"note","ملاحظات")}
+        ${shF(it,"profileThk","سماكة القطاعات مم (تغطي سماكة القالب)")}${shF(it,"rev","رقم المراجعة","","number")}${shF(it,"note","ملاحظات")}
       </div>
-      <p class="small muted" style="margin:6px 0 0">الترجمة الإنجليزية تلقائية للكلمات الشائعة. إذا ما ظهرت ترجمة، اكتب القيمة بالشكل: «رمادي غامق / Dark grey».</p>
+      <p class="small muted" style="margin:6px 0 0">اللوحات تُطبع بالإنجليزي. اكتب القيم بالإنجليزي مباشرة، أو بالعربي والإنجليزي بالشكل: «رمادي غامق / Dark grey». الكلمات الشائعة تُترجم تلقائياً.</p>
     </details></div>`).join("");
 }
 async function shopMutate(c,fn){const sh=clone(c.shop||{items:[]});sh.items=fn(sh.items)||sh.items;return write(c._id,{shop:sh})}
