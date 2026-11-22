@@ -1389,7 +1389,7 @@ const Q_TERMS=`الأسعار بالريال السعودي وغير شاملة 
 الضمان على أعمال الألمنيوم والإكسسوارات حسب شروط الضمان المعتمدة لدى المصنع.`;
 const Q_PAY=[{label:"دفعة مقدمة عند التعميد",pct:50},{label:"عند توريد الأعمال للموقع",pct:40},{label:"بعد التركيب والتسليم النهائي",pct:10}];
 
-function nextQuoteNo(){const y=new Date().getFullYear();let mx=0;S.quotes.forEach(q=>{const m=new RegExp("^Q-"+y+"-(\\d+)").exec(q.no||"");if(m)mx=Math.max(mx,+m[1])});return `Q-${y}-${String(mx+1).padStart(4,"0")}`}
+function nextQuoteNo(){const y=new Date().getFullYear();let mx=1600;S.quotes.forEach(q=>{const m=new RegExp("^QTG-"+y+"-(\\d+)").exec(q.no||"");if(m)mx=Math.max(mx,+m[1])});return `QTG-${y}-${mx+1}`}
 function newQuote(){const co=CO();return{no:nextQuoteNo(),rev:0,date:today(),validDays:15,status:"مسودة",client:{name:"",phone:"",email:"",project:"",location:"الرياض - حي ",attn:""},
   items:[{id:uid(),ref:"W1",type:"sliding2",sys:"saraya",desc:"",w:0,h:0,qty:1,pricing:"m2",price:defPrice("sliding2","saraya"),addon:0}],minArea:1,discount:0,
   specs:{system:"سرايا 10 سم",profileThk:"1.5 مم",paintColor:"",paintCode:"",paintFinish:"دهان بودرة (Powder coated)",glassType:"دبل سكوريت",glassThk:"24 مم (6+12+6)",glassColor:"شفاف",accType:"",accColor:"",screen:"شبك ألمنيوم مع درفة سلك"},
