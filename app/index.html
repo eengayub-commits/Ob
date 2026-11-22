@@ -1533,7 +1533,7 @@ function quoteSVGs(q,logo){
   y+=bh+14;
   s+=T(X2,y,"يسرّنا أن نتقدم لكم بعرض سعر لتصنيع وتوريد وتركيب الأعمال التالية شاملاً جميع الإكسسوارات وأصول التركيب:",{size:9.5,anchor:"end"});
   s+=EN(X2,y+11,"We are pleased to quote for the manufacture, supply and installation of the following works, including all accessories and proper installation:",{size:7.4});y+=21;
-  const C=[["#","No.",20],["الشكل","Elevation",42],["الدور","Floor",30],["البند والوصف","Item & description",130],["العدد","Qty",32],["العرض","Width",48],["الارتفاع","Height",48],["المساحة (م2)","Area (m²)",54],["سعر الوحدة","Unit price",62],["الإجمالي","Total (SAR)",69]];
+  const C=[["#","No.",20],["الشكل","Elevation",42],["الدور","Floor",30],["البند والوصف","Item & description",130],["العدد","Qty",32],["العرض","Width",48],["الارتفاع","Height",48],["الوحدة (م2)","Unit (m²)",54],["سعر الوحدة","Unit price",62],["الإجمالي","Total (SAR)",69]];
   function thead(){const HH=48;s+=`<rect x="${X1}" y="${y}" width="${W}" height="${HH}" rx="3" fill="${QC.teal}"/>`;let x=X2;
     C.forEach(([l,e,w],ci)=>{if(ci===5||ci===6){s+=T(x-5,y+36,l,{size:7.8,anchor:"end",weight:700,fill:"#fff"})+EN(x-5,y+44,e,{size:6.4,fill:"#d7e7ef"});
         if(ci===5){const gx=x,gw=C[5][2]+C[6][2];s+=T(gx-gw/2,y+12,"المقاس (مم)",{size:8.3,anchor:"middle",weight:700,fill:"#fff"})+EN(gx-gw/2,y+21,"Size (mm)",{size:6.6,fill:"#d7e7ef",anchor:"middle"})+L(gx-gw+4,y+25,gx-4,y+25,{stroke:"#7fa9bc",sw:.6})}}
