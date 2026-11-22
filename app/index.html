@@ -1379,13 +1379,14 @@ const Q_TERMS=`الأسعار بالريال السعودي وغير شاملة 
 const Q_PAY=[{label:"دفعة مقدمة عند التعميد",pct:50},{label:"عند توريد الأعمال للموقع",pct:40},{label:"بعد التركيب والتسليم النهائي",pct:10}];
 
 function nextQuoteNo(){const y=new Date().getFullYear();let mx=0;S.quotes.forEach(q=>{const m=new RegExp("^Q-"+y+"-(\\d+)").exec(q.no||"");if(m)mx=Math.max(mx,+m[1])});return `Q-${y}-${String(mx+1).padStart(4,"0")}`}
-function newQuote(){const co=CO();return{no:nextQuoteNo(),rev:0,date:today(),validDays:15,status:"مسودة",client:{name:"",phone:"",email:"",project:"",location:"",attn:""},
+function newQuote(){const co=CO();return{no:nextQuoteNo(),rev:0,date:today(),validDays:15,status:"مسودة",client:{name:"",phone:"",email:"",project:"",location:"الرياض - حي ",attn:""},
   items:[{id:uid(),ref:"W1",type:"sliding2",desc:"",w:1500,h:1200,qty:1,pricing:"m2",price:0}],minArea:0,discount:0,
   specs:{system:"سرايا 10 سم",profileThk:"1.5 مم",paintColor:"",paintCode:"",paintFinish:"دهان بودرة (Powder coated)",glassType:"دبل سكوريت",glassThk:"24 مم (6+12+6)",glassColor:"شفاف",accType:"",accColor:"",screen:"شبك ألمنيوم مع درفة سلك"},
   deliveryDays:30,payTerms:clone(Q_PAY),terms:Q_TERMS,notes:"",preparedBy:"",preparedRole:"قسم المبيعات",createdAt:new Date().toISOString()}}
 const Q_TITLES=["الأستاذ","الأستاذة","المهندس","المهندسة","الدكتور","الدكتورة","السادة"];
 const isCompanyName=n=>/^(شركة|مؤسسة|مجموعة|مكتب|مصنع|مستشفى|مدارس|جمعية|وزارة|هيئة|أمانة|بلدية)|مقاولات|للمقاولات|المحدودة|التجارية|القابضة/.test(String(n||"").trim());
 function qTitle(q){const c=q.client||{};return c.title||(isCompanyName(c.name)?"السادة":"الأستاذ")}
+function locFmt(v){v=String(v||"").trim();if(/^الرياض\s*-\s*حي$/.test(v))return "الرياض";return v}
 function qSalute(q){const n=String(q.client?.name||"").trim();return n?`عناية ${qTitle(q)}/ ${n}`:"—"}
 function qLine(q,it){const area=N(it.w)*N(it.h)/1e6;const a1=Math.max(area,N(q.minArea));const qty=N(it.qty)||1;
   const totalArea=it.type==="other"&&!(N(it.w)&&N(it.h))?0:a1*qty;
@@ -1412,10 +1413,73 @@ async function logoHref(forPdf){const id=CO().logo;if(!id)return"";if(!forPdf)re
 /* --- quotation PDF pages (A4 595x842) --- */
 const m2f=n=>N(n).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
 const QC={ink:"#16202a",teal:"#1d5d78",bronze:"#8f6234",soft:"#eef3f6",line:"#d5dde3",muted:"#5d6b77"};
+/* --- bilingual helpers for the quotation --- */
+const Q_TERMS_EN=`Prices are in Saudi Riyals and exclude 15% VAT unless stated otherwise.
+Sizes are approximate; final billing is based on actual dimensions measured on site.
+Execution period starts from receipt of the advance payment and approval of drawings, colours and samples.
+The client shall prepare the openings in their final condition (plastering and levelling) before installation.
+Any additional works or changes outside the scope of this quotation will be priced separately.
+Scaffolding, cranes and civil works are not included unless explicitly stated.
+Warranty on aluminium works and accessories is as per the factory's approved warranty terms.`;
+const PAY_EN={"دفعة مقدمة عند التعميد":"Advance payment upon approval","عند توريد الأعمال للموقع":"Upon delivery of works to site","بعد التركيب والتسليم النهائي":"After installation and final handover"};
+const TITLE_EN={"الأستاذ":"Mr.","الأستاذة":"Ms.","المهندس":"Eng.","المهندسة":"Eng.","الدكتور":"Dr.","الدكتورة":"Dr.","السادة":"Messrs."};
+const hasAr=v=>/[؀-ۿ]/.test(String(v||""));
+const enOf=(v,vEn)=>{v=String(v||"").trim();if(vEn&&String(vEn).trim())return String(vEn).trim();if(!v)return"";if(!hasAr(v))return v;const par=/\(([A-Za-z][^)]*)\)/.exec(v);if(par)return par[1].trim();return enVal(v)||""};
+const BANK_EN=[[/الراجحي/,"Al Rajhi Bank"],[/الأهلي|الاهلي/,"Saudi National Bank (SNB)"],[/الرياض/,"Riyad Bank"],[/الإنماء|الانماء/,"Alinma Bank"],[/البلاد/,"Bank Albilad"],[/ساب|البريطاني/,"SAB"],[/العربي/,"Arab National Bank"],[/الجزيرة/,"Bank AlJazira"],[/الفرنسي/,"Banque Saudi Fransi"],[/الاستثمار/,"Saudi Investment Bank"]];
+const bankEn=v=>{v=String(v||"");if(!hasAr(v))return v;const m=BANK_EN.find(([r])=>r.test(v));return m?m[1]:""};
+const qSaluteEn=q=>{const n=enOf(q.client?.name,q.client?.nameEn);return n?`${TITLE_EN[qTitle(q)]||""} ${n}`.trim():""};
+const qTermsEn=q=>{if(q.termsEn&&String(q.termsEn).trim())return String(q.termsEn);if(String(q.terms||"").trim()===Q_TERMS.trim())return Q_TERMS_EN;return""};
+const qPayEn=p=>p.labelEn||PAY_EN[String(p.label||"").trim()]||(hasAr(p.label)?"":p.label||"");
+const EN1=["","One","Two","Three","Four","Five","Six","Seven","Eight","Nine","Ten","Eleven","Twelve","Thirteen","Fourteen","Fifteen","Sixteen","Seventeen","Eighteen","Nineteen"];
+const EN10=["","","Twenty","Thirty","Forty","Fifty","Sixty","Seventy","Eighty","Ninety"];
+function en3(n){const h=Math.floor(n/100),r=n%100,p=[];if(h)p.push(EN1[h]+" Hundred");if(r)p.push(r<20?EN1[r]:EN10[Math.floor(r/10)]+(r%10?"-"+EN1[r%10]:""));return p.join(" ")}
+function enWords(n){n=Math.floor(n);if(!n)return"Zero";const p=[];[[1e9,"Billion"],[1e6,"Million"],[1e3,"Thousand"]].forEach(([d,w])=>{const k=Math.floor(n/d);if(k){p.push(en3(k)+" "+w);n%=d}});if(n)p.push(en3(n));return p.join(" ")}
+function amountEn(v){const i=Math.floor(r2(v)),h=Math.round((r2(v)-i)*100);return `${enWords(i)} Saudi Riyal${i===1?"":"s"}${h?` and ${enWords(h)} Halala${h===1?"":"s"}`:""} Only`}
+function qMissingEn(q){const m={};const c=q.client||{};
+  [["client.name","nameEn"],["client.project","projectEn"],["client.location","locationEn"],["client.attn","attnEn"]].forEach(([k,e])=>{const v=c[k.split(".")[1]];if(hasAr(v)&&!c[e])m[k]=v});
+  (q.items||[]).forEach(it=>{if(hasAr(it.desc)&&!it.descEn)m["item."+it.id]=it.desc});
+  Object.entries(q.specs||{}).forEach(([k,v])=>{if(hasAr(v)&&!(q.specsEn||{})[k]&&!enVal(v))m["spec."+k]=v});
+  (q.payTerms||[]).forEach((p,i)=>{if(hasAr(p.label)&&!qPayEn(p))m["pay."+i]=p.label});
+  if(!qTermsEn(q)&&String(q.terms||"").trim())m.terms=q.terms;
+  if(hasAr(q.notes)&&!q.notesEn)m.notes=q.notes;
+  if(hasAr(q.preparedBy)&&!q.preparedByEn)m.preparedBy=q.preparedBy;if(hasAr(q.preparedRole)&&!q.preparedRoleEn)m.preparedRole=q.preparedRole;
+  return m}
+async function qTranslate(silent){
+  const q=S.qd;if(!q)return;const m=qMissingEn(q);if(!Object.keys(m).length){if(!silent)toast("كل النصوص لها ترجمة إنجليزية");return}
+  if(!S.sample){if(!silent)toast("الترجمة التلقائية متاحة فقط داخل Claude");return}
+  const key="qtr:"+S.qid;S.ex[key]={busy:true};render();
+  try{const out=await S.sample.json(`Translate the values of this JSON object from Arabic into concise, professional English for an aluminium & glass works price quotation in Saudi Arabia.
+Rules: person and company names are transliterated in the usual Saudi English spelling (e.g. "مؤسسة أبو فهد للمقاولات" → "Abu Fahad Contracting Est."); room names (غرفة النوم → Bedroom); trade terms (سرايا → Saraya, سكوريت → Tempered, دبل → Double glazed, سانديلاست → Sandblasted, شبك → Fly screen, دهان بودرة → Powder coated). Keep codes, numbers, RAL codes and brand names. For the "terms" value keep one line per line of the Arabic text.
+Reply with ONLY a JSON object with exactly the same keys and the English text as values:
+${JSON.stringify(m)}`,{modelTier:"default"});
+    const g=k=>out&&typeof out[k]==="string"&&out[k].trim()?out[k].trim():null;let n=0;
+    q.client=q.client||{};[["client.name","nameEn"],["client.project","projectEn"],["client.location","locationEn"],["client.attn","attnEn"]].forEach(([k,e])=>{if(g(k)){q.client[e]=g(k);n++}});
+    (q.items||[]).forEach(it=>{if(g("item."+it.id)){it.descEn=g("item."+it.id);n++}});
+    q.specsEn=q.specsEn||{};Object.keys(q.specs||{}).forEach(k=>{if(g("spec."+k)){q.specsEn[k]=g("spec."+k);n++}});
+    (q.payTerms||[]).forEach((p,i)=>{if(g("pay."+i)){p.labelEn=g("pay."+i);n++}});
+    if(g("terms")){q.termsEn=g("terms");n++}if(g("notes")){q.notesEn=g("notes");n++}if(g("preparedBy")){q.preparedByEn=g("preparedBy");n++}if(g("preparedRole")){q.preparedRoleEn=g("preparedRole");n++}
+    S.ex[key]={busy:false};render();qScheduleSave();if(!silent)toast(`تُرجم ${n} نص. راجع النصوص الإنجليزية وعدّل أي كلمة إذا تحتاج.`);
+  }catch(e){S.ex[key]={busy:false};render();if(!silent)toast(sampleErr(e))}
+}
+function qEnCard(){
+  const q=S.qd;const W_=S.canWrite&&q.status!=="معتمد";const busy=S.ex["qtr:"+S.qid]&&S.ex["qtr:"+S.qid].busy;const miss=Object.keys(qMissingEn(q)).length;
+  const sp=[["system","نظام الألمنيوم"],["profileThk","سماكة القطاعات"],["paintColor","لون الدهان"],["paintFinish","نوع الدهان"],["glassType","نوع الزجاج"],["glassThk","سماكة الزجاج"],["glassColor","لون الزجاج"],["accType","الإكسسوارات"],["accColor","لون الإكسسوارات"],["screen","الشبك"]];
+  return `<details class="card" ${S.openEn?"open":""} data-en="1"><summary style="cursor:pointer"><b>النصوص الإنجليزية في العرض</b> <span class="small muted">تظهر تحت العربي في كل بند${miss?` · <span class="neg">${miss} نص بدون ترجمة</span>`:" · مكتملة"}</span></summary>
+    <div class="toolbar" style="margin-top:10px">${W_&&S.sample?(busy?`<span class="spin" aria-hidden="true"></span><span class="small">جارٍ الترجمة…</span>`:`<button class="primary" data-act="q-translate">ترجمة كل النصوص تلقائياً</button>`):""}<span class="small muted">الترجمة تتم تلقائياً أيضاً عند تنزيل PDF إذا كان فيه نص بدون ترجمة.</span></div>
+    <div class="grid" style="margin-top:10px">${qIn("client.nameEn","اسم العميل بالإنجليزي","text",'dir="ltr"')}${qIn("client.projectEn","المشروع بالإنجليزي","text",'dir="ltr"')}${qIn("client.locationEn","الموقع بالإنجليزي","text",'dir="ltr"')}${qIn("client.attnEn","المسؤول بالإنجليزي","text",'dir="ltr"')}${qIn("preparedByEn","معدّ العرض بالإنجليزي","text",'dir="ltr"')}${qIn("preparedRoleEn","المسمى بالإنجليزي","text",'dir="ltr"')}</div>
+    <h3 style="margin-top:10px">المواصفات بالإنجليزي</h3><div class="grid">${sp.map(([k,l])=>qIn("specsEn."+k,l,"text",`dir="ltr" placeholder="${esc(enVal((q.specs||{})[k])||"")}"`)).join("")}</div>
+    <h3 style="margin-top:10px">الدفعات بالإنجليزي</h3><div class="grid">${(q.payTerms||[]).map((p,i)=>qIn(`payTerms.${i}.labelEn`,p.label||`دفعة ${i+1}`,"text",`dir="ltr" placeholder="${esc(PAY_EN[p.label]||"")}"`)).join("")}</div>
+    <label class="fld" style="margin-top:10px">الشروط بالإنجليزي (كل سطر بند، بنفس ترتيب العربي)<textarea id="qf-termsEn" data-q="termsEn" rows="7" dir="ltr" placeholder="${esc(String(q.terms||"").trim()===Q_TERMS.trim()?Q_TERMS_EN:"")}" ${W_?"":"disabled"}>${esc(q.termsEn||"")}</textarea></label>
+    <label class="fld">الملاحظات بالإنجليزي<textarea id="qf-notesEn" data-q="notesEn" rows="2" dir="ltr" ${W_?"":"disabled"}>${esc(q.notesEn||"")}</textarea></label>
+  </details>`;
+}
+
+/* --- quotation PDF pages (A4 595x842), Arabic with English under every line --- */
 function quoteSVGs(q,logo){
   const co=CO();const t=qTotals(q);const pages=[];let s,y;const X1=30,X2=565,W=X2-X1;
-  const sp=q.specs||{};
-  function header(first){
+  const sp=q.specs||{},spE=q.specsEn||{};
+  const EN=(x,yy,v,o={})=>v?`<text x="${sx(x)}" y="${sx(yy)}" font-size="${o.size||7.4}" fill="${o.fill||QC.muted}" text-anchor="${o.anchor||"end"}" font-weight="${o.weight||400}" font-family="${SF}">${esc(v)}</text>`:"";
+  function header(){
     s=`<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 595 842" width="595" height="842"><rect width="595" height="842" fill="#fff"/>`;
     s+=`<rect x="0" y="0" width="595" height="6" fill="${QC.teal}"/><rect x="0" y="6" width="595" height="2" fill="${QC.bronze}"/>`;
     const lx=X2-(logo?58:34);
@@ -1423,82 +1487,87 @@ function quoteSVGs(q,logo){
     else s+=`<rect x="${X2-34}" y="24" width="34" height="34" rx="7" fill="${QC.teal}"/><rect x="${X2-26}" y="32" width="18" height="18" fill="none" stroke="#fff" stroke-width="2.4"/>`;
     s+=T(lx-8,42,co.nameAr,{size:16,anchor:"end",weight:700,fill:QC.ink})+T(lx-8,58,"لجميع أعمال الألمنيوم والزجاج والسيكوريت",{size:8.5,anchor:"end",fill:QC.muted});
     s+=T(X1,40,co.nameEn.toUpperCase(),{size:11.5,weight:700,fill:QC.ink})+T(X1,54,"ALUMINIUM & GLASS WORKS",{size:7.5,fill:QC.muted});
-    const meta=[co.vat?`VAT ${co.vat}`:"",co.cr?`CR ${co.cr}`:"",co.phone||"",co.email||""].filter(Boolean).join("   ·   ");
-    s+=T(X1,68,meta,{size:7.5,fill:QC.muted});
-    s+=L(X1,82,X2,82,{stroke:QC.line,sw:.8});
-    y=first?96:96;
+    s+=T(X1,68,[co.vat?`VAT ${co.vat}`:"",co.cr?`CR ${co.cr}`:"",co.phone||"",co.email||""].filter(Boolean).join("   ·   "),{size:7.5,fill:QC.muted});
+    s+=L(X1,82,X2,82,{stroke:QC.line,sw:.8});y=96;
   }
   function footer(){s+=L(X1,808,X2,808,{stroke:QC.line,sw:.6})+T(X2,822,[co.nameAr,co.address].filter(Boolean).join(" · "),{size:7.5,anchor:"end",fill:QC.muted})+T(X1,822,"{{PAGE}}",{size:7.5,fill:QC.muted});pages.push(s+"</svg>")}
-  function ensure(h){if(y+h>795){footer();header(false);return true}return false}
-  header(true);
-  // title + meta
+  function ensure(h){if(y+h>795){footer();header();return true}return false}
+  const secTitle=(ar,en)=>{s+=T(X2,y+10,ar,{size:12,anchor:"end",weight:700,fill:QC.teal})+EN(X2,y+21,en,{size:8,weight:700,fill:QC.teal});y+=28};
+  header();
   s+=T(X2,y+22,"عرض سعر",{size:24,anchor:"end",weight:700,fill:QC.teal})+T(X1,y+22,"QUOTATION",{size:15,weight:700,fill:QC.teal})+`<text x="${X1}" y="${y+34}" font-size="7.5" fill="${QC.muted}" font-family="${SF}" letter-spacing="1.5">PRICE OFFER FOR ALUMINIUM &amp; GLASS WORKS</text>`;
-  y+=48;
-  const bw=(W-12)/2;
-  s+=`<rect x="${X1+bw+12}" y="${y}" width="${bw}" height="86" rx="6" fill="${QC.soft}"/>`+`<rect x="${X1}" y="${y}" width="${bw}" height="86" rx="6" fill="#fff" stroke="${QC.line}" stroke-width=".8"/>`;
-  const cx=X2-10,vx=cx-62;const crow=(yy,l,v,o={})=>{s+=T(cx,yy,l,{size:8.5,anchor:"end",fill:QC.muted})+T(vx,yy,v||"—",{size:9.5,anchor:"end",...o})};
-  crow(y+20,"اسم العميل:",qSalute(q),{size:11.5,weight:700});crow(y+40,"اسم المشروع:",q.client?.project||"—",{weight:600});crow(y+58,"الموقع:",q.client?.location||"—");
-  s+=T(cx,y+76,[q.client?.attn?`المسؤول: ${q.client.attn}`:"",q.client?.phone?`جوال: ${iso(q.client.phone)}`:""].filter(Boolean).join("   "),{size:8.5,anchor:"end",fill:QC.muted});
-  const mx=X1+bw-10;const mrow=(i,l,v)=>{s+=T(mx,y+18+i*17,l,{size:8.5,anchor:"end",fill:QC.muted})+T(X1+10,y+18+i*17,v,{size:9.5,weight:700})};
-  mrow(0,"رقم العرض",`${q.no}${q.rev?`-R${q.rev}`:""}`);mrow(1,"تاريخ العرض",q.date||today());mrow(2,"صالح حتى",qValidUntil(q));mrow(3,"مدة التنفيذ",`${N(q.deliveryDays)} يوماً`);
-  y+=100;
-  s+=T(X2,y,"يسرّنا أن نتقدم لكم بعرض سعرنا لتوريد وتركيب أعمال الألمنيوم والزجاج حسب البنود والمواصفات التالية:",{size:9.5,anchor:"end"});y+=14;
-  // items table
-  const C=[["#",22],["الشكل",48],["البند والوصف",170],["المقاس مم",72],["العدد",34],["المساحة م٢",46],["سعر الوحدة",68],["الإجمالي",75]];
-  function thead(){s+=`<rect x="${X1}" y="${y}" width="${W}" height="24" rx="3" fill="${QC.teal}"/>`;let x=X2;C.forEach(([l,w])=>{s+=T(x-5,y+16,l,{size:8.3,anchor:"end",weight:700,fill:"#fff"});x-=w});y+=24}
+  y+=46;
+  const bw=(W-12)/2,bh=104;
+  s+=`<rect x="${X1+bw+12}" y="${y}" width="${bw}" height="${bh}" rx="6" fill="${QC.soft}"/>`+`<rect x="${X1}" y="${y}" width="${bw}" height="${bh}" rx="6" fill="#fff" stroke="${QC.line}" stroke-width=".8"/>`;
+  const cx=X2-10,vx=cx-64;
+  const crow=(yy,l,le,v,ve,o={})=>{s+=T(cx,yy,l,{size:8.3,anchor:"end",fill:QC.muted})+EN(cx,yy+9,le,{size:6.6})+T(vx,yy,v||"—",{size:9.5,anchor:"end",...o})+EN(vx,yy+10,ve,{size:7.6})};
+  crow(y+18,"اسم العميل:","Client",qSalute(q),qSaluteEn(q),{size:11,weight:700});
+  crow(y+44,"اسم المشروع:","Project",q.client?.project||"—",enOf(q.client?.project,q.client?.projectEn),{weight:600});
+  crow(y+68,"الموقع:","Location",locFmt(q.client?.location)||"—",enOf(locFmt(q.client?.location),q.client?.locationEn));
+  s+=T(cx,y+92,[q.client?.attn?`المسؤول: ${q.client.attn}`:"",q.client?.phone?`جوال: ${iso(q.client.phone)}`:""].filter(Boolean).join("   "),{size:8,anchor:"end",fill:QC.muted});
+  const mx=X1+bw-10;const mrow=(i,l,le,v)=>{const yy=y+18+i*23;s+=T(mx,yy,l,{size:8.3,anchor:"end",fill:QC.muted})+EN(mx,yy+9,le,{size:6.6})+T(X1+10,yy+3,v,{size:9.5,weight:700})};
+  mrow(0,"رقم العرض","Quotation No.",`${q.no}${q.rev?`-R${q.rev}`:""}`);mrow(1,"تاريخ العرض","Date",q.date||today());mrow(2,"صالح حتى","Valid until",qValidUntil(q));mrow(3,"مدة التنفيذ","Delivery period",`${N(q.deliveryDays)} Days`);
+  y+=bh+14;
+  s+=T(X2,y,"يسرّنا أن نتقدم لكم بعرض سعرنا لتوريد وتركيب أعمال الألمنيوم والزجاج حسب البنود والمواصفات التالية:",{size:9.5,anchor:"end"});
+  s+=EN(X2,y+11,"We are pleased to submit our quotation for the supply and installation of aluminium and glass works as per the following items and specifications:",{size:7.4});y+=20;
+  const C=[["#","No.",22],["الشكل","Elevation",48],["البند والوصف","Item & description",170],["المقاس مم","Size (mm)",72],["العدد","Qty",34],["المساحة م٢","Area m²",46],["سعر الوحدة","Unit price",68],["الإجمالي","Total (SAR)",75]];
+  function thead(){s+=`<rect x="${X1}" y="${y}" width="${W}" height="30" rx="3" fill="${QC.teal}"/>`;let x=X2;C.forEach(([l,e,w])=>{s+=T(x-5,y+13,l,{size:8.3,anchor:"end",weight:700,fill:"#fff"})+EN(x-5,y+24,e,{size:6.6,fill:"#d7e7ef"});x-=w});y+=30}
   thead();
   (q.items||[]).forEach((it,i)=>{
-    const L1=qLine(q,it);const isWin=it.type!=="other"&&KINDS[it.type];const dl=wrapText(it.desc||"",40).slice(0,2);const de=wrapText(it.descEn||"",50).slice(0,2);const typeEn=it.type==="other"?"General item / other works":(KINDS[it.type]?KINDS[it.type][1]:"");const rh=Math.max(isWin?50:30,8+(2+dl.length+de.length)*11);
+    const L1=qLine(q,it);const isWin=it.type!=="other"&&KINDS[it.type];const dl=wrapText(it.desc||"",40).slice(0,2);const de=wrapText(enOf(it.desc,it.descEn),50).slice(0,2);const typeEn=it.type==="other"?"General item / other works":(KINDS[it.type]?KINDS[it.type][1]:"");const rh=Math.max(isWin?50:30,8+(2+dl.length+de.length)*11);
     if(ensure(rh+4)){thead()}
     if(i%2)s+=`<rect x="${X1}" y="${y}" width="${W}" height="${rh}" fill="#f7f9fb"/>`;
     let x=X2;const cy=y+16;
-    s+=T(x-5,cy,String(i+1),{size:8.5,anchor:"end",fill:QC.muted});x-=C[0][1];
-    if(isWin&&N(it.w)&&N(it.h))s+=`<g>${elevation({...it,kind:it.type,hinge:it.hinge||"R"},x-C[1][1]+4,y+5,C[1][1]-8,rh-10,{mini:true})}</g>`;x-=C[1][1];
+    s+=T(x-5,cy,String(i+1),{size:8.5,anchor:"end",fill:QC.muted});x-=C[0][2];
+    if(isWin&&N(it.w)&&N(it.h))s+=`<g>${elevation({...it,kind:it.type,hinge:it.hinge||"R"},x-C[1][2]+4,y+5,C[1][2]-8,rh-10,{mini:true})}</g>`;x-=C[1][2];
     s+=T(x-5,cy,`${it.ref?it.ref+" - ":""}${qTypeName(it.type)}`,{size:9,anchor:"end",weight:700});let ly=cy+10.5;
-    if(typeEn){s+=`<text x="${sx(x-5)}" y="${sx(ly)}" font-size="7.6" fill="${QC.muted}" text-anchor="end" font-family="${SF}">${esc((it.ref?it.ref+" - ":"")+typeEn)}</text>`;ly+=11}
+    if(typeEn){s+=EN(x-5,ly,(it.ref?it.ref+" - ":"")+typeEn,{size:7.6});ly+=11}
     dl.forEach(l=>{s+=T(x-5,ly,l,{size:8,anchor:"end",fill:"#333"});ly+=11});
-    de.forEach(l=>{s+=`<text x="${sx(x-5)}" y="${sx(ly)}" font-size="7.6" fill="${QC.muted}" text-anchor="end" font-family="${SF}">${esc(l)}</text>`;ly+=11});x-=C[2][1];
-    s+=(N(it.w)&&N(it.h)?`<text x="${sx(x-5)}" y="${sx(cy)}" font-size="8.8" fill="#111" text-anchor="end" direction="ltr" unicode-bidi="bidi-override" font-family="${SF}">${N(it.w)} x ${N(it.h)}</text>`:T(x-5,cy,"—",{size:8.8,anchor:"end"}));x-=C[3][1];
-    s+=T(x-5,cy,String(L1.qty),{size:8.8,anchor:"end"});x-=C[4][1];
-    s+=T(x-5,cy,L1.totalArea?L1.totalArea.toFixed(2):"—",{size:8.8,anchor:"end"});x-=C[5][1];
-    s+=T(x-5,cy,it.pricing==="lump"?"مقطوع":m2f(it.price),{size:8.8,anchor:"end"})+(it.pricing!=="lump"?T(x-5,cy+11,it.pricing==="unit"?"للحبة":"للمتر٢",{size:7,anchor:"end",fill:QC.muted}):"");x-=C[6][1];
+    de.forEach(l=>{s+=EN(x-5,ly,l,{size:7.6});ly+=11});x-=C[2][2];
+    s+=(N(it.w)&&N(it.h)?`<text x="${sx(x-5)}" y="${sx(cy)}" font-size="8.8" fill="#111" text-anchor="end" direction="ltr" unicode-bidi="bidi-override" font-family="${SF}">${N(it.w)} x ${N(it.h)}</text>`:T(x-5,cy,"—",{size:8.8,anchor:"end"}));x-=C[3][2];
+    s+=T(x-5,cy,String(L1.qty),{size:8.8,anchor:"end"});x-=C[4][2];
+    s+=T(x-5,cy,L1.totalArea?L1.totalArea.toFixed(2):"—",{size:8.8,anchor:"end"});x-=C[5][2];
+    s+=T(x-5,cy,it.pricing==="lump"?"مقطوع":m2f(it.price),{size:8.8,anchor:"end"})+EN(x-5,cy+11,it.pricing==="lump"?"Lump sum":it.pricing==="unit"?"للحبة / per unit":"للمتر٢ / per m²",{size:6.8});x-=C[6][2];
     s+=T(x-5,cy,m2f(L1.total),{size:9.2,anchor:"end",weight:700});
     s+=L(X1,y+rh,X2,y+rh,{stroke:QC.line,sw:.5});y+=rh;
   });
-  // totals
-  ensure(150);y+=10;
-  const tb=[["المجموع",t.sub],...(t.disc?[["الخصم",-t.disc],["الصافي بعد الخصم",t.net]]:[]),["ضريبة القيمة المضافة 15%",t.vat]];
+  ensure(190);y+=10;
+  const tb=[["المجموع","Subtotal",t.sub],...(t.disc?[["الخصم","Discount",-t.disc],["الصافي بعد الخصم","Net after discount",t.net]]:[]),["ضريبة القيمة المضافة 15%","VAT 15%",t.vat]];
   const TX=X1,TW=250;
-  s+=T(X2,y+12,`إجمالي المساحة: ${t.area.toFixed(2)} م٢   ·   عدد الوحدات: ${t.qty}`,{size:8.8,anchor:"end",fill:QC.muted});
-  tb.forEach(([l,v])=>{s+=T(TX+TW-8,y+14,l,{size:9.2,anchor:"end"})+T(TX+8,y+14,`${v<0?"- ":""}${m2f(Math.abs(v))} SAR`,{size:9.2,weight:600})+L(TX,y+21,TX+TW,y+21,{stroke:QC.line,sw:.5});y+=22});
-  s+=`<rect x="${TX}" y="${y+2}" width="${TW}" height="30" rx="4" fill="${QC.teal}"/>`+T(TX+TW-8,y+22,"الإجمالي شامل الضريبة",{size:10.5,anchor:"end",weight:700,fill:"#fff"})+T(TX+8,y+22,`${m2f(t.total)} SAR`,{size:11.5,weight:700,fill:"#fff"});y+=44;
-  wrapText(tafqeet(t.total),90).forEach(l=>{s+=T(X2,y,l,{size:9.2,anchor:"end",weight:600,fill:QC.bronze});y+=14});y+=8;
-  // specs
-  const specRows=[["نظام الألمنيوم",sp.system],["سماكة القطاعات",sp.profileThk],["لون الدهان",[sp.paintColor,sp.paintCode].filter(Boolean).join(" - ")],["نوع الدهان",sp.paintFinish],["الزجاج",[sp.glassType,sp.glassThk].filter(Boolean).join(" - ")],["لون الزجاج",sp.glassColor],["الإكسسوارات",[sp.accType,sp.accColor].filter(Boolean).join(" - ")],["الشبك",sp.screen]].filter(r=>r[1]);
-  if(specRows.length){ensure(40+Math.ceil(specRows.length/2)*22);s+=T(X2,y+10,"المواصفات الفنية",{size:12,anchor:"end",weight:700,fill:QC.teal})+T(X1,y+10,"TECHNICAL SPECIFICATIONS",{size:8,weight:700,fill:QC.teal});y+=18;
+  s+=T(X2,y+12,`إجمالي المساحة: ${t.area.toFixed(2)} م٢   ·   عدد الوحدات: ${t.qty}`,{size:8.8,anchor:"end",fill:QC.muted})+EN(X2,y+23,`Total area: ${t.area.toFixed(2)} m²   ·   Units: ${t.qty}`,{size:7.4});
+  tb.forEach(([l,e,v])=>{s+=T(TX+TW-8,y+12,l,{size:9,anchor:"end"})+EN(TX+TW-8,y+22,e,{size:6.8})+T(TX+8,y+16,`${v<0?"- ":""}${m2f(Math.abs(v))} SAR`,{size:9.2,weight:600})+L(TX,y+26,TX+TW,y+26,{stroke:QC.line,sw:.5});y+=27});
+  s+=`<rect x="${TX}" y="${y+2}" width="${TW}" height="34" rx="4" fill="${QC.teal}"/>`+T(TX+TW-8,y+17,"الإجمالي شامل الضريبة",{size:10.5,anchor:"end",weight:700,fill:"#fff"})+EN(TX+TW-8,y+29,"Grand total incl. VAT",{size:7.4,fill:"#d7e7ef"})+T(TX+8,y+24,`${m2f(t.total)} SAR`,{size:11.5,weight:700,fill:"#fff"});y+=48;
+  wrapText(tafqeet(t.total),90).forEach(l=>{s+=T(X2,y,l,{size:9.2,anchor:"end",weight:600,fill:QC.bronze});y+=13});
+  wrapText(amountEn(t.total),100).forEach(l=>{s+=EN(X2,y,l,{size:7.8,fill:QC.bronze,weight:600});y+=11});y+=10;
+  const specRows=[["نظام الألمنيوم","Aluminium system","system"],["سماكة القطاعات","Profile thickness","profileThk"],["لون الدهان","Paint colour","paintColor"],["نوع الدهان","Paint finish","paintFinish"],["الزجاج","Glass","glassType"],["لون الزجاج","Glass colour","glassColor"],["الإكسسوارات","Accessories","accType"],["الشبك","Fly screen","screen"]].map(([a,e,k])=>{
+    let v=sp[k]||"",ve=enOf(sp[k],spE[k]);if(k==="paintColor"){v=[sp.paintColor,sp.paintCode].filter(Boolean).join(" - ");ve=[enOf(sp.paintColor,spE.paintColor),sp.paintCode].filter(Boolean).join(" - ")}
+    if(k==="glassType"){v=[sp.glassType,sp.glassThk].filter(Boolean).join(" - ");ve=[enOf(sp.glassType,spE.glassType),enOf(sp.glassThk,spE.glassThk)].filter(Boolean).join(" - ")}
+    if(k==="accType"){v=[sp.accType,sp.accColor].filter(Boolean).join(" - ");ve=[enOf(sp.accType,spE.accType),enOf(sp.accColor,spE.accColor)].filter(Boolean).join(" - ")}
+    return[a,e,v,ve]}).filter(r=>r[2]);
+  if(specRows.length){ensure(44+Math.ceil(specRows.length/2)*28);secTitle("المواصفات الفنية","TECHNICAL SPECIFICATIONS");
     const half=Math.ceil(specRows.length/2);for(let r=0;r<half;r++){[specRows[r],specRows[r+half]].forEach((row,k)=>{if(!row)return;const xr=k===0?X2:X1+W/2-6;const bx=k===0?X1+W/2+6:X1;
-      s+=`<rect x="${bx}" y="${y}" width="${W/2-6}" height="20" fill="${r%2?"#fff":QC.soft}"/>`+T(xr-6,y+14,row[0],{size:8.5,anchor:"end",fill:QC.muted})+T(xr-90,y+14,(row[1].length>34?row[1].slice(0,33)+"…":row[1]),{size:8.8,anchor:"end",weight:600})});y+=20}
+      const cut=(v,n=34)=>v.length>n?v.slice(0,n-1)+"…":v;
+      s+=`<rect x="${bx}" y="${y}" width="${W/2-6}" height="27" fill="${r%2?"#fff":QC.soft}"/>`+T(xr-6,y+12,row[0],{size:8.3,anchor:"end",fill:QC.muted})+EN(xr-6,y+22,row[1],{size:6.6})+T(xr-88,y+12,cut(row[2]),{size:8.8,anchor:"end",weight:600})+EN(xr-88,y+22,cut(row[3]||"",44),{size:6.9})});y+=27}
     y+=14}
-  // payment schedule
   const pays=(q.payTerms||[]).filter(p=>N(p.pct)>0);
-  if(pays.length){ensure(40+pays.length*20);s+=T(X2,y+10,"جدول الدفعات",{size:12,anchor:"end",weight:700,fill:QC.teal})+T(X1,y+10,"PAYMENT SCHEDULE",{size:8,weight:700,fill:QC.teal});y+=18;
-    pays.forEach((p,i)=>{s+=`<rect x="${X1}" y="${y}" width="${W}" height="20" fill="${i%2?"#fff":QC.soft}"/>`+T(X2-8,y+14,`${i+1}. ${p.label||""}`,{size:9,anchor:"end"})+T(X1+170,y+14,`${N(p.pct)}%`,{size:9,anchor:"end",weight:700})+T(X1+8,y+14,`${m2f(r2(t.total*N(p.pct)/100))} SAR`,{size:9,weight:600});y+=20});
-    const sp2=sum(pays,p=>N(p.pct));if(sp2!==100)s+=T(X2,y+12,`تنبيه: مجموع نسب الدفعات ${sp2}%`,{size:8,anchor:"end",fill:"#b0281f"}),y+=6;y+=16}
-  // terms
-  const terms=String(q.terms||"").split(/\n+/).map(x=>x.trim()).filter(Boolean);
-  if(terms.length){ensure(40);s+=T(X2,y+10,"الشروط والأحكام",{size:12,anchor:"end",weight:700,fill:QC.teal})+T(X1,y+10,"TERMS & CONDITIONS",{size:8,weight:700,fill:QC.teal});y+=22;
-    terms.forEach((tx,i)=>{const ls=wrapText(tx,96);ensure(ls.length*12+4);ls.forEach((l,k)=>{s+=T(X2-(k?14:0),y,(k?"":`${i+1}. `)+l,{size:8.6,anchor:"end"});y+=12});y+=3});y+=8}
-  if(q.notes){const ls=wrapText(q.notes,96).slice(0,6);ensure(30+ls.length*12);s+=T(X2,y+8,"ملاحظات",{size:11,anchor:"end",weight:700,fill:QC.teal});y+=20;ls.forEach(l=>{s+=T(X2,y,l,{size:8.8,anchor:"end"});y+=12});y+=8}
-  // bank + signatures
-  ensure(150);
-  if(co.iban||co.bank){s+=`<rect x="${X1}" y="${y}" width="${W}" height="26" rx="4" fill="${QC.soft}"/>`+T(X2-8,y+17,`الحساب البنكي: ${co.bank||""}   ·   IBAN: ${iso(co.iban||"")}   ·   باسم: ${co.nameAr}`,{size:8.8,anchor:"end"});y+=36}
-  const sy=y;const bw2=(W-14)/2;
-  s+=`<rect x="${X1+bw2+14}" y="${sy}" width="${bw2}" height="96" rx="6" fill="#fff" stroke="${QC.line}"/>`+T(X2-10,sy+18,`عن ${co.nameAr}`,{size:9.5,anchor:"end",weight:700})+T(X2-10,sy+38,q.preparedBy?`${q.preparedBy}${q.preparedRole?" - "+q.preparedRole:""}`:(q.preparedRole||""),{size:9,anchor:"end"})+T(X2-10,sy+62,"التوقيع:",{size:8.5,anchor:"end",fill:QC.muted})+T(X2-10,sy+84,"الختم:",{size:8.5,anchor:"end",fill:QC.muted});
-  s+=`<rect x="${X1}" y="${sy}" width="${bw2}" height="96" rx="6" fill="#fff" stroke="${QC.teal}" stroke-dasharray="4 3"/>`+T(X1+bw2-10,sy+18,"موافقة العميل واعتماد العرض",{size:9.5,anchor:"end",weight:700,fill:QC.teal})+T(X1+bw2-10,sy+40,"الاسم:",{size:8.5,anchor:"end",fill:QC.muted})+T(X1+bw2-10,sy+62,"التوقيع:",{size:8.5,anchor:"end",fill:QC.muted})+T(X1+bw2-10,sy+84,"التاريخ:",{size:8.5,anchor:"end",fill:QC.muted});
-  y+=106;s+=T(297,y+8,"شاكرين لكم ثقتكم، ونتطلع لخدمتكم - Thank you for your trust",{size:8.5,anchor:"middle",fill:QC.muted});
+  if(pays.length){ensure(44+pays.length*27);secTitle("جدول الدفعات","PAYMENT SCHEDULE");
+    pays.forEach((p,i)=>{s+=`<rect x="${X1}" y="${y}" width="${W}" height="27" fill="${i%2?"#fff":QC.soft}"/>`+T(X2-8,y+12,`${i+1}. ${p.label||""}`,{size:9,anchor:"end"})+EN(X2-8,y+22,qPayEn(p),{size:7.2})+T(X1+170,y+16,`${N(p.pct)}%`,{size:9,anchor:"end",weight:700})+T(X1+8,y+16,`${m2f(r2(t.total*N(p.pct)/100))} SAR`,{size:9,weight:600});y+=27});
+    const sp2=sum(pays,p=>N(p.pct));if(sp2!==100){s+=T(X2,y+12,`تنبيه: مجموع نسب الدفعات ${sp2}%`,{size:8,anchor:"end",fill:"#b0281f"});y+=6}y+=16}
+  const terms=String(q.terms||"").split(/\n+/).map(x=>x.trim()).filter(Boolean);const termsE=qTermsEn(q).split(/\n+/).map(x=>x.trim()).filter(Boolean);
+  if(terms.length){ensure(50);secTitle("الشروط والأحكام","TERMS & CONDITIONS");y+=6;
+    terms.forEach((tx,i)=>{const ls=wrapText(tx,96);const le=wrapText(termsE[i]||"",110);ensure(ls.length*12+le.length*10+5);
+      ls.forEach((l,k)=>{s+=T(X2-(k?14:0),y,(k?"":`${i+1}. `)+l,{size:8.6,anchor:"end"});y+=12});le.forEach(l=>{s+=EN(X2-14,y-1,l,{size:7.2});y+=10});y+=4});y+=6}
+  if(q.notes){const ls=wrapText(q.notes,96).slice(0,6);const le=wrapText(enOf(q.notes,q.notesEn),110).slice(0,6);ensure(36+ls.length*12+le.length*10);secTitle("ملاحظات","NOTES");ls.forEach(l=>{s+=T(X2,y,l,{size:8.8,anchor:"end"});y+=12});le.forEach(l=>{s+=EN(X2,y-1,l,{size:7.4});y+=10});y+=8}
+  ensure(170);
+  if(co.iban||co.bank){s+=`<rect x="${X1}" y="${y}" width="${W}" height="34" rx="4" fill="${QC.soft}"/>`+T(X2-8,y+14,`الحساب البنكي: ${co.bank||""}   ·   IBAN: ${iso(co.iban||"")}   ·   باسم: ${co.nameAr}`,{size:8.8,anchor:"end"})+EN(X2-8,y+26,`Bank: ${bankEn(co.bank)}   ·   IBAN: ${co.iban||""}   ·   Account name: ${co.nameEn}`,{size:7.2});y+=44}
+  const sy=y;const bw2=(W-14)/2;const prep=q.preparedBy?`${q.preparedBy}${q.preparedRole?" - "+q.preparedRole:""}`:(q.preparedRole||"");const prepE=[enOf(q.preparedBy,q.preparedByEn),enOf(q.preparedRole,q.preparedRoleEn)].filter(Boolean).join(" - ");
+  s+=`<rect x="${X1+bw2+14}" y="${sy}" width="${bw2}" height="108" rx="6" fill="#fff" stroke="${QC.line}"/>`+T(X2-10,sy+16,`عن ${co.nameAr}`,{size:9.5,anchor:"end",weight:700})+EN(X2-10,sy+27,`For ${co.nameEn}`,{size:7.4,weight:700})+T(X2-10,sy+44,prep,{size:9,anchor:"end"})+EN(X2-10,sy+55,prepE,{size:7.4})+T(X2-10,sy+76,"التوقيع:",{size:8.5,anchor:"end",fill:QC.muted})+EN(X2-10,sy+85,"Signature",{size:6.6})+T(X2-10,sy+98,"الختم:",{size:8.5,anchor:"end",fill:QC.muted})+EN(X2-10,sy+106,"Stamp",{size:6.6});
+  s+=`<rect x="${X1}" y="${sy}" width="${bw2}" height="108" rx="6" fill="#fff" stroke="${QC.teal}" stroke-dasharray="4 3"/>`+T(X1+bw2-10,sy+16,"موافقة العميل واعتماد العرض",{size:9.5,anchor:"end",weight:700,fill:QC.teal})+EN(X1+bw2-10,sy+27,"Client acceptance & approval",{size:7.4,weight:700,fill:QC.teal});
+  [["الاسم:","Name",48],["التوقيع:","Signature",72],["التاريخ:","Date",96]].forEach(([a,e,dy])=>{s+=T(X1+bw2-10,sy+dy,a,{size:8.5,anchor:"end",fill:QC.muted})+EN(X1+bw2-10,sy+dy+9,e,{size:6.6})});
+  y+=118;s+=T(297,y+8,"شاكرين لكم ثقتكم، ونتطلع لخدمتكم",{size:8.5,anchor:"middle",fill:QC.muted})+EN(297,y+19,"Thank you for your trust; we look forward to serving you",{size:7.4,anchor:"middle"});
   footer();
   return pages.map((p,i)=>p.replace("{{PAGE}}",`Page ${i+1} / ${pages.length}   ·   ${q.no}${q.rev?`-R${q.rev}`:""}`));
 }
+
 async function quotePdfBlob(q){const {jsPDF}=await loadJsPdf();const logo=await logoHref(true);const pdf=new jsPDF({unit:"mm",format:"a4",orientation:"portrait",compress:true});
   const pgs=quoteSVGs(q,logo);for(let i=0;i<pgs.length;i++){if(i)pdf.addPage("a4","portrait");pdf.addImage(await svgToJpeg(pgs[i],3.5,595,842),"JPEG",0,0,210,297)}return pdf.output("blob")}
 const qFileName=q=>`عرض-سعر-${q.no}${q.rev?`-R${q.rev}`:""}-${(q.client?.name||"").trim()}.pdf`.replace(/[\\/:*?"<>|]/g,"-");
@@ -1552,7 +1621,7 @@ function quoteEditor(){
     <div class="card"><h3>بيانات العرض</h3><div class="grid">
       ${qIn("date","تاريخ العرض","date")}${qIn("validDays","مدة صلاحية العرض (يوم)","number")}${qIn("deliveryDays","مدة التنفيذ (يوم)","number")}${qIn("minArea","أقل مساحة محسوبة للقطعة م²","number")}${qIn("preparedBy","معدّ العرض")}${qIn("preparedRole","المسمى")}
     </div></div>
-    <div class="card"><h3>البنود <span class="toolbar">${W_&&S.sample?(S.ex["qtr:"+S.qid]&&S.ex["qtr:"+S.qid].busy?`<span class="spin" aria-hidden="true"></span><span class="small">جارٍ الترجمة…</span>`:`<button data-act="q-translate">ترجمة الأوصاف للإنجليزي</button>`):""}${W_?`<button data-act="q-add">+ بند</button>`:""}</span></h3>
+    <div class="card"><h3>البنود <span class="toolbar">${W_&&S.sample?(S.ex["qtr:"+S.qid]&&S.ex["qtr:"+S.qid].busy?`<span class="spin" aria-hidden="true"></span><span class="small">جارٍ الترجمة…</span>`:`<button data-act="q-translate">ترجمة النصوص للإنجليزي</button>`):""}${W_?`<button data-act="q-add">+ بند</button>`:""}</span></h3>
       <div class="tablebox"><table class="qitems"><thead><tr><th>الكود</th><th>النوع</th><th>الوصف (عربي)</th><th>الوصف (English)</th><th>العرض مم</th><th>الارتفاع مم</th><th>العدد</th><th>التسعير</th><th>السعر</th><th>المساحة م²</th><th>الإجمالي</th><th></th></tr></thead><tbody>
       ${(q.items||[]).map((it,i)=>{const L1=qLine(q,it);return `<tr class="${it.unclear?"unclear":""}"><td>${qCell(`items.${i}.ref`,"text","56px")}</td><td>${qSel(`items.${i}.type`,Q_TYPES,"150px")}</td><td>${qCell(`items.${i}.desc`,"text","180px")}</td><td>${qCell(`items.${i}.descEn`,"text","180px",'dir="ltr" placeholder="English description"')}</td><td>${qCell(`items.${i}.w`,"number","70px")}</td><td>${qCell(`items.${i}.h`,"number","70px")}</td><td>${qCell(`items.${i}.qty`,"number","50px")}</td><td>${qSel(`items.${i}.pricing`,PRICING,"110px")}</td><td>${qCell(`items.${i}.price`,"number","80px")}</td><td class="num">${L1.totalArea?L1.totalArea.toFixed(2):"—"}</td><td><b>${M(L1.total)}</b></td>
         <td>${W_?`<span class="toolbar" style="gap:2px;flex-wrap:nowrap"><button class="ghost" data-act="q-mv" data-i="${i}" data-d="-1" ${i?"":"disabled"} aria-label="لأعلى">↑</button><button class="ghost" data-act="q-mv" data-i="${i}" data-d="1" ${i<q.items.length-1?"":"disabled"} aria-label="لأسفل">↓</button>${S.confirm==="qi:"+it.id?`<button class="danger armed" data-act="q-del" data-i="${i}" data-id="${esc(it.id)}">تأكيد</button>`:`<button class="danger ghost" data-act="q-del" data-i="${i}" data-id="${esc(it.id)}">حذف</button>`}</span>`:""}</td></tr>`}).join("")}
@@ -1572,6 +1641,7 @@ function quoteEditor(){
       <div class="tablebox"><table><thead><tr><th>البيان</th><th>النسبة %</th><th>المبلغ</th><th></th></tr></thead><tbody>
       ${pay.map((p,i)=>`<tr><td>${qCell(`payTerms.${i}.label`,"text","220px")}</td><td>${qCell(`payTerms.${i}.pct`,"number","60px")}</td><td>${M(r2(t.total*N(p.pct)/100))}</td><td>${W_?`<button class="danger ghost" data-act="q-pay-del" data-i="${i}">حذف</button>`:""}</td></tr>`).join("")}
       </tbody><tfoot><tr><td>المجموع</td><td class="num ${pctSum===100?"pos":"neg"}">${pctSum}%</td><td colspan="2">${pctSum!==100?`<span class="small neg">يجب أن يكون المجموع 100%</span>`:""}</td></tr></tfoot></table></div></div>
+    ${qEnCard()}
     <div class="card"><h3>الشروط والأحكام والملاحظات</h3>
       <label class="fld">الشروط (كل سطر بند)<textarea id="qf-terms" data-q="terms" rows="8" ${W_?"":"disabled"}>${esc(q.terms||"")}</textarea></label>
       <label class="fld">ملاحظات إضافية<textarea id="qf-notes" data-q="notes" rows="3" ${W_?"":"disabled"}>${esc(q.notes||"")}</textarea></label>
@@ -1586,12 +1656,13 @@ function quoteEditor(){
 }
 async function approveQuote(){
   const q=S.qd;if(!q||!db)return;if(!String(q.client?.name||"").trim()){toast("أدخل اسم العميل أولاً");return}
+  if(S.sample&&Object.keys(qMissingEn(q)).length)await qTranslate(true);
   await qSaveNow();const t=qTotals(q);const sp=q.specs||{};toast("جارٍ إنشاء ملف العميل…");
   const y=new Date().getFullYear();const nums=S.clients.map(x=>{const m=/(\d+)$/.exec(x.fileNo||"");return m?+m[1]:0});const fileNo=`${y}-${String((Math.max(0,...nums)||0)+1).padStart(3,"0")}`;
   const files={};
   if(S.assets){try{const b=await quotePdfBlob(q);const name=qFileName(q);const r=await S.assets.upload(new File([b],name,{type:"application/pdf"}));files.quote=[{id:r.id,name,type:"application/pdf",size:r.sizeBytes,at:new Date().toISOString()}]}catch(e){}}
   const alu=(q.items||[]).filter(it=>it.type!=="other"&&KINDS[it.type]&&N(it.w)&&N(it.h)).map(it=>{const rc=recipeById(KINDS[it.type][2]);return{id:uid(),ref:it.ref||"",w:N(it.w),h:N(it.h),qty:N(it.qty)||1,recipe:rc?rc.id:"",system:rc?rc.system:"",type:rc?rc.name:"",group:"regular",note:it.desc||""}});
-  const doc={name:q.client.name.trim(),phone:q.client.phone||"",location:[q.client.project,q.client.location].filter(Boolean).join(" - "),fileNo,approvalDate:today(),status:"تم التعميد",
+  const doc={name:q.client.name.trim(),phone:q.client.phone||"",location:locFmt(q.client.location)||q.client.project||"",project:q.client.project||"",fileNo,approvalDate:today(),status:"تم التعميد",
     quoteNo:q.no+(q.rev?`-R${q.rev}`:""),quoteValue:t.net,quoteVatMode:"قبل الضريبة",quoteNet:t.net,quoteVat:t.vat,quoteTotal:t.total,contractValue:t.total,quoteId:S.qid,
     colors:{alu:{color:sp.paintColor||"",code:sp.paintCode||"",finish:sp.paintFinish||"",system:[sp.system,sp.profileThk].filter(Boolean).join(" - ")},glass:{type:sp.glassType||"",thickness:sp.glassThk||"",color:sp.glassColor||""},acc:{brand:sp.accType||"",color:sp.accColor||""}},
     files,payments:[],installs:[],glass:[],alu,purchases:[],notes:q.notes||"",createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
@@ -1651,16 +1722,6 @@ async function qSheetRead(){
   }catch(e){S.ex["qs:"+S.qid]={busy:false,err:e&&e.code==="image_rejected"?"لا يمكن قراءة الملف. ارفعه صورة JPG/PNG أو PDF.":sampleErr(e)}}
   render();
 }
-async function qTranslate(){
-  const q=S.qd;if(!q||!S.sample)return;const todo=(q.items||[]).filter(it=>String(it.desc||"").trim());if(!todo.length){toast("لا توجد أوصاف عربية للترجمة");return}
-  const key="qtr:"+S.qid;S.ex[key]={busy:true};render();
-  try{const out=await S.sample.json(`Translate these Arabic item descriptions from an aluminium & glass works quotation (Saudi Arabia) into concise, professional English as used in construction quotations (e.g. "غرفة النوم" → "Bedroom", "سانديلاست" → "Sandblasted", "شبك" → "fly screen"). Keep codes, numbers and brand names as they are.
-Reply with ONLY a JSON object mapping each id to its English text:
-${JSON.stringify(Object.fromEntries(todo.map(it=>[it.id,it.desc])))}`,{modelTier:"quick"});
-    let n=0;(q.items||[]).forEach(it=>{if(out&&typeof out[it.id]==="string"&&out[it.id].trim()){it.descEn=out[it.id].trim();n++}});
-    S.ex[key]={busy:false};render();qScheduleSave();toast(`تُرجم ${n} وصف. راجعها وعدّل أي كلمة إذا تحتاج.`);
-  }catch(e){S.ex[key]={busy:false};render();toast(sampleErr(e))}
-}
 function qSheetCard(){
   const q=S.qd;const sheets=q.sheets||[];const st=S.ex["qs:"+S.qid]||{};const W_=S.canWrite&&q.status!=="معتمد";
   return `<div class="card qsheet"><h3>ورقة رفع المقاسات من الموقع ${W_?(S.assets?`<span class="btn upl">${S.busy.qsheet?"جارٍ الرفع…":"رفع صورة أو PDF"}<input type="file" multiple data-qup="1" accept="image/*,application/pdf" aria-label="رفع ورقة المقاسات"></span>`:`<span class="small muted">الرفع متاح للمحررين</span>`):""}</h3>
@@ -1685,7 +1746,7 @@ async function act(el){
   if(a==="q-new"){if(!db)return;const ref=db.collection("quotes").doc();const q=newQuote();try{await ref.set(q);S.everWrote=true}catch(e){handleWriteErr(e);return}S.section="quotes";S.quotes=[...S.quotes,{...q,_id:ref.id}];openQuote(ref.id);toast("أُنشئ العرض "+q.no);return}
   if(a==="q-open"){openQuote(el.dataset.id);return}
   if(S.qid&&S.qd&&!S.id){const q=S.qd;
-    if(a==="q-pdf"){if(S.pdfBusy)return;S.pdfBusy=true;render();try{const b=await quotePdfBlob(q);if(S.downloads)await S.downloads.save({filename:qFileName(q),data:b});else toast("التنزيل غير متاح هنا")}catch(e){if(!(e&&e.code==="declined"))toast("تعذّر إنشاء ملف PDF")}S.pdfBusy=false;render();return}
+    if(a==="q-pdf"){if(S.pdfBusy)return;if(S.sample&&S.canWrite&&q.status!=="معتمد"&&Object.keys(qMissingEn(q)).length){toast("جارٍ ترجمة النصوص للإنجليزي قبل التنزيل…");await qTranslate(true)}S.pdfBusy=true;render();try{const b=await quotePdfBlob(q);if(S.downloads)await S.downloads.save({filename:qFileName(q),data:b});else toast("التنزيل غير متاح هنا")}catch(e){if(!(e&&e.code==="declined"))toast("تعذّر إنشاء ملف PDF")}S.pdfBusy=false;render();return}
     if(a==="q-approve"){if(S.confirm!=="q-approve"){S.confirm="q-approve";render();clearTimeout(act._t);act._t=setTimeout(()=>{S.confirm=null;render()},5000);return}S.confirm=null;await approveQuote();return}
     if(a==="q-rev"){await qSaveNow();const n=clone(q);delete n._id;delete n.clientId;delete n.approvedAt;n.rev=(N(q.rev)||0)+1;n.status="مسودة";n.date=today();n.createdAt=new Date().toISOString();
       const same=S.quotes.filter(x=>x.no===q.no);n.rev=Math.max(n.rev,...same.map(x=>(N(x.rev)||0)+1));const ref=db.collection("quotes").doc();try{await ref.set(n)}catch(e){handleWriteErr(e);return}S.quotes=[...S.quotes,{...n,_id:ref.id}];openQuote(ref.id);toast(`أُنشئت المراجعة R${n.rev}`);return}
@@ -1725,7 +1786,7 @@ async function act(el){
     const y=new Date().getFullYear();const nums=S.clients.map(x=>{const m=/(\d+)$/.exec(x.fileNo||"");return m?+m[1]:0});
     const next=`${y}-${String((Math.max(0,...nums)||0)+1).padStart(3,"0")}`;
     const ref=db.collection("clients").doc();
-    try{await ref.set({name:"عميل جديد",fileNo:next,approvalDate:today(),status:"تم التعميد",contractValue:0,files:{},payments:[],installs:[],glass:[],alu:[],purchases:[],colors:{},createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()});S.everWrote=true}
+    try{await ref.set({name:"عميل جديد",location:"الرياض - حي ",fileNo:next,approvalDate:today(),status:"تم التعميد",contractValue:0,files:{},payments:[],installs:[],glass:[],alu:[],purchases:[],colors:{},createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()});S.everWrote=true}
     catch(e){handleWriteErr(e);return}
     go(ref.id,"info");toast("أُنشئ ملف رقم "+next+"، أكمل بيانات العميل");
     setTimeout(()=>{const n=document.getElementById(("f-info:"+ref.id+"-name").replace(/[^a-zA-Z0-9_-]/g,"_"));n&&(n.focus(),n.select&&n.select())},60);
@@ -1918,7 +1979,7 @@ document.addEventListener("change",async e=>{
   }
 });
 window.addEventListener("hashchange",fromHash);
-document.addEventListener("toggle",e=>{const d=e.target;if(d.dataset&&d.dataset.shop){if(d.open)S.openShop=d.dataset.shop;else if(S.openShop===d.dataset.shop)S.openShop=null;return}if(d.dataset&&d.dataset.ri!=null){if(d.open)S.openRecipe=+d.dataset.ri;else if(S.openRecipe===+d.dataset.ri)S.openRecipe=null}},true);
+document.addEventListener("toggle",e=>{const d=e.target;if(d.dataset&&d.dataset.en){S.openEn=d.open;return}if(d.dataset&&d.dataset.shop){if(d.open)S.openShop=d.dataset.shop;else if(S.openShop===d.dataset.shop)S.openShop=null;return}if(d.dataset&&d.dataset.ri!=null){if(d.open)S.openRecipe=+d.dataset.ri;else if(S.openRecipe===+d.dataset.ri)S.openRecipe=null}},true);
 
 /* ---------- boot ---------- */
 fromHash();
