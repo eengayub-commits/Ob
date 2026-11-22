@@ -1,4 +1,4 @@
-<title>ملفات عملاء برج القمة</title>
+<title>مصنع برج القمة</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Readex+Pro:wght@500;600;700&display=swap">
@@ -138,6 +138,21 @@ tr.unclear td{background:var(--warn-soft)}
 .checks{display:flex;flex-direction:column;gap:8px;padding:12px;border:1px solid var(--line);border-radius:8px}
 .checks .approve{font-weight:500}
 .ph video{width:100%;aspect-ratio:16/9;background:#000;display:block}
+.seg{display:flex;gap:4px;padding:4px;background:var(--surface);border:1px solid var(--line);border-radius:10px;width:fit-content;max-width:100%;overflow-x:auto}
+.seg button{border:0;background:none;border-radius:7px;padding:8px 14px;color:var(--muted);white-space:nowrap;position:relative}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.seg .cnt{font-size:.72rem;border-radius:99px;padding:0 7px;background:var(--surface-2);color:var(--muted);border:1px solid var(--line)}
+.seg .dot{width:7px;height:7px;border-radius:50%;background:var(--bronze);display:inline-block}
+.qsplit{display:grid;gap:20px;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);align-items:start}
+@media (max-width:1100px){.qsplit{grid-template-columns:1fr}}
+.qform{display:flex;flex-direction:column;gap:16px;min-width:0}
+.qpreview{position:sticky;top:calc(env(safe-area-inset-top,0px) + 76px);display:flex;flex-direction:column;gap:12px;max-height:calc(100vh - 96px);overflow:auto;padding:12px;background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r)}
+@media (max-width:1100px){.qpreview{position:static;max-height:none}}
+.qprev-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.sheet.a4{box-shadow:0 2px 10px rgba(0,0,0,.12);border-radius:4px}
+.qitems td{padding:6px 6px}.qitems input,.qitems select{padding:5px 6px}
+.qtot{display:flex;flex-direction:column;gap:6px;align-items:flex-end;padding:12px;border-radius:8px;background:var(--surface-2);border:1px solid var(--line)}
+button.armed-ok{background:var(--ok);border-color:var(--ok);color:#fff}
 .kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:.9rem}
 .kv dt{color:var(--muted)}.kv dd{margin:0;font-weight:600}
 @media (prefers-reduced-motion:no-preference){.card,.stat{transition:border-color .15s}}
@@ -230,10 +245,10 @@ function mutateFiles(cat,fn){const c=cur();if(!c)return;const files={...(c.files
 function topbar(){
   const c=cur();
   return `<header class="top"><div class="wrap">
-    <div class="brand"><div class="mark" aria-hidden="true"></div><h1>برج القمة للأعمال المعدنية<small>سجل ملفات العملاء والمشاريع</small></h1></div>
-    ${c||S.settings?`<button data-act="back">${S.settings&&c?"→ رجوع للملف":"→ كل الملفات"}</button>`:""}
+    <div class="brand"><div class="mark" aria-hidden="true"></div><h1>${esc(CO().nameAr)}<small>سجل ملفات العملاء والمشاريع</small></h1></div>
+    ${c||S.settings||S.qid?`<button data-act="back">${S.settings&&c?"→ رجوع للملف":S.settings&&S.qid?"→ رجوع للعرض":S.qid&&!S.settings?"→ عروض الأسعار":"→ كل الملفات"}</button>`:""}
     ${db&&!S.settings?`<button data-act="open-settings">الإعدادات</button>`:""}
-    ${S.canWrite&&db&&!c&&!S.settings?`<button class="primary" data-act="new">+ عميل جديد</button>`:""}
+    ${S.canWrite&&db&&!c&&!S.settings&&!S.qid?(S.section==="quotes"?`<button class="primary" data-act="q-new">+ عرض سعر جديد</button>`:`<button class="primary" data-act="new">+ عميل جديد</button>`):""}
   </div></header>`;
 }
 
@@ -274,7 +289,7 @@ function listView(){
     </tbody></table></div>`;
   }
 
-  return `${stats}
+  return `${sectionNav()}${stats}
   <div class="split">
     <section style="display:flex;flex-direction:column;gap:12px;min-width:0">
       <div class="toolbar">
@@ -449,7 +464,7 @@ function render(){
   if(S.id&&!c&&S.loaded){S.id=null}
   let main;
   if(S.id&&!c)main=`<div class="card empty"><p class="muted">جارٍ فتح الملف…</p></div>`;
-  else main=S.settings&&S.cfgDraft?settingsView():c?clientView(c):listView();
+  else main=S.settings&&S.cfgDraft?settingsView():c?clientView(c):S.qid?quoteEditor():S.section==="quotes"?quotesListView():listView();
   app.innerHTML=topbar()+`<main class="wrap">${!S.canWrite&&db?`<div class="note">صلاحيتك للعرض فقط. اطلب من مالك البرنامج صلاحية «مساهم» أو «محرر» للتعديل.</div>`:""}${main}</main>`+(S.lightbox?`<div class="lb" data-act="unzoom"><img src="${blob(S.lightbox)}" alt="صورة مكبرة"></div>`:"");
   if(aid){const n=document.getElementById(aid);if(n){n.focus({preventScroll:true});try{if(ss!=null)n.setSelectionRange(ss,se)}catch(e){}}}
 }
@@ -463,7 +478,7 @@ const P={
 };
 const DEFAULT_CFG={
   barLen:6000, trim:20, kerf:5, aluPrice:0, paintRate:0, glassPrice:0, tapeFactor:1, tapeRoll:100, tapePrice:0,
-  company:{nameAr:"برج القمة للأعمال المعدنية",nameEn:"Burj Al-Qimma Metal Works",vat:"",cr:"",address:"",phone:"",bank:"",iban:""},
+  company:{nameAr:"مصنع برج القمة للأعمال المعدنية",nameEn:"AL QIMMA TOWER FACTORY",vat:"",cr:"",address:"",phone:"",email:"",website:"",bank:"",iban:"",logo:""},
   profiles:[[P.sFrame,1.10],[P.sSash,0.95],[P.sScreen,0.45],[P.sInter,0.40],[P.rFrame,1.65],[P.rSash,1.20],[P.rInter,0.45],[P.rScreen,0.42],[P.cFrame,1.25],[P.cSash,1.05],[P.bead24,0.25],[P.dFrame,1.50],[P.dSash,1.30],[P.dKick,1.10],[P.bead1,0.22]].map(([name,kg])=>({name,kg})),
   recipes:[
     {id:"sar-slide2",name:"شباك سحاب سرايا 10سم - درفتين",system:"سرايا",
@@ -573,7 +588,7 @@ function groupBar(b){
 function csvCell(v){v=String(v??"");return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}
 async function exportCalc(c){
   const T=takeoff(c,S.cfg);const rows=[];const alu=c.colors?.alu||{};
-  rows.push(["برج القمة للأعمال المعدنية - حساب الكميات"],["العميل",c.name||""],["رقم الملف",c.fileNo||""],["لون الألمنيوم",[alu.color,alu.code].filter(Boolean).join(" ")],[]);
+  rows.push([CO().nameAr+" - حساب الكميات"],["العميل",c.name||""],["رقم الملف",c.fileNo||""],["لون الألمنيوم",[alu.color,alu.code].filter(Boolean).join(" ")],[]);
   rows.push(["١ - حصر الألمنيوم"],["القطاع","عدد القطع","الطول الصافي م","عدد العيدان","الوزن كجم"]);
   T.profiles.forEach(p=>rows.push([p.name,p.pieces,(p.net/1000).toFixed(2),p.nb,p.kg.toFixed(1)]));
   rows.push(["الإجمالي","","",T.bars,T.kg.toFixed(1)],[],["Cutting List"],["القطاع","العود","القطع (طول×عدد)","المستخدم مم","المتبقي مم"]);
@@ -603,7 +618,8 @@ function settingsView(){
   return `<section class="head"><div><h2>الإعدادات: بيانات الشركة وقوالب الحساب والأسعار</h2><p class="small muted" style="margin:0;max-width:70ch">تُستخدم لكل العملاء. في المعادلات: <b>W</b> = العرض و <b>H</b> = الارتفاع بالمليمتر (مثال: <span class="num" dir="ltr">W/2-10</span>). الخصومات والأوزان الافتراضية تقريبية، عدّلها حسب كتالوج قطاعات المصنع ثم احفظ.</p></div>
     <div class="toolbar">${S.canWrite?`<button class="primary" data-act="save-settings">حفظ الإعدادات</button>${S.confirm==="reset-cfg"?`<button class="danger armed" data-act="reset-settings">تأكيد الاسترجاع</button>`:`<button class="danger ghost" data-act="reset-settings">استرجاع الافتراضي</button>`}`:""}</div></section>
   <div class="card"><h3>بيانات الشركة للفواتير</h3><div class="grid">
-    ${sIn("company.nameAr","اسم الشركة بالعربي")}${sIn("company.nameEn","اسم الشركة بالإنجليزي")}${sIn("company.vat","الرقم الضريبي (15 رقم)")}${sIn("company.cr","السجل التجاري")}${sIn("company.address","العنوان")}${sIn("company.phone","الهاتف")}${sIn("company.bank","البنك")}${sIn("company.iban","رقم الآيبان IBAN")}
+    ${sIn("company.nameAr","اسم الشركة بالعربي")}${sIn("company.nameEn","اسم الشركة بالإنجليزي")}${sIn("company.vat","الرقم الضريبي (15 رقم)")}${sIn("company.cr","السجل التجاري")}${sIn("company.address","العنوان")}${sIn("company.phone","الهاتف")}${sIn("company.email","البريد الإلكتروني")}${sIn("company.website","الموقع الإلكتروني")}${sIn("company.bank","البنك")}${sIn("company.iban","رقم الآيبان IBAN")}
+    <div class="fld">شعار الشركة (للعروض والمستندات)<div class="toolbar">${S.cfgDraft.company&&S.cfgDraft.company.logo?`<img src="${blob(S.cfgDraft.company.logo)}" alt="الشعار" style="height:44px;width:auto;border:1px solid var(--line);border-radius:6px;background:#fff;padding:2px">`:""}${S.canWrite&&S.assets?`<span class="btn upl">${S.busy.logo?"جارٍ الرفع…":"رفع الشعار PNG/JPG"}<input type="file" data-logo="1" accept="image/png,image/jpeg"></span>`:`<span class="small muted">رفع الشعار متاح للمحررين</span>`}</div></div>
   </div></div>
   <div class="card"><h3>عام</h3><div class="grid">
     ${sIn("barLen","طول عود الألمنيوم (مم)","number")}${sIn("trim","تشذيب أطراف العود (مم)","number")}${sIn("kerf","سماكة قص المنشار (مم)","number")}
@@ -703,7 +719,7 @@ async function sheetImages(f){
   }
   return [];
 }
-function exPrompt(i,n){return `You are reading page ${i} of ${n}: a photographed HANDWRITTEN site measurement sheet (Arabic/English) for aluminium windows and doors at Burj Al-Qimma factory, Saudi Arabia.
+function exPrompt(i,n){return `You are reading page ${i} of ${n}: a photographed HANDWRITTEN site measurement sheet (Arabic/English) for aluminium windows and doors at Al Qimma Tower Factory (مصنع برج القمة), Saudi Arabia.
 Measurements on the sheet are in CENTIMETERS. Precision is the top priority: read every number twice, and never guess a digit silently.
 For every window/door line return:
 - ref: the code and the window/door number in ONE string formatted "floor-code", e.g. "14-D3". If no floor is written, just the code, e.g. "W1".
@@ -803,7 +819,7 @@ async function buildMeasPdf(c,sections,sheetBlobs){
   function txt(t,x,yy,{size=22,weight=400,color="#16202a",align="right",maxW}={}){ctx.font=`${weight} ${size}px ${FONT}`;ctx.fillStyle=color;ctx.textAlign=align;ctx.direction="rtl";let s=String(t??"");if(maxW){while(s.length>1&&ctx.measureText(s).width>maxW)s=s.slice(0,-2);if(s!==String(t??""))s+="…"}ctx.fillText(s,x,yy)}
   function newPage(){cv=document.createElement("canvas");cv.width=PW;cv.height=PH;ctx=cv.getContext("2d");ctx.fillStyle="#fff";ctx.fillRect(0,0,PW,PH);pages.push(cv);pageNo++;
     ctx.fillStyle="#1d5d78";ctx.fillRect(0,0,PW,10);
-    txt("برج القمة للأعمال المعدنية",PW-MX,70,{size:30,weight:600});
+    txt(CO().nameAr,PW-MX,70,{size:30,weight:600});
     txt("كشف مقاسات الموقع · بالمليمتر",PW-MX,112,{size:22,color:"#5a6774"});
     txt(`العميل: ${c.name||""}`,MX+520,70,{size:22,align:"right"});
     txt(`رقم الملف: ${c.fileNo||"—"}   ·   التاريخ: ${today()}`,MX+520,112,{size:20,color:"#5a6774"});
@@ -903,9 +919,9 @@ function handle(x,y,vert=true){return vert?R(x-2.5,y-10,5,20,{fill:"#333",stroke
 function dimH(x1,x2,y,label,up=true){return L(x1,y,x2,y,{sw:.7})+L(x1,y-6,x1,y+6,{sw:.7})+L(x2,y-6,x2,y+6,{sw:.7})+L(x1-3,y+3,x1+3,y-3,{sw:1.2})+L(x2-3,y+3,x2+3,y-3,{sw:1.2})+T((x1+x2)/2,up?y-5:y+13,label,{size:11,anchor:"middle"})}
 function dimV(y1,y2,x,label){return L(x,y1,x,y2,{sw:.7})+L(x-6,y1,x+6,y1,{sw:.7})+L(x-6,y2,x+6,y2,{sw:.7})+L(x-3,y1+3,x+3,y1-3,{sw:1.2})+L(x-3,y2+3,x+3,y2-3,{sw:1.2})+T(x+14,(y1+y2)/2,label,{size:11,anchor:"middle",rot:-90})}
 
-function elevation(it,X0,Y0,AW,AH){
+function elevation(it,X0,Y0,AW,AH,opt={}){const mini=!!opt.mini;
   const W=N(it.w)||1200,H=N(it.h)||1200;const k=Math.min(AW/W,AH/H);const w=W*k,h=H*k;const x=X0+(AW-w)/2,y=Y0+(AH-h)/2;
-  const fw=Math.max(50*k,5),s=Math.max(45*k,4),ov=Math.max(25*k,3),kind=it.kind,hinged=kind==="door1"||kind==="door2";
+  const fw=Math.max(50*k,mini?1.6:5),s=Math.max(45*k,mini?1.2:4),ov=Math.max(25*k,mini?1:3),kind=it.kind,hinged=kind==="door1"||kind==="door2";
   let g="";
   if(hinged){g+=`<path d="M${sx(x)} ${sx(y+h)} V${sx(y)} H${sx(x+w)} V${sx(y+h)}" fill="#f4f4f4" stroke="#111" stroke-width="1.6"/>`+L(x-8,y+h,x+w+8,y+h,{sw:2})}
   else g+=R(x,y,w,h,{sw:1.6,fill:"#f4f4f4"});
@@ -930,6 +946,7 @@ function elevation(it,X0,Y0,AW,AH){
       if(kind==="awning")g+=handle(lx+lw/2,ly+lh-sp/2,false);else{const hx=apex==="R"?lx+sp/2:lx+lw-sp/2;g+=handle(hx,ly+lh*(hinged?.5:.5))}
     }
   }
+  if(mini)return g;
   g+=dimH(x,x+w,y+h+42,`${W}`);
   if(sashesSplit(kind)){const n=kind==="sliding3"?3:2;const parts=[];for(let i=0;i<n;i++)parts.push(Math.round(W/n));for(let i=0;i<n;i++)g+=dimH(x+i*w/n,x+(i+1)*w/n,y+h+20,`${parts[i]}`)}
   g+=dimV(y,y+h,x+w+30,`${H}`);
@@ -968,7 +985,7 @@ function sheetSVG(c,it,idx,total){
   const TY=700;s+=L(22,TY,1168,TY,{sw:1.2});
   [[250],[560],[800],[960]].forEach(([a])=>{s+=L(a,TY,a,820,{sw:.8})});
   s+=`<rect x="34" y="${TY+14}" width="26" height="26" rx="5" fill="#1d5d78"/><rect x="40" y="${TY+20}" width="14" height="14" fill="none" stroke="#fff" stroke-width="2"/>`;
-  s+=T(68,TY+26,"BURJ AL-QIMMA",{size:11.5,weight:700})+T(68,TY+42,"METAL WORKS",{size:10,weight:700})+T(34,TY+66,"ALUMINIUM & GLASS WORKS",{size:9,fill:"#555"});
+  s+=T(68,TY+26,"AL QIMMA TOWER",{size:11.5,weight:700})+T(68,TY+42,"FACTORY",{size:10,weight:700})+T(34,TY+66,"ALUMINIUM & GLASS WORKS",{size:9,fill:"#555"});
   const cn=c.nameEn||enOnly(c.name)||c.name,cl=c.locationEn||enOnly(c.location)||"";
   s+=T(260,TY+20,"CLIENT / PROJECT",{size:8.5,fill:"#666"})+T(260,TY+42,U(cn)||"-",{size:12,weight:700})+T(260,TY+60,U(cl),{size:10})+T(260,TY+82,`FILE NO. ${c.fileNo||"-"}${c.contractNo&&!/[؀-ۿ]/.test(c.contractNo)?`   |   CONTRACT NO. ${c.contractNo}`:""}`,{size:9.5});
   s+=T(570,TY+20,"DRAWING TITLE",{size:8.5,fill:"#666"})+T(570,TY+42,"PRELIMINARY SHOP DRAWING",{size:11,weight:700})+T(570,TY+60,`ITEM ${it.ref||""}`,{size:11,weight:700})+T(570,TY+80,U(kd[1]),{size:9,fill:"#444"});
@@ -999,7 +1016,7 @@ async function shopPdf(c,mode){
   S.pdfBusy=false;render();
 }
 
-function quotePrompt(i,n){return `You are reading page ${i} of ${n} of a price quotation (عرض سعر) from Burj Al-Qimma aluminium & glass factory, Saudi Arabia. List EVERY window, door or facade item priced on this page.
+function quotePrompt(i,n){return `You are reading page ${i} of ${n} of a price quotation (عرض سعر) from Al Qimma Tower Factory (مصنع برج القمة), an aluminium & glass factory in Saudi Arabia. List EVERY window, door or facade item priced on this page.
 For each item return:
 - ref: the item code as written (e.g. W1, D2, ش1). If none, use the line number as "#3".
 - title: short Arabic description as written.
@@ -1174,7 +1191,7 @@ function handoverSVG(c){
   const h=hoMerged(c);const works=hoWorks(c);let y;
   let s=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 595 842" width="595" height="842"><rect width="595" height="842" fill="#fff"/>`;
   s+=`<rect x="0" y="0" width="595" height="8" fill="#1d5d78"/>`+R(20,20,555,802,{sw:.8});
-  s+=T(560,52,"برج القمة للأعمال المعدنية",{size:15,anchor:"end",weight:700})+T(35,52,"BURJ AL-QIMMA METAL WORKS",{size:10,weight:700})+T(35,66,"Aluminium & Glass Works",{size:8.5,fill:"#555"});
+  s+=T(560,52,CO().nameAr,{size:15,anchor:"end",weight:700})+T(35,52,CO().nameEn.toUpperCase(),{size:10,weight:700})+T(35,66,"Aluminium & Glass Works",{size:8.5,fill:"#555"});
   s+=`<rect x="35" y="82" width="525" height="38" fill="#eef3f6"/>`+T(560-8,106,"محضر تسليم نهائي",{size:16,anchor:"end",weight:700,fill:"#1d5d78"})+T(43,106,"FINAL HANDOVER CERTIFICATE",{size:11,weight:700,fill:"#1d5d78"});
   y=146;const kv=(ar,v,en)=>{s+=T(560,y,ar+":",{size:10,anchor:"end",fill:"#555"})+T(470,y,v||"—",{size:10.5,anchor:"end",weight:600})+T(35,y,en,{size:8.5,fill:"#888"});y+=20};
   kv("العميل",c.name,"Client");kv("الموقع",c.location,"Location");kv("رقم الملف",iso(c.fileNo||"—"),"File No.");kv("رقم العقد",iso(c.contractNo||"—"),"Contract No.");kv("تاريخ التسليم",iso(h.date||today()),"Handover date");
@@ -1189,7 +1206,7 @@ function handoverSVG(c){
   s+=T(560,y,`مدة الضمان: ${N(h.warranty??1)} ${N(h.warranty??1)===1?"سنة":"سنوات"} من تاريخ التسليم على أعمال الألمنيوم والإكسسوارات حسب شروط العقد.`,{size:10,anchor:"end"})+T(35,y+14,`Warranty: ${N(h.warranty??1)} year(s) from handover date.`,{size:8.5,fill:"#666"});y+=36;
   wrapText("يقر العميل باستلام الأعمال المذكورة أعلاه بحالة جيدة ومطابقة للمواصفات والمخططات المعتمدة، باستثناء الملاحظات المدونة في هذا المحضر.",95).forEach(l=>{s+=T(560,y,l,{size:10,anchor:"end"});y+=16});
   const sy=Math.max(y+20,690);
-  [[300,560,"المصنع - برج القمة","Factory representative",h.engineer||""],[35,285,"العميل / المستلم","Client / Receiver",[h.receiver,h.role].filter(Boolean).join(" - ")]].forEach(([x1,x2,ar,en,name])=>{
+  [[300,560,"مندوب المصنع","Factory representative",h.engineer||""],[35,285,"العميل / المستلم","Client / Receiver",[h.receiver,h.role].filter(Boolean).join(" - ")]].forEach(([x1,x2,ar,en,name])=>{
     s+=R(x1,sy,x2-x1,110,{stroke:"#999",sw:.7})+T(x2-8,sy+18,ar,{size:10.5,anchor:"end",weight:700})+T(x1+8,sy+18,en,{size:8.5,fill:"#777"})+T(x2-8,sy+42,"الاسم: "+(name||""),{size:10,anchor:"end"})+T(x2-8,sy+70,"التوقيع:",{size:10,anchor:"end"})+L(x1+10,sy+72,x2-60,sy+72,{stroke:"#bbb",sw:.6,dash:"3 3"})+T(x2-8,sy+96,x2===560?"الختم:":"الجوال: "+iso(h.phone||""),{size:10,anchor:"end"})});
   return s+"</svg>";
 }
@@ -1207,7 +1224,7 @@ async function handoverPdf(c,mode){
 /* ---------- sales invoices & statements ---------- */
 const QRLIB="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js";
 let qrLoad=null;function loadQr(){if(window.qrcode)return Promise.resolve(window.qrcode);if(!qrLoad){qrLoad=addScript(QRLIB).then(()=>window.qrcode);qrLoad.catch(()=>{qrLoad=null})}return qrLoad}
-const CO=()=>({nameAr:"برج القمة للأعمال المعدنية",nameEn:"Burj Al-Qimma Metal Works",vat:"",cr:"",address:"",phone:"",bank:"",iban:"",...(S.cfg.company||{})});
+const CO=()=>{const c={nameAr:"مصنع برج القمة للأعمال المعدنية",nameEn:"AL QIMMA TOWER FACTORY",vat:"",cr:"",address:"",phone:"",email:"",website:"",bank:"",iban:"",logo:"",...(S.cfg.company||{})};if(!c.nameAr||c.nameAr==="برج القمة للأعمال المعدنية")c.nameAr="مصنع برج القمة للأعمال المعدنية";if(!c.nameEn||/^burj al-qimma metal works$/i.test(c.nameEn))c.nameEn="AL QIMMA TOWER FACTORY";return c};
 function invTotals(amount,mode){const a=N(amount);let net,total;if(mode==="شامل الضريبة"){total=r2(a);net=r2(a/(1+VAT_RATE))}else{net=r2(a);total=r2(a*(1+VAT_RATE))}return{net,vat:r2(total-net),total}}
 function nextInvNo(){const y=new Date().getFullYear();let mx=0;S.clients.forEach(c=>(c.salesInvoices||[]).forEach(i=>{const m=new RegExp("^INV-"+y+"-(\\d+)$").exec(i.no||"");if(m)mx=Math.max(mx,+m[1])}));return `INV-${y}-${String(mx+1).padStart(4,"0")}`}
 function zatcaTLV(co,inv){const enc=new TextEncoder();const parts=[[1,co.nameAr],[2,co.vat],[3,inv.createdAt||(inv.date+"T12:00:00Z")],[4,inv.total.toFixed(2)],[5,inv.vat.toFixed(2)]];
@@ -1306,6 +1323,232 @@ function tabInvoices(c){
   <div class="card"><h3>فواتير وكشوفات محفوظة ${uploader("salesInv","رفع فاتورة")}</h3>${fileList(c,"salesInv")}${((c.files||{}).statements||[]).length?`<h3 style="margin-top:6px">كشوفات الحساب</h3>${fileList(c,"statements")}`:""}</div>`;
 }
 
+/* ---------- preliminary quotations (عروض الأسعار المبدئية) ---------- */
+S.quotes=[];S.section="clients";S.qid=null;S.qd=null;S.qDirty=false;S.qq="";S.qstatus="";S.logoData=null;
+const Q_STATUS=["مسودة","مرسل للعميل","معتمد","مرفوض"];
+const Q_STATUS_CLS={"مسودة":"","مرسل للعميل":"s2","معتمد":"s3","مرفوض":"bad","منتهي":"bad"};
+const Q_TYPES={...Object.fromEntries(Object.entries(KINDS).map(([k,v])=>[k,v[0]])),other:"بند عام / أعمال أخرى"};
+const PRICING={m2:"بالمتر المربع",unit:"بالحبة",lump:"مقطوعية"};
+const Q_TERMS=`الأسعار بالريال السعودي وغير شاملة ضريبة القيمة المضافة 15% ما لم يُذكر خلاف ذلك.
+المقاسات الواردة تقريبية، والمحاسبة النهائية حسب المقاسات الفعلية بعد الرفع المساحي في الموقع.
+تبدأ مدة التنفيذ من تاريخ استلام الدفعة المقدمة واعتماد المخططات والألوان والعينات.
+يلتزم العميل بتجهيز الفتحات بشكل نهائي (لياسة وتسوية) قبل موعد التركيب.
+أي أعمال إضافية أو تعديلات خارج نطاق هذا العرض تُسعّر بشكل منفصل.
+لا يشمل العرض أعمال السقالات أو الرافعات أو الأعمال المدنية ما لم يُذكر صراحة.
+الضمان على أعمال الألمنيوم والإكسسوارات حسب شروط الضمان المعتمدة لدى المصنع.`;
+const Q_PAY=[{label:"دفعة مقدمة عند التعميد",pct:50},{label:"عند توريد الأعمال للموقع",pct:40},{label:"بعد التركيب والتسليم النهائي",pct:10}];
+
+function nextQuoteNo(){const y=new Date().getFullYear();let mx=0;S.quotes.forEach(q=>{const m=new RegExp("^Q-"+y+"-(\\d+)").exec(q.no||"");if(m)mx=Math.max(mx,+m[1])});return `Q-${y}-${String(mx+1).padStart(4,"0")}`}
+function newQuote(){const co=CO();return{no:nextQuoteNo(),rev:0,date:today(),validDays:15,status:"مسودة",client:{name:"",phone:"",email:"",project:"",location:"",attn:""},
+  items:[{id:uid(),ref:"W1",type:"sliding2",desc:"",w:1500,h:1200,qty:1,pricing:"m2",price:0}],minArea:0,discount:0,
+  specs:{system:"سرايا 10 سم",profileThk:"1.5 مم",paintColor:"",paintCode:"",paintFinish:"دهان بودرة (Powder coated)",glassType:"دبل سكوريت",glassThk:"24 مم (6+12+6)",glassColor:"شفاف",accType:"",accColor:"",screen:"شبك ألمنيوم مع درفة سلك"},
+  deliveryDays:30,payTerms:clone(Q_PAY),terms:Q_TERMS,notes:"",preparedBy:"",preparedRole:"قسم المبيعات",createdAt:new Date().toISOString()}}
+function qLine(q,it){const area=N(it.w)*N(it.h)/1e6;const a1=Math.max(area,N(q.minArea));const qty=N(it.qty)||1;
+  const totalArea=it.type==="other"&&!(N(it.w)&&N(it.h))?0:a1*qty;
+  const total=it.pricing==="lump"?N(it.price):it.pricing==="unit"?qty*N(it.price):totalArea*N(it.price);return{area:a1,totalArea,qty,total:r2(total)}}
+function qTotals(q){const sub=r2(sum(q.items||[],it=>qLine(q,it).total));const disc=r2(Math.min(N(q.discount),sub));const net=r2(sub-disc);const vat=r2(net*VAT_RATE);return{sub,disc,net,vat,total:r2(net+vat),area:sum(q.items||[],it=>qLine(q,it).totalArea),qty:sum((q.items||[]).filter(i=>i.type!=="other"),it=>N(it.qty)||1)}}
+function qExpired(q){if(q.status==="معتمد"||q.status==="مرفوض")return false;const d=new Date(q.date+"T00:00:00");d.setDate(d.getDate()+N(q.validDays));return d<new Date(today()+"T00:00:00")}
+function qValidUntil(q){const d=new Date((q.date||today())+"T00:00:00");d.setDate(d.getDate()+N(q.validDays));return d.toISOString().slice(0,10)}
+function qStatus(q){return qExpired(q)?"منتهي":q.status||"مسودة"}
+
+/* Arabic amount in words */
+const AW1=["","واحد","اثنان","ثلاثة","أربعة","خمسة","ستة","سبعة","ثمانية","تسعة","عشرة","أحد عشر","اثنا عشر","ثلاثة عشر","أربعة عشر","خمسة عشر","ستة عشر","سبعة عشر","ثمانية عشر","تسعة عشر"];
+const AW10=["","","عشرون","ثلاثون","أربعون","خمسون","ستون","سبعون","ثمانون","تسعون"];
+const AW100=["","مائة","مائتان","ثلاثمائة","أربعمائة","خمسمائة","ستمائة","سبعمائة","ثمانمائة","تسعمائة"];
+function aw3(n){const h=Math.floor(n/100),r=n%100,p=[];if(h)p.push(AW100[h]);if(r){if(r<20)p.push(AW1[r]);else{const o=r%10,t=Math.floor(r/10);p.push(o?AW1[o]+" و"+AW10[t]:AW10[t])}}return p.join(" و")}
+function awScale(k,s1,s2,s3,s4){if(!k)return"";if(k===1)return s1;if(k===2)return s2;if(k<=10)return aw3(k)+" "+s3;const r=k%100;return aw3(k)+" "+(r>=11&&r<=99?s4:s1)}
+function arWords(n){n=Math.floor(n);if(!n)return"صفر";const p=[];const b=Math.floor(n/1e9),m=Math.floor(n%1e9/1e6),t=Math.floor(n%1e6/1000),r=n%1000;
+  if(b)p.push(awScale(b,"مليار","ملياران","مليارات","ملياراً"));if(m)p.push(awScale(m,"مليون","مليونان","ملايين","مليوناً"));if(t)p.push(awScale(t,"ألف","ألفان","آلاف","ألفاً"));if(r)p.push(aw3(r));return p.join(" و")}
+function tafqeet(v){const i=Math.floor(r2(v)),h=Math.round((r2(v)-i)*100);const r=i%100;const cur=r>=3&&r<=10?"ريالات سعودية":r>=11?"ريالاً سعودياً":"ريال سعودي";const hr=h%100;const hw=h===1?"هللة واحدة":h===2?"هللتان":hr>=3&&hr<=10?`${h<=10?["","","","ثلاث","أربع","خمس","ست","سبع","ثماني","تسع","عشر"][h]:arWords(h)} هللات`:`${arWords(h)} هللة`;return `فقط ${i===1?"ريال سعودي واحد":i===2?"ريالان سعوديان":`${arWords(i)} ${cur}`}${h?` و${hw}`:""} لا غير`}
+
+/* logo for documents */
+async function logoHref(forPdf){const id=CO().logo;if(!id)return"";if(!forPdf)return blob(id);if(S.logoData&&S.logoData.id===id)return S.logoData.url;
+  try{const b=await fetchFile({id});const url=await new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result);fr.readAsDataURL(b)});S.logoData={id,url};return url}catch(e){return""}}
+
+/* --- quotation PDF pages (A4 595x842) --- */
+const m2f=n=>N(n).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
+const QC={ink:"#16202a",teal:"#1d5d78",bronze:"#8f6234",soft:"#eef3f6",line:"#d5dde3",muted:"#5d6b77"};
+function quoteSVGs(q,logo){
+  const co=CO();const t=qTotals(q);const pages=[];let s,y;const X1=30,X2=565,W=X2-X1;
+  const sp=q.specs||{};
+  function header(first){
+    s=`<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 595 842" width="595" height="842"><rect width="595" height="842" fill="#fff"/>`;
+    s+=`<rect x="0" y="0" width="595" height="6" fill="${QC.teal}"/><rect x="0" y="6" width="595" height="2" fill="${QC.bronze}"/>`;
+    const lx=X2-(logo?58:34);
+    if(logo)s+=`<image href="${esc(logo)}" xlink:href="${esc(logo)}" x="${X2-52}" y="20" width="52" height="52" preserveAspectRatio="xMidYMid meet"/>`;
+    else s+=`<rect x="${X2-34}" y="24" width="34" height="34" rx="7" fill="${QC.teal}"/><rect x="${X2-26}" y="32" width="18" height="18" fill="none" stroke="#fff" stroke-width="2.4"/>`;
+    s+=T(lx-8,42,co.nameAr,{size:16,anchor:"end",weight:700,fill:QC.ink})+T(lx-8,58,"أعمال الألمنيوم والزجاج",{size:8.5,anchor:"end",fill:QC.muted});
+    s+=T(X1,40,co.nameEn.toUpperCase(),{size:11.5,weight:700,fill:QC.ink})+T(X1,54,"ALUMINIUM & GLASS WORKS",{size:7.5,fill:QC.muted});
+    const meta=[co.vat?`VAT ${co.vat}`:"",co.cr?`CR ${co.cr}`:"",co.phone||"",co.email||""].filter(Boolean).join("   ·   ");
+    s+=T(X1,68,meta,{size:7.5,fill:QC.muted});
+    s+=L(X1,82,X2,82,{stroke:QC.line,sw:.8});
+    y=first?96:96;
+  }
+  function footer(){s+=L(X1,808,X2,808,{stroke:QC.line,sw:.6})+T(X2,822,[co.nameAr,co.address].filter(Boolean).join(" · "),{size:7.5,anchor:"end",fill:QC.muted})+T(X1,822,"{{PAGE}}",{size:7.5,fill:QC.muted});pages.push(s+"</svg>")}
+  function ensure(h){if(y+h>795){footer();header(false);return true}return false}
+  header(true);
+  // title + meta
+  s+=T(X2,y+22,"عرض سعر",{size:24,anchor:"end",weight:700,fill:QC.teal})+T(X1,y+22,"QUOTATION",{size:15,weight:700,fill:QC.teal})+`<text x="${X1}" y="${y+34}" font-size="7.5" fill="${QC.muted}" font-family="${SF}" letter-spacing="1.5">PRICE OFFER FOR ALUMINIUM &amp; GLASS WORKS</text>`;
+  y+=48;
+  const bw=(W-12)/2;
+  s+=`<rect x="${X1+bw+12}" y="${y}" width="${bw}" height="86" rx="6" fill="${QC.soft}"/>`+`<rect x="${X1}" y="${y}" width="${bw}" height="86" rx="6" fill="#fff" stroke="${QC.line}" stroke-width=".8"/>`;
+  const cx=X2-10;s+=T(cx,y+16,"مقدّم إلى السادة",{size:8,anchor:"end",fill:QC.muted})+T(cx,y+34,q.client?.name||"—",{size:13,anchor:"end",weight:700})+T(cx,y+52,[q.client?.project,q.client?.location].filter(Boolean).join(" - ")||"",{size:9,anchor:"end"})+T(cx,y+68,[q.client?.attn?`عناية: ${q.client.attn}`:"",q.client?.phone?`جوال: ${iso(q.client.phone)}`:""].filter(Boolean).join("   "),{size:8.5,anchor:"end",fill:QC.muted});
+  const mx=X1+bw-10;const mrow=(i,l,v)=>{s+=T(mx,y+18+i*17,l,{size:8.5,anchor:"end",fill:QC.muted})+T(X1+10,y+18+i*17,v,{size:9.5,weight:700})};
+  mrow(0,"رقم العرض",`${q.no}${q.rev?`-R${q.rev}`:""}`);mrow(1,"تاريخ العرض",q.date||today());mrow(2,"صالح حتى",qValidUntil(q));mrow(3,"مدة التنفيذ",`${N(q.deliveryDays)} يوماً`);
+  y+=100;
+  s+=T(X2,y,"يسرّنا أن نتقدم لكم بعرض سعرنا لتوريد وتركيب أعمال الألمنيوم والزجاج حسب البنود والمواصفات التالية:",{size:9.5,anchor:"end"});y+=14;
+  // items table
+  const C=[["#",22],["الشكل",48],["البند والوصف",170],["المقاس مم",72],["العدد",34],["المساحة م٢",46],["سعر الوحدة",68],["الإجمالي",75]];
+  function thead(){s+=`<rect x="${X1}" y="${y}" width="${W}" height="24" rx="3" fill="${QC.teal}"/>`;let x=X2;C.forEach(([l,w])=>{s+=T(x-5,y+16,l,{size:8.3,anchor:"end",weight:700,fill:"#fff"});x-=w});y+=24}
+  thead();
+  (q.items||[]).forEach((it,i)=>{
+    const L1=qLine(q,it);const isWin=it.type!=="other"&&KINDS[it.type];const dl=wrapText(it.desc||"",40).slice(0,3);const rh=Math.max(isWin?50:30,22+dl.length*11);
+    if(ensure(rh+4)){thead()}
+    if(i%2)s+=`<rect x="${X1}" y="${y}" width="${W}" height="${rh}" fill="#f7f9fb"/>`;
+    let x=X2;const cy=y+16;
+    s+=T(x-5,cy,String(i+1),{size:8.5,anchor:"end",fill:QC.muted});x-=C[0][1];
+    if(isWin&&N(it.w)&&N(it.h))s+=`<g>${elevation({...it,hinge:it.hinge||"R"},x-C[1][1]+4,y+5,C[1][1]-8,rh-10,{mini:true})}</g>`;x-=C[1][1];
+    s+=T(x-5,cy,`${it.ref?it.ref+" - ":""}${Q_TYPES[it.type]||""}`,{size:9,anchor:"end",weight:700});dl.forEach((l,k)=>{s+=T(x-5,cy+12+k*11,l,{size:8,anchor:"end",fill:"#333"})});x-=C[2][1];
+    s+=T(x-5,cy,N(it.w)&&N(it.h)?`${N(it.w)} × ${N(it.h)}`:"—",{size:8.8,anchor:"end"});x-=C[3][1];
+    s+=T(x-5,cy,String(L1.qty),{size:8.8,anchor:"end"});x-=C[4][1];
+    s+=T(x-5,cy,L1.totalArea?L1.totalArea.toFixed(2):"—",{size:8.8,anchor:"end"});x-=C[5][1];
+    s+=T(x-5,cy,it.pricing==="lump"?"مقطوع":m2f(it.price),{size:8.8,anchor:"end"})+(it.pricing!=="lump"?T(x-5,cy+11,it.pricing==="unit"?"للحبة":"للمتر٢",{size:7,anchor:"end",fill:QC.muted}):"");x-=C[6][1];
+    s+=T(x-5,cy,m2f(L1.total),{size:9.2,anchor:"end",weight:700});
+    s+=L(X1,y+rh,X2,y+rh,{stroke:QC.line,sw:.5});y+=rh;
+  });
+  // totals
+  ensure(150);y+=10;
+  const tb=[["المجموع",t.sub],...(t.disc?[["الخصم",-t.disc],["الصافي بعد الخصم",t.net]]:[]),["ضريبة القيمة المضافة 15%",t.vat]];
+  const TX=X1,TW=250;
+  s+=T(X2,y+12,`إجمالي المساحة: ${t.area.toFixed(2)} م٢   ·   عدد الوحدات: ${t.qty}`,{size:8.8,anchor:"end",fill:QC.muted});
+  tb.forEach(([l,v])=>{s+=T(TX+TW-8,y+14,l,{size:9.2,anchor:"end"})+T(TX+8,y+14,`${v<0?"- ":""}${m2f(Math.abs(v))} SAR`,{size:9.2,weight:600})+L(TX,y+21,TX+TW,y+21,{stroke:QC.line,sw:.5});y+=22});
+  s+=`<rect x="${TX}" y="${y+2}" width="${TW}" height="30" rx="4" fill="${QC.teal}"/>`+T(TX+TW-8,y+22,"الإجمالي شامل الضريبة",{size:10.5,anchor:"end",weight:700,fill:"#fff"})+T(TX+8,y+22,`${m2f(t.total)} SAR`,{size:11.5,weight:700,fill:"#fff"});y+=44;
+  wrapText(tafqeet(t.total),90).forEach(l=>{s+=T(X2,y,l,{size:9.2,anchor:"end",weight:600,fill:QC.bronze});y+=14});y+=8;
+  // specs
+  const specRows=[["نظام الألمنيوم",sp.system],["سماكة القطاعات",sp.profileThk],["لون الدهان",[sp.paintColor,sp.paintCode].filter(Boolean).join(" - ")],["نوع الدهان",sp.paintFinish],["الزجاج",[sp.glassType,sp.glassThk].filter(Boolean).join(" - ")],["لون الزجاج",sp.glassColor],["الإكسسوارات",[sp.accType,sp.accColor].filter(Boolean).join(" - ")],["الشبك",sp.screen]].filter(r=>r[1]);
+  if(specRows.length){ensure(40+Math.ceil(specRows.length/2)*22);s+=T(X2,y+10,"المواصفات الفنية",{size:12,anchor:"end",weight:700,fill:QC.teal})+T(X1,y+10,"TECHNICAL SPECIFICATIONS",{size:8,weight:700,fill:QC.teal});y+=18;
+    const half=Math.ceil(specRows.length/2);for(let r=0;r<half;r++){[specRows[r],specRows[r+half]].forEach((row,k)=>{if(!row)return;const xr=k===0?X2:X1+W/2-6;const bx=k===0?X1+W/2+6:X1;
+      s+=`<rect x="${bx}" y="${y}" width="${W/2-6}" height="20" fill="${r%2?"#fff":QC.soft}"/>`+T(xr-6,y+14,row[0],{size:8.5,anchor:"end",fill:QC.muted})+T(xr-90,y+14,(row[1].length>34?row[1].slice(0,33)+"…":row[1]),{size:8.8,anchor:"end",weight:600})});y+=20}
+    y+=14}
+  // payment schedule
+  const pays=(q.payTerms||[]).filter(p=>N(p.pct)>0);
+  if(pays.length){ensure(40+pays.length*20);s+=T(X2,y+10,"جدول الدفعات",{size:12,anchor:"end",weight:700,fill:QC.teal})+T(X1,y+10,"PAYMENT SCHEDULE",{size:8,weight:700,fill:QC.teal});y+=18;
+    pays.forEach((p,i)=>{s+=`<rect x="${X1}" y="${y}" width="${W}" height="20" fill="${i%2?"#fff":QC.soft}"/>`+T(X2-8,y+14,`${i+1}. ${p.label||""}`,{size:9,anchor:"end"})+T(X1+170,y+14,`${N(p.pct)}%`,{size:9,anchor:"end",weight:700})+T(X1+8,y+14,`${m2f(r2(t.total*N(p.pct)/100))} SAR`,{size:9,weight:600});y+=20});
+    const sp2=sum(pays,p=>N(p.pct));if(sp2!==100)s+=T(X2,y+12,`تنبيه: مجموع نسب الدفعات ${sp2}%`,{size:8,anchor:"end",fill:"#b0281f"}),y+=6;y+=16}
+  // terms
+  const terms=String(q.terms||"").split(/\n+/).map(x=>x.trim()).filter(Boolean);
+  if(terms.length){ensure(40);s+=T(X2,y+10,"الشروط والأحكام",{size:12,anchor:"end",weight:700,fill:QC.teal})+T(X1,y+10,"TERMS & CONDITIONS",{size:8,weight:700,fill:QC.teal});y+=22;
+    terms.forEach((tx,i)=>{const ls=wrapText(tx,96);ensure(ls.length*12+4);ls.forEach((l,k)=>{s+=T(X2-(k?14:0),y,(k?"":`${i+1}. `)+l,{size:8.6,anchor:"end"});y+=12});y+=3});y+=8}
+  if(q.notes){const ls=wrapText(q.notes,96).slice(0,6);ensure(30+ls.length*12);s+=T(X2,y+8,"ملاحظات",{size:11,anchor:"end",weight:700,fill:QC.teal});y+=20;ls.forEach(l=>{s+=T(X2,y,l,{size:8.8,anchor:"end"});y+=12});y+=8}
+  // bank + signatures
+  ensure(150);
+  if(co.iban||co.bank){s+=`<rect x="${X1}" y="${y}" width="${W}" height="26" rx="4" fill="${QC.soft}"/>`+T(X2-8,y+17,`الحساب البنكي: ${co.bank||""}   ·   IBAN: ${iso(co.iban||"")}   ·   باسم: ${co.nameAr}`,{size:8.8,anchor:"end"});y+=36}
+  const sy=y;const bw2=(W-14)/2;
+  s+=`<rect x="${X1+bw2+14}" y="${sy}" width="${bw2}" height="96" rx="6" fill="#fff" stroke="${QC.line}"/>`+T(X2-10,sy+18,`عن ${co.nameAr}`,{size:9.5,anchor:"end",weight:700})+T(X2-10,sy+38,q.preparedBy?`${q.preparedBy}${q.preparedRole?" - "+q.preparedRole:""}`:(q.preparedRole||""),{size:9,anchor:"end"})+T(X2-10,sy+62,"التوقيع:",{size:8.5,anchor:"end",fill:QC.muted})+T(X2-10,sy+84,"الختم:",{size:8.5,anchor:"end",fill:QC.muted});
+  s+=`<rect x="${X1}" y="${sy}" width="${bw2}" height="96" rx="6" fill="#fff" stroke="${QC.teal}" stroke-dasharray="4 3"/>`+T(X1+bw2-10,sy+18,"موافقة العميل واعتماد العرض",{size:9.5,anchor:"end",weight:700,fill:QC.teal})+T(X1+bw2-10,sy+40,"الاسم:",{size:8.5,anchor:"end",fill:QC.muted})+T(X1+bw2-10,sy+62,"التوقيع:",{size:8.5,anchor:"end",fill:QC.muted})+T(X1+bw2-10,sy+84,"التاريخ:",{size:8.5,anchor:"end",fill:QC.muted});
+  y+=106;s+=T(297,y+8,"شاكرين لكم ثقتكم، ونتطلع لخدمتكم - Thank you for your trust",{size:8.5,anchor:"middle",fill:QC.muted});
+  footer();
+  return pages.map((p,i)=>p.replace("{{PAGE}}",`Page ${i+1} / ${pages.length}   ·   ${q.no}${q.rev?`-R${q.rev}`:""}`));
+}
+async function quotePdfBlob(q){const {jsPDF}=await loadJsPdf();const logo=await logoHref(true);const pdf=new jsPDF({unit:"mm",format:"a4",orientation:"portrait",compress:true});
+  const pgs=quoteSVGs(q,logo);for(let i=0;i<pgs.length;i++){if(i)pdf.addPage("a4","portrait");pdf.addImage(await svgToJpeg(pgs[i],3.5,595,842),"JPEG",0,0,210,297)}return pdf.output("blob")}
+const qFileName=q=>`عرض-سعر-${q.no}${q.rev?`-R${q.rev}`:""}-${(q.client?.name||"").trim()}.pdf`.replace(/[\\/:*?"<>|]/g,"-");
+
+/* --- quote persistence --- */
+let qSaveT=null,qSaving=Promise.resolve();
+function qScheduleSave(){if(!S.canWrite||!S.qid)return;S.qDirty=true;clearTimeout(qSaveT);qSaveT=setTimeout(qSaveNow,700)}
+function qSaveNow(){clearTimeout(qSaveT);if(!S.qd||!S.qid||!db)return qSaving;const id=S.qid,data={...clone(S.qd),updatedAt:new Date().toISOString()};delete data._id;
+  qSaving=qSaving.then(()=>db.doc("quotes/"+id).set(data)).then(()=>{if(S.qid===id){S.qDirty=false;render()}}).catch(e=>{handleWriteErr(e)});return qSaving}
+function openQuote(id){const q=S.quotes.find(x=>x._id===id);S.qid=id;S.qd=q?clone(q):null;S.qDirty=false;S.confirm=null;try{history.replaceState(null,"","#q-"+id)}catch(e){location.hash="q-"+id}render();window.scrollTo(0,0)}
+
+/* --- views --- */
+function sectionNav(){const open=S.quotes.filter(q=>["مسودة","مرسل للعميل"].includes(q.status)&&!qExpired(q)).length;
+  return `<nav class="seg" aria-label="الأقسام"><button data-act="sec" data-sec="clients" aria-pressed="${S.section==="clients"}">ملفات العملاء <span class="cnt num">${S.clients.length}</span></button><button data-act="sec" data-sec="quotes" aria-pressed="${S.section==="quotes"}">عروض الأسعار المبدئية <span class="cnt num">${S.quotes.length}</span>${open?`<span class="dot" title="عروض مفتوحة"></span>`:""}</button></nav>`}
+function quotesListView(){
+  const Qs=S.quotes;const tot=q=>qTotals(q).total;
+  const open=Qs.filter(q=>["مسودة","مرسل للعميل"].includes(qStatus(q)));const won=Qs.filter(q=>q.status==="معتمد");const decided=Qs.filter(q=>["معتمد","مرفوض"].includes(q.status)||qExpired(q));
+  const stats=`<section class="stats"><div class="stat"><span>عروض الأسعار</span><b class="num">${Qs.length}</b></div><div class="stat"><span>عروض مفتوحة</span><b>${M(sum(open,tot))}</b></div><div class="stat"><span>عروض معتمدة</span><b class="pos">${M(sum(won,tot))}</b></div><div class="stat"><span>نسبة التعميد</span><b class="num">${decided.length?Math.round(won.length/decided.length*100):0}%</b></div></section>`;
+  const qq=S.qq.trim();const rows=Qs.filter(q=>(!S.qstatus||qStatus(q)===S.qstatus)&&(!qq||[q.no,q.client?.name,q.client?.phone,q.client?.project,q.client?.location].some(v=>String(v||"").includes(qq)))).sort((a,b)=>String(b.date+b.no).localeCompare(String(a.date+a.no)));
+  const table=!Qs.length?`<div class="card empty"><h2>لا توجد عروض أسعار بعد</h2><p class="muted" style="max-width:54ch">جهّز عرض السعر هنا بالبنود والمقاسات والمواصفات، ونزّله PDF بتصميم احترافي. إذا عمّده العميل، اضغط «تعميد» ويتحوّل لملف عميل كامل بكل بياناته.</p>${S.canWrite?`<button class="primary" data-act="q-new">+ أول عرض سعر</button>`:""}</div>`:
+  `<div class="tablebox"><table><thead><tr><th>رقم العرض</th><th>التاريخ</th><th>العميل</th><th>المشروع / الموقع</th><th>الإجمالي شامل الضريبة</th><th>صالح حتى</th><th>الحالة</th></tr></thead><tbody>
+  ${rows.map(q=>{const st=qStatus(q);return `<tr class="click" data-act="q-open" data-id="${esc(q._id)}" tabindex="0"><td class="fileno num">${esc(q.no)}${q.rev?`-R${q.rev}`:""}</td><td class="num">${esc(q.date)}</td><td><b>${esc(q.client?.name||"بدون اسم")}</b></td><td>${esc([q.client?.project,q.client?.location].filter(Boolean).join(" - ")||"—")}</td><td>${M(tot(q))}</td><td class="num ${st==="منتهي"?"neg":""}">${qValidUntil(q)}</td><td><span class="pill ${Q_STATUS_CLS[st]||""}">${esc(st)}</span></td></tr>`}).join("")||`<tr><td colspan="7" class="muted">لا توجد نتائج مطابقة</td></tr>`}
+  </tbody></table></div>`;
+  return `${sectionNav()}${stats}<div class="toolbar"><input id="qq" type="search" placeholder="ابحث برقم العرض أو اسم العميل أو المشروع" value="${esc(S.qq)}" aria-label="بحث"><select id="qstatusFilter" aria-label="الحالة"><option value="">كل الحالات</option>${[...Q_STATUS,"منتهي"].map(x=>`<option ${x===S.qstatus?"selected":""}>${x}</option>`).join("")}</select></div>${table}`;
+}
+function qIn(path,label,type="text",extra=""){const v=getPath(S.qd,path);return `<label class="fld">${label}<input id="${"qf-"+path.replace(/[^a-zA-Z0-9_-]/g,"_")}" data-q="${esc(path)}" type="${type}" value="${esc(v??"")}" ${type==="number"?'step="any" inputmode="decimal"':""} ${extra} ${S.canWrite&&S.qd.status!=="معتمد"?"":"disabled"}></label>`}
+function qCell(path,type="text",w="",extra=""){const v=getPath(S.qd,path);return `<input id="${"qf-"+path.replace(/[^a-zA-Z0-9_-]/g,"_")}" data-q="${esc(path)}" type="${type}" value="${esc(v??"")}" style="${w?`min-width:${w}`:""}" ${type==="number"?'step="any" inputmode="decimal"':""} ${extra} ${S.canWrite&&S.qd.status!=="معتمد"?"":"disabled"} aria-label="${esc(path)}">`}
+function qSel(path,opts,w=""){const v=getPath(S.qd,path);return `<select id="${"qf-"+path.replace(/[^a-zA-Z0-9_-]/g,"_")}" data-q="${esc(path)}" style="${w?`min-width:${w}`:""}" ${S.canWrite&&S.qd.status!=="معتمد"?"":"disabled"} aria-label="${esc(path)}">${Object.entries(opts).map(([k,l])=>`<option value="${esc(k)}" ${k===v?"selected":""}>${esc(l)}</option>`).join("")}</select>`}
+function quoteEditor(){
+  const q=S.qd;if(!q)return `<div class="card empty"><p class="muted">جارٍ فتح العرض…</p></div>`;
+  const t=qTotals(q);const st=qStatus(q);const locked=q.status==="معتمد";const W_=S.canWrite&&!locked;
+  const linkedClient=q.clientId&&S.clients.find(c=>c._id===q.clientId);
+  const pay=(q.payTerms||[]);const pctSum=sum(pay,p=>N(p.pct));
+  return `<section class="head"><div><div class="fileno">عرض سعر رقم <span class="num">${esc(q.no)}${q.rev?`-R${q.rev}`:""}</span></div><h2>${esc(q.client?.name||"عرض سعر جديد")}</h2>
+      <div class="small muted">${esc([q.client?.project,q.client?.location].filter(Boolean).join(" · "))} ${S.qDirty?`<span class="pill">جارٍ الحفظ…</span>`:`<span class="small ok-badge">محفوظ</span>`}</div></div>
+      <div class="toolbar"><span class="pill ${Q_STATUS_CLS[st]||""}">${esc(st)}</span>${W_?qSel("status",Object.fromEntries(Q_STATUS.filter(x=>x!=="معتمد").map(x=>[x,x])),"140px"):""}</div></section>
+    ${locked?`<div class="note" style="background:var(--ok-soft);color:var(--ok)">تم تعميد هذا العرض${linkedClient?` وإنشاء ملف العميل رقم ${esc(linkedClient.fileNo||"")}`:""}. العرض مقفل للتعديل؛ لإجراء تعديل أنشئ مراجعة جديدة.</div>`:""}
+    <div class="toolbar qactions">
+      <button class="primary" data-act="q-pdf" ${S.pdfBusy?"disabled":""}>${S.pdfBusy?"جارٍ تجهيز PDF…":"تنزيل عرض السعر PDF"}</button>
+      ${linkedClient?`<button data-act="open" data-id="${esc(linkedClient._id)}">فتح ملف العميل ←</button>`:""}
+      ${S.canWrite&&!locked?(S.confirm==="q-approve"?`<button class="primary armed-ok" data-act="q-approve">تأكيد التعميد وإنشاء ملف العميل</button>`:`<button data-act="q-approve">✓ تعميد وإنشاء ملف عميل</button>`):""}
+      ${S.canWrite?`<button data-act="q-rev">مراجعة جديدة (نسخة)</button>`:""}
+      <span style="flex:1"></span>${S.canWrite?del("quote:"+S.qid,"حذف العرض"):""}
+    </div>
+    <div class="qsplit">
+    <div class="qform">
+    <div class="card"><h3>العميل والمشروع</h3><div class="grid">
+      ${qIn("client.name","اسم العميل")}${qIn("client.attn","عناية (الشخص المسؤول)")}${qIn("client.phone","الجوال","tel")}${qIn("client.email","البريد الإلكتروني","email")}${qIn("client.project","المشروع")}${qIn("client.location","الموقع")}
+    </div></div>
+    <div class="card"><h3>بيانات العرض</h3><div class="grid">
+      ${qIn("date","تاريخ العرض","date")}${qIn("validDays","مدة صلاحية العرض (يوم)","number")}${qIn("deliveryDays","مدة التنفيذ (يوم)","number")}${qIn("minArea","أقل مساحة محسوبة للقطعة م²","number")}${qIn("preparedBy","معدّ العرض")}${qIn("preparedRole","المسمى")}
+    </div></div>
+    <div class="card"><h3>البنود ${W_?`<button data-act="q-add">+ بند</button>`:""}</h3>
+      <div class="tablebox"><table class="qitems"><thead><tr><th>الكود</th><th>النوع</th><th>الوصف</th><th>العرض مم</th><th>الارتفاع مم</th><th>العدد</th><th>التسعير</th><th>السعر</th><th>المساحة م²</th><th>الإجمالي</th><th></th></tr></thead><tbody>
+      ${(q.items||[]).map((it,i)=>{const L1=qLine(q,it);return `<tr><td>${qCell(`items.${i}.ref`,"text","56px")}</td><td>${qSel(`items.${i}.type`,Q_TYPES,"150px")}</td><td>${qCell(`items.${i}.desc`,"text","180px")}</td><td>${qCell(`items.${i}.w`,"number","70px")}</td><td>${qCell(`items.${i}.h`,"number","70px")}</td><td>${qCell(`items.${i}.qty`,"number","50px")}</td><td>${qSel(`items.${i}.pricing`,PRICING,"110px")}</td><td>${qCell(`items.${i}.price`,"number","80px")}</td><td class="num">${L1.totalArea?L1.totalArea.toFixed(2):"—"}</td><td><b>${M(L1.total)}</b></td>
+        <td>${W_?`<span class="toolbar" style="gap:2px;flex-wrap:nowrap"><button class="ghost" data-act="q-mv" data-i="${i}" data-d="-1" ${i?"":"disabled"} aria-label="لأعلى">↑</button><button class="ghost" data-act="q-mv" data-i="${i}" data-d="1" ${i<q.items.length-1?"":"disabled"} aria-label="لأسفل">↓</button>${S.confirm==="qi:"+it.id?`<button class="danger armed" data-act="q-del" data-i="${i}" data-id="${esc(it.id)}">تأكيد</button>`:`<button class="danger ghost" data-act="q-del" data-i="${i}" data-id="${esc(it.id)}">حذف</button>`}</span>`:""}</td></tr>`}).join("")}
+      </tbody></table></div>
+      <div class="qtot"><dl class="kv">
+        <dt>المجموع</dt><dd>${M(t.sub)}</dd>
+        <dt>الخصم</dt><dd>${W_?qCell("discount","number","110px"):M(t.disc)}</dd>
+        <dt>الصافي قبل الضريبة</dt><dd>${M(t.net)}</dd><dt>ضريبة القيمة المضافة 15%</dt><dd>${M(t.vat)}</dd>
+        <dt>الإجمالي شامل الضريبة</dt><dd style="font-size:1.2rem;color:var(--accent)">${M(t.total)}</dd></dl>
+        <p class="small" style="margin:0;color:var(--bronze);font-weight:600">${esc(tafqeet(t.total))}</p></div>
+    </div>
+    <div class="card"><h3>المواصفات الفنية</h3><div class="grid">
+      ${qIn("specs.system","نظام الألمنيوم")}${qIn("specs.profileThk","سماكة القطاعات")}${qIn("specs.paintColor","لون الدهان")}${qIn("specs.paintCode","كود اللون RAL")}${qIn("specs.paintFinish","نوع الدهان")}
+      ${qIn("specs.glassType","نوع الزجاج")}${qIn("specs.glassThk","سماكة الزجاج")}${qIn("specs.glassColor","لون الزجاج")}${qIn("specs.accType","الإكسسوارات")}${qIn("specs.accColor","لون الإكسسوارات")}${qIn("specs.screen","الشبك")}
+    </div></div>
+    <div class="card"><h3>جدول الدفعات ${W_?`<button data-act="q-pay-add">+ دفعة</button>`:""}</h3>
+      <div class="tablebox"><table><thead><tr><th>البيان</th><th>النسبة %</th><th>المبلغ</th><th></th></tr></thead><tbody>
+      ${pay.map((p,i)=>`<tr><td>${qCell(`payTerms.${i}.label`,"text","220px")}</td><td>${qCell(`payTerms.${i}.pct`,"number","60px")}</td><td>${M(r2(t.total*N(p.pct)/100))}</td><td>${W_?`<button class="danger ghost" data-act="q-pay-del" data-i="${i}">حذف</button>`:""}</td></tr>`).join("")}
+      </tbody><tfoot><tr><td>المجموع</td><td class="num ${pctSum===100?"pos":"neg"}">${pctSum}%</td><td colspan="2">${pctSum!==100?`<span class="small neg">يجب أن يكون المجموع 100%</span>`:""}</td></tr></tfoot></table></div></div>
+    <div class="card"><h3>الشروط والأحكام والملاحظات</h3>
+      <label class="fld">الشروط (كل سطر بند)<textarea id="qf-terms" data-q="terms" rows="8" ${W_?"":"disabled"}>${esc(q.terms||"")}</textarea></label>
+      <label class="fld">ملاحظات إضافية<textarea id="qf-notes" data-q="notes" rows="3" ${W_?"":"disabled"}>${esc(q.notes||"")}</textarea></label>
+      ${W_?`<div><button class="ghost" data-act="q-terms-reset">استرجاع الشروط الافتراضية</button></div>`:""}
+    </div>
+    </div>
+    <aside class="qpreview"><div class="qprev-head"><b>معاينة العرض</b><span class="small muted">كما سيظهر في ملف PDF</span></div>
+      ${quoteSVGs(q,CO().logo?blob(CO().logo):"").map(p=>`<div class="sheet a4">${p}</div>`).join("")}
+      ${!CO().vat||!CO().phone?`<p class="small muted">أكمل بيانات الشركة (الرقم الضريبي، الهاتف، البريد، الآيبان، الشعار) من «الإعدادات» لتظهر في العرض.</p>`:""}
+    </aside>
+    </div>`;
+}
+async function approveQuote(){
+  const q=S.qd;if(!q||!db)return;if(!String(q.client?.name||"").trim()){toast("أدخل اسم العميل أولاً");return}
+  await qSaveNow();const t=qTotals(q);const sp=q.specs||{};toast("جارٍ إنشاء ملف العميل…");
+  const y=new Date().getFullYear();const nums=S.clients.map(x=>{const m=/(\d+)$/.exec(x.fileNo||"");return m?+m[1]:0});const fileNo=`${y}-${String((Math.max(0,...nums)||0)+1).padStart(3,"0")}`;
+  const files={};
+  if(S.assets){try{const b=await quotePdfBlob(q);const name=qFileName(q);const r=await S.assets.upload(new File([b],name,{type:"application/pdf"}));files.quote=[{id:r.id,name,type:"application/pdf",size:r.sizeBytes,at:new Date().toISOString()}]}catch(e){}}
+  const alu=(q.items||[]).filter(it=>it.type!=="other"&&KINDS[it.type]&&N(it.w)&&N(it.h)).map(it=>{const rc=recipeById(KINDS[it.type][2]);return{id:uid(),ref:it.ref||"",w:N(it.w),h:N(it.h),qty:N(it.qty)||1,recipe:rc?rc.id:"",system:rc?rc.system:"",type:rc?rc.name:"",group:"regular",note:it.desc||""}});
+  const doc={name:q.client.name.trim(),phone:q.client.phone||"",location:[q.client.project,q.client.location].filter(Boolean).join(" - "),fileNo,approvalDate:today(),status:"تم التعميد",
+    quoteNo:q.no+(q.rev?`-R${q.rev}`:""),quoteValue:t.net,quoteVatMode:"قبل الضريبة",quoteNet:t.net,quoteVat:t.vat,quoteTotal:t.total,contractValue:t.total,quoteId:S.qid,
+    colors:{alu:{color:sp.paintColor||"",code:sp.paintCode||"",finish:sp.paintFinish||"",system:[sp.system,sp.profileThk].filter(Boolean).join(" - ")},glass:{type:sp.glassType||"",thickness:sp.glassThk||"",color:sp.glassColor||""},acc:{brand:sp.accType||"",color:sp.accColor||""}},
+    files,payments:[],installs:[],glass:[],alu,purchases:[],notes:q.notes||"",createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
+  try{const ref=db.collection("clients").doc();await ref.set(doc);S.qd={...S.qd,status:"معتمد",clientId:ref.id,approvedAt:new Date().toISOString()};await qSaveNow();
+    S.qid=null;S.qd=null;S.section="clients";go(ref.id,"info");toast(`تم التعميد وأُنشئ ملف رقم ${fileNo} بكل بيانات العرض`)}catch(e){handleWriteErr(e)}
+}
+
 /* ---------- actions ---------- */
 function need(fk,fields){const d=S.draft[fk]||{};for(const[f,l]of fields){if(!String(d[f]??"").trim()){toast("أدخل "+l);const el=document.getElementById(("f-"+fk+"-"+f).replace(/[^a-zA-Z0-9_-]/g,"_"));el&&el.focus();return null}}return d}
 function rowFrom(fk,defaults){return{...defaults,...(S.draft[fk]||{})}}
@@ -1313,7 +1556,26 @@ function rowFrom(fk,defaults){return{...defaults,...(S.draft[fk]||{})}}
 async function act(el){
   const a=el.dataset.act;const c=cur();
   if(a==="open"){go(el.dataset.id,el.dataset.tab||"info");return}
-  if(a==="back"){if(S.settings){S.settings=false;S.confirm=null;render();window.scrollTo(0,0);return}location.hash="";S.id=null;render();window.scrollTo(0,0);return}
+  if(a==="back"){if(S.settings){S.settings=false;S.confirm=null;render();window.scrollTo(0,0);return}
+    if(S.qid&&!S.id){await qSaveNow();S.qid=null;S.qd=null;S.section="quotes";try{history.replaceState(null,"","#quotes")}catch(e){location.hash="quotes"}render();window.scrollTo(0,0);return}
+    location.hash="";S.id=null;render();window.scrollTo(0,0);return}
+  if(a==="sec"){S.section=el.dataset.sec;try{history.replaceState(null,"",S.section==="quotes"?"#quotes":location.pathname)}catch(e){}render();return}
+  if(a==="q-new"){if(!db)return;const ref=db.collection("quotes").doc();const q=newQuote();try{await ref.set(q);S.everWrote=true}catch(e){handleWriteErr(e);return}S.section="quotes";S.quotes=[...S.quotes,{...q,_id:ref.id}];openQuote(ref.id);toast("أُنشئ العرض "+q.no);return}
+  if(a==="q-open"){openQuote(el.dataset.id);return}
+  if(S.qid&&S.qd&&!S.id){const q=S.qd;
+    if(a==="q-pdf"){if(S.pdfBusy)return;S.pdfBusy=true;render();try{const b=await quotePdfBlob(q);if(S.downloads)await S.downloads.save({filename:qFileName(q),data:b});else toast("التنزيل غير متاح هنا")}catch(e){if(!(e&&e.code==="declined"))toast("تعذّر إنشاء ملف PDF")}S.pdfBusy=false;render();return}
+    if(a==="q-approve"){if(S.confirm!=="q-approve"){S.confirm="q-approve";render();clearTimeout(act._t);act._t=setTimeout(()=>{S.confirm=null;render()},5000);return}S.confirm=null;await approveQuote();return}
+    if(a==="q-rev"){await qSaveNow();const n=clone(q);delete n._id;delete n.clientId;delete n.approvedAt;n.rev=(N(q.rev)||0)+1;n.status="مسودة";n.date=today();n.createdAt=new Date().toISOString();
+      const same=S.quotes.filter(x=>x.no===q.no);n.rev=Math.max(n.rev,...same.map(x=>(N(x.rev)||0)+1));const ref=db.collection("quotes").doc();try{await ref.set(n)}catch(e){handleWriteErr(e);return}S.quotes=[...S.quotes,{...n,_id:ref.id}];openQuote(ref.id);toast(`أُنشئت المراجعة R${n.rev}`);return}
+    if(a==="q-add"){const last=q.items[q.items.length-1]||{};q.items.push({id:uid(),ref:"W"+(q.items.length+1),type:last.type||"sliding2",desc:"",w:last.w||1500,h:last.h||1200,qty:1,pricing:last.pricing||"m2",price:last.price||0});render();qScheduleSave();return}
+    if(a==="q-del"){const key="qi:"+el.dataset.id;if(S.confirm!==key){S.confirm=key;render();clearTimeout(act._t);act._t=setTimeout(()=>{S.confirm=null;render()},4000);return}S.confirm=null;q.items=q.items.filter(x=>x.id!==el.dataset.id);render();qScheduleSave();return}
+    if(a==="q-mv"){const i=+el.dataset.i,j=i+(+el.dataset.d);if(j<0||j>=q.items.length)return;[q.items[i],q.items[j]]=[q.items[j],q.items[i]];render();qScheduleSave();return}
+    if(a==="q-pay-add"){q.payTerms=q.payTerms||[];q.payTerms.push({label:"دفعة",pct:0});render();qScheduleSave();return}
+    if(a==="q-pay-del"){q.payTerms.splice(+el.dataset.i,1);render();qScheduleSave();return}
+    if(a==="q-terms-reset"){q.terms=Q_TERMS;render();qScheduleSave();return}
+    if(a==="del"&&String(el.dataset.key).startsWith("quote:")){const key=el.dataset.key;if(S.confirm!==key){S.confirm=key;render();clearTimeout(act._t);act._t=setTimeout(()=>{S.confirm=null;render()},4000);return}
+      S.confirm=null;const id=S.qid;clearTimeout(qSaveT);S.qid=null;S.qd=null;try{await db.doc("quotes/"+id).delete();toast("حُذف العرض")}catch(e){handleWriteErr(e)}try{history.replaceState(null,"","#quotes")}catch(e){}render();return}
+  }
   if(a==="open-settings"){S.cfgDraft=clone(S.cfg);S.settings=true;S.confirm=null;render();window.scrollTo(0,0);return}
   if(a==="save-settings"){
     if(!db||!S.canWrite)return;
@@ -1453,7 +1715,8 @@ async function upload(files){
 }
 
 function go(id,tab){S.id=id;S.tab=tab||"info";S.confirm=null;try{history.replaceState(null,"","#c-"+id)}catch(e){location.hash="c-"+id}render();window.scrollTo(0,0)}
-function fromHash(){const m=/^#c-([A-Za-z0-9_.~:@+-]+)$/.exec(location.hash);S.id=m?m[1]:null;if(!m)S.tab="info";render()}
+function fromHash(){const h=location.hash;const m=/^#c-([A-Za-z0-9_.~:@+-]+)$/.exec(h);const mq=/^#q-([A-Za-z0-9_.~:@+-]+)$/.exec(h);S.id=m?m[1]:null;if(!m)S.tab="info";
+  if(mq){S.section="quotes";if(S.qid!==mq[1]){S.qid=mq[1];const q=S.quotes.find(x=>x._id===mq[1]);S.qd=q?clone(q):null}}else{S.qid=null;S.qd=null;if(h==="#quotes")S.section="quotes"}render()}
 
 /* ---------- events ---------- */
 document.addEventListener("click",e=>{const el=e.target.closest("[data-act]");if(!el||el.tagName==="SELECT")return;if(el.tagName==="INPUT")return;e.preventDefault();act(el)});
@@ -1468,6 +1731,9 @@ const onField=e=>{const el=e.target;
     if(fk.startsWith("info:")&&(f==="quoteValue"||f==="quoteVatMode")){const box=document.getElementById("quote-calc");const c=cur();if(box&&c)box.innerHTML=quoteCalcHtml(fk,c)}
     return}
   if(el.dataset&&el.dataset.s&&S.cfgDraft){setPath(S.cfgDraft,el.dataset.s,el.value);if(e.type==="change")render();return}
+  if(el.dataset&&el.dataset.q&&S.qd){let v=el.value;setPath(S.qd,el.dataset.q,v);if(e.type==="change"){if(/^items\.\d+\.type$/.test(el.dataset.q)&&v==="other"){const it=getPath(S.qd,el.dataset.q.replace(/\.type$/,""));if(it.pricing==="m2")it.pricing="lump"}render();qScheduleSave()}return}
+  if(el.id==="qq"){S.qq=el.value;render();return}
+  if(el.id==="qstatusFilter"&&e.type==="change"){S.qstatus=el.value;render();return}
   if(el.id==="q"){S.q=el.value;render();return}
   if(el.id==="statusFilter"&&e.type==="change"){S.status=el.value;render();return}
 };
@@ -1485,6 +1751,7 @@ document.addEventListener("change",async e=>{
     if(got.length&&cid===S.id){if(await mutateFiles(cat,l=>l.concat(got)))toast(got.length===1?"رُفع الملف":"رُفعت "+got.length+" ملفات")}
     render();return;
   }
+  if(el.dataset.logo&&el.files&&el.files[0]&&S.cfgDraft){S.busy.logo=true;render();const got=await upload([el.files[0]]);S.busy.logo=false;if(got[0]){S.cfgDraft.company=S.cfgDraft.company||{};S.cfgDraft.company.logo=got[0].id;toast("رُفع الشعار، اضغط «حفظ الإعدادات»")}render();return}
   if(el.dataset.inv&&el.files&&el.files[0]){
     const pid=el.dataset.inv;S.busy["inv:"+pid]=true;render();
     const got=await upload([el.files[0]]);S.busy["inv:"+pid]=false;
@@ -1509,6 +1776,11 @@ fromHash();
     if(!snap.metadata.fromCache){S.loaded=true;S.slow=false;clearTimeout(t)}
     render();
   },err=>{clearTimeout(t);S.loaded=true;S.err=err.code||"error";render()});
+  db.collection("quotes").onSnapshot(snap=>{
+    S.quotes=snap.docs.map(d=>({...d.data(),_id:d.id}));
+    if(S.qid){const q=S.quotes.find(x=>x._id===S.qid);if(q&&!S.qDirty&&!(document.activeElement&&document.activeElement.dataset&&document.activeElement.dataset.q))S.qd=clone(q);if(!S.qd&&q)S.qd=clone(q)}
+    render();
+  },()=>{});
   db.doc("settings/takeoff").onSnapshot(snap=>{
     if(snap.exists){const d=snap.data();S.cfg={...clone(DEFAULT_CFG),...clone(d)};S.cfgSaved=true}
     render();
