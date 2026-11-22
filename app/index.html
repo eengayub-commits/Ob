@@ -878,16 +878,33 @@ async function makePdf(c,src,mode){
 
 /* ---------- preliminary shop drawings ---------- */
 const KINDS={
-  sliding2:["شباك سحاب درفتين","Sliding window - 2 sashes","sar-slide2"],
-  sliding3:["شباك سحاب 3 درف","Sliding window - 3 sashes","sar-slide2"],
-  slidingdoor:["باب سحاب درفتين","Sliding door - 2 leaves","sar-slide2"],
-  casement1:["شباك مفصلي درفة واحدة","Casement window - 1 sash","sar-case1"],
-  casement2:["شباك مفصلي درفتين","Casement window - 2 sashes","sar-case1"],
-  awning:["شباك قلاب (علوي)","Top-hung (awning) window","sar-case1"],
-  fixed:["شباك ثابت","Fixed window","sar-fix"],
-  door1:["باب مفصلي درفة واحدة","Hinged door - 1 leaf","sar-door1"],
-  door2:["باب مفصلي درفتين","Hinged door - 2 leaves","sar-door1"]
+  sliding2:["شباك سحاب درفتين","Sliding window - 2 sashes","sar-slide2",{base:"sliding",n:2}],
+  sliding2f:["شباك سحاب مع ثابت درفتين","Sliding window - 2 sashes with fixed panel","sar-slide2",{base:"sliding",n:2,fix:1}],
+  sliding3:["شباك سحاب 3 درف","Sliding window - 3 sashes","sar-slide2",{base:"sliding",n:3}],
+  sliding3f:["شباك سحاب 3 درف مع ثابت","Sliding window - 3 sashes with fixed panel","sar-slide2",{base:"sliding",n:3,fix:1}],
+  sliding4:["شباك سحاب 4 درف","Sliding window - 4 sashes","sar-slide2",{base:"sliding",n:4}],
+  sliding4f:["شباك سحاب 4 درف مع ثابت","Sliding window - 4 sashes with fixed panel","sar-slide2",{base:"sliding",n:4,fix:1}],
+  cw_fixed:["كارتن وول ثابت كامل","Curtain wall - fully fixed","sar-fix",{base:"cw",cw:"fixed"}],
+  cw_pushout:["كارتن وول مع فتحة بوش اوت","Curtain wall with push-out vent","sar-fix",{base:"cw",cw:"pushout"}],
+  cw_door:["كارتن وول مع باب مفصلي","Curtain wall with hinged door","sar-fix",{base:"cw",cw:"door"}],
+  cw_swing:["كارتن وول مع باب مروحة","Curtain wall with double-action (swing) door","sar-fix",{base:"cw",cw:"swing"}],
+  casement1:["شباك مفصلي درفة واحدة","Casement window - 1 sash","sar-case1",{base:"casement",n:1}],
+  casement1f:["شباك مفصلي درفة واحدة مع ثابت","Casement window - 1 sash with fixed panel","sar-case1",{base:"casement",n:1,fix:1}],
+  casement2:["شباك مفصلي درفتين","Casement window - 2 sashes","sar-case1",{base:"casement",n:2}],
+  casement2f:["شباك مفصلي درفتين مع ثابت","Casement window - 2 sashes with fixed panel","sar-case1",{base:"casement",n:2,fix:1}],
+  awning:["شباك قلاب","Top-hung (awning) window","sar-case1",{base:"awning"}],
+  awningf:["شباك قلاب مع ثابت","Top-hung (awning) window with fixed panel","sar-case1",{base:"awning",fix:1}],
+  fixed:["شباك ثابت كامل","Fixed window","sar-fix",{base:"fixed"}],
+  door1f:["باب مفصلي مع ثابت","Hinged door with fixed panel","sar-door1",{base:"door",n:1,fix:1}],
+  door1:["باب مفصلي","Hinged door","sar-door1",{base:"door",n:1}],
+  door1ff:["باب مفصلي مع ثابت مع فورمايكا","Hinged door with fixed panel and formica panel","sar-door1",{base:"door",n:1,fix:1,formica:1}],
+  door1fm:["باب مفصلي مع فورمايكا","Hinged door with formica panel","sar-door1",{base:"door",n:1,formica:1}],
+  slidingdoor:["باب سحاب درفتين","Sliding door - 2 leaves","sar-slide2",{base:"sliding",n:2,door:1,legacy:1}],
+  door2:["باب مفصلي درفتين","Hinged door - 2 leaves","sar-door1",{base:"door",n:2,legacy:1}]
 };
+const KOPT=k=>(KINDS[k]&&KINDS[k][3])||{base:"fixed"};
+const KIND_LIST=Object.entries(KINDS).filter(([,v])=>!(v[3]&&v[3].legacy));
+const KIND_PROMPT=KIND_LIST.map(([k,v])=>`${k} (${v[1]})`).join(", ");
 const KIND_OF_RECIPE={"sar-slide2":"sliding2","roy-slide2":"sliding2","sar-case1":"casement1","sar-fix":"fixed","sar-door1":"door1"};
 const VAL_EN={"دبل":"Double glazed","مزدوج":"Double glazed","سنجل":"Single","مفرد":"Single","شفاف":"Clear","رمادي":"Grey","رصاصي":"Grey","أسود":"Black","اسود":"Black","أبيض":"White","ابيض":"White","برونزي":"Bronze","برونز":"Bronze","عاكس":"Reflective","سكوريت":"Tempered","مقسى":"Tempered","سانديلاست":"Sandblasted","مصنفر":"Frosted","فضي":"Silver","ذهبي":"Gold","أخضر":"Green","اخضر":"Green","أزرق":"Blue","ازرق":"Blue","بيج":"Beige","خشبي":"Wood grain","مطفي":"Matt","لامع":"Gloss","دهان":"Paint","بودرة":"Powder coat","أنودايز":"Anodized","انودايز":"Anodized","شامبين":"Champagne","بني":"Brown","غامق":"Dark","فاتح":"Light","لوكس":"Low-E","لامينيت":"Laminated","مم":"mm","و":"&","سرايا":"Saraya","رويال":"Royal","سم":"cm","ألماني":"German","الماني":"German","تركي":"Turkish","صيني":"Chinese","إيطالي":"Italian","ايطالي":"Italian","ستانلس":"Stainless","كروم":"Chrome","نيكل":"Nickel","مفصلات":"Hinges","مقابض":"Handles","أقفال":"Locks","اقفال":"Locks","عجلات":"Rollers"};
 const VAL_PHRASE=[[/دهان\s*بودرة|بودرة/g,"Powder coated"],[/زجاج\s*مزدوج/g,"Double glazed"]];
@@ -927,38 +944,54 @@ function dimV(y1,y2,x,label){return L(x,y1,x,y2,{sw:.7})+L(x-6,y1,x+6,y1,{sw:.7}
 
 function elevation(it,X0,Y0,AW,AH,opt={}){const mini=!!opt.mini;
   const W=N(it.w)||1200,H=N(it.h)||1200;const k=Math.min(AW/W,AH/H);const w=W*k,h=H*k;const x=X0+(AW-w)/2,y=Y0+(AH-h)/2;
-  const fw=Math.max(50*k,mini?1.6:5),s=Math.max(45*k,mini?1.2:4),ov=Math.max(25*k,mini?1:3),kind=it.kind,hinged=kind==="door1"||kind==="door2";
+  const fw=Math.max(50*k,mini?1.6:5),s=Math.max(45*k,mini?1.2:4),ov=Math.max(25*k,mini?1:3),bar=Math.max(40*k,mini?1.2:4);
+  const o=KOPT(it.kind),door=o.base==="door"||o.door;
+  const lbl=(tx,cx,cy,sz=11)=>mini?"":T(cx,cy,tx,{size:sz,anchor:"middle",fill:"#555",weight:600});
   let g="";
-  if(hinged){g+=`<path d="M${sx(x)} ${sx(y+h)} V${sx(y)} H${sx(x+w)} V${sx(y+h)}" fill="#f4f4f4" stroke="#111" stroke-width="1.6"/>`+L(x-8,y+h,x+w+8,y+h,{sw:2})}
+  if(door&&o.base!=="cw"){g+=`<path d="M${sx(x)} ${sx(y+h)} V${sx(y)} H${sx(x+w)} V${sx(y+h)}" fill="#f4f4f4" stroke="#111" stroke-width="1.6"/>`+L(x-8,y+h,x+w+8,y+h,{sw:2})}
   else g+=R(x,y,w,h,{sw:1.6,fill:"#f4f4f4"});
-  const ix=x+fw,iy=y+fw,iw=w-2*fw,ih=h-fw-(hinged?0:fw);
+  let ix=x+fw,iy=y+fw,iw=w-2*fw,ih=h-fw-(door&&o.base!=="cw"?0:fw);
+  let fixH=0;
+  if(o.fix&&o.base!=="cw"){fixH=Math.min(ih*.45,Math.max(ih*.18,(N(it.fixedH)||H*.28)*k));
+    g+=glassPane(ix,iy,iw,fixH)+lbl("F",ix+iw/2,iy+fixH/2+4)+R(ix,iy+fixH,iw,bar,{fill:"#f4f4f4",sw:1});
+    iy+=fixH+bar;ih-=fixH+bar}
   g+=R(ix,iy,iw,ih,{sw:.8,fill:"#fff"});
-  const sashes=[];
-  if(kind==="sliding2"||kind==="slidingdoor"||kind==="sliding3"){
-    const n=kind==="sliding3"?3:2;const swd=(iw+(n-1)*ov)/n;
-    for(let i=0;i<n;i++){const sxp=ix+i*(swd-ov);g+=sashBox(sxp,iy,swd,ih,s);sashes.push([sxp,swd])}
-    sashes.forEach(([sxp,swd],i)=>{const cy=iy+ih/2,a=Math.min(swd*.3,60);g+=i%2===0?arrowH(sxp+swd/2-a/2,sxp+swd/2+a/2,cy):arrowH(sxp+swd/2+a/2,sxp+swd/2-a/2,cy)});
-    
-  }else if(kind==="fixed"){g+=glassPane(ix,iy,iw,ih)+T(ix+iw/2,iy+ih/2+5,"F (FIXED)",{size:13,anchor:"middle",fill:"#555",weight:600})}
-  else{
-    const leaves=kind==="casement2"||kind==="door2"?2:1;const gap=2,lw=(iw-(leaves-1)*gap)/leaves;
-    for(let i=0;i<leaves;i++){
-      const lx=ix+i*(lw+gap),ly=iy,lh=ih;const sp=hinged?Math.max(s,6):s;
-      g+=R(lx,ly,lw,lh,{sw:1.2,fill:"#fff"});
-      if(hinged){const kick=Math.min(lh*.25,Math.max(250*k,14));g+=glassPane(lx+sp,ly+sp,lw-2*sp,lh-2*sp-kick)+R(lx+sp,ly+lh-sp-kick,lw-2*sp,kick,{fill:"#d9d9d9",stroke:"#555",sw:.8})}
-      else g+=glassPane(lx+sp,ly+sp,lw-2*sp,lh-2*sp);
-      const apex=kind==="awning"?"T":leaves===2?(i===0?"L":"R"):(it.hinge==="L"?"L":"R");
-      g+=openTri(lx+sp,ly+sp,lw-2*sp,lh-2*sp,apex);
-      if(kind==="awning")g+=handle(lx+lw/2,ly+lh-sp/2,false);else{const hx=apex==="R"?lx+sp/2:lx+lw-sp/2;g+=handle(hx,ly+lh*(hinged?.5:.5))}
-    }
+  const leaf=(lx,ly,lw,lh,apex,isDoor,formica,swing)=>{const sp=isDoor?Math.max(s,mini?1.5:6):s;let r=R(lx,ly,lw,lh,{sw:1.2,fill:"#fff"});
+    if(isDoor){const panel=formica?lh*.45:Math.min(lh*.25,Math.max(250*k,mini?3:14));const gh=lh-2*sp-panel;r+=glassPane(lx+sp,ly+sp,lw-2*sp,gh);
+      r+=R(lx+sp,ly+lh-sp-panel,lw-2*sp,panel,{fill:formica?"#d9c3a2":"#d9d9d9",stroke:"#555",sw:.8});if(formica)r+=lbl("FORMICA",lx+lw/2,ly+lh-sp-panel/2+4,9)}
+    else r+=glassPane(lx+sp,ly+sp,lw-2*sp,lh-2*sp);
+    r+=openTri(lx+sp,ly+sp,lw-2*sp,lh-2*sp,apex);if(swing)r+=openTri(lx+sp,ly+sp,lw-2*sp,lh-2*sp,apex==="R"?"L":"R").replace('stroke-dasharray="6 4"','stroke-dasharray="2 3"');
+    if(!mini){if(apex==="T")r+=handle(lx+lw/2,ly+lh-sp/2,false);else{const hx=apex==="R"?lx+sp/2:lx+lw-sp/2;r+=handle(hx,ly+lh*.5)}}
+    return r};
+  if(o.base==="sliding"){const n=o.n||2;const swd=(iw+(n-1)*ov)/n;
+    for(let i=0;i<n;i++){const sxp=ix+i*(swd-ov);g+=sashBox(sxp,iy,swd,ih,s);if(!mini||n<=3){const cy=iy+ih/2,a=Math.min(swd*.3,60);
+      const dirR=n===4?i<2:i%2===0;g+=dirR?arrowH(sxp+swd/2-a/2,sxp+swd/2+a/2,cy):arrowH(sxp+swd/2+a/2,sxp+swd/2-a/2,cy)}}}
+  else if(o.base==="fixed"){g+=glassPane(ix,iy,iw,ih)+lbl("F (FIXED)",ix+iw/2,iy+ih/2+5,13)}
+  else if(o.base==="awning"){g+=leaf(ix+2,iy+2,iw-4,ih-4,"T")}
+  else if(o.base==="casement"){const n=o.n||1,gap=2,lw=(iw-(n-1)*gap)/n;for(let i=0;i<n;i++)g+=leaf(ix+i*(lw+gap),iy,lw,ih,n===2?(i===0?"L":"R"):(it.hinge==="L"?"L":"R"))}
+  else if(o.base==="door"){const n=o.n||1,gap=2,lw=(iw-(n-1)*gap)/n;for(let i=0;i<n;i++)g+=leaf(ix+i*(lw+gap),iy,lw,ih,n===2?(i===0?"L":"R"):(it.hinge==="L"?"L":"R"),true,o.formica)}
+  else if(o.base==="cw"){
+    const cols=Math.max(1,Math.round(W/1200));const cwid=iw/cols;const mb=Math.max(50*k,mini?1.4:5);
+    const hasDoor=o.cw==="door"||o.cw==="swing";const dCol=Math.floor((cols-1)/2);
+    const doorH=hasDoor?Math.min(ih*.8,Math.min(2200,H-200)*k):0;
+    const rows=hasDoor?(ih-doorH>40*k?2:1):Math.max(1,Math.round(H/1600));
+    const rowsH=hasDoor?(rows===2?[ih-doorH-mb,doorH]:[ih]):Array(rows).fill((ih-(rows-1)*mb)/rows);
+    let yy=iy;rowsH.forEach((rh,ri)=>{for(let ci=0;ci<cols;ci++){const px=ix+ci*cwid+(ci?mb/2:0),pw=cwid-(ci?mb/2:0)-(ci<cols-1?mb/2:0);
+        const isDoorBay=hasDoor&&ri===rowsH.length-1&&ci===dCol;const isVent=o.cw==="pushout"&&ri===0&&ci===dCol;
+        if(isDoorBay){g+=leaf(px,yy,pw,rh,it.hinge==="L"?"L":"R",true,false,o.cw==="swing")+(o.cw==="swing"?lbl("SWING",px+pw/2,yy+14,9):"")}
+        else if(isVent){g+=R(px,yy,pw,rh,{sw:1.2,fill:"#fff"})+glassPane(px+s,yy+s,pw-2*s,rh-2*s)+openTri(px+s,yy+s,pw-2*s,rh-2*s,"T")+lbl("PUSH-OUT",px+pw/2,yy+rh-8,9)}
+        else g+=glassPane(px,yy,pw,rh);
+        if(ci<cols-1)g+=R(ix+(ci+1)*cwid-mb/2,yy,mb,rh,{fill:"#cfd5da",sw:.6})}
+      yy+=rh;if(ri<rowsH.length-1){g+=R(ix,yy,iw,mb,{fill:"#cfd5da",sw:.6});yy+=mb}});
   }
   if(mini)return g;
   g+=dimH(x,x+w,y+h+42,`${W}`);
-  if(sashesSplit(kind)){const n=kind==="sliding3"?3:2;const parts=[];for(let i=0;i<n;i++)parts.push(Math.round(W/n));for(let i=0;i<n;i++)g+=dimH(x+i*w/n,x+(i+1)*w/n,y+h+20,`${parts[i]}`)}
+  if(o.base==="sliding"||(o.base==="casement"&&o.n===2)||(o.base==="door"&&o.n===2)){const n=o.n||2;for(let i=0;i<n;i++)g+=dimH(x+i*w/n,x+(i+1)*w/n,y+h+20,`${Math.round(W/n)}`)}
+  if(fixH){const fmm=Math.round(fixH/k+fw/k);g+=dimV(y,y+fw+fixH,x-30,`${fmm}`)+dimV(y+fw+fixH,y+h,x-30,`${H-fmm}`)}
   g+=dimV(y,y+h,x+w+30,`${H}`);
   return g;
 }
-const sashesSplit=k=>k==="sliding2"||k==="sliding3"||k==="slidingdoor"||k==="casement2"||k==="door2";
+const sashesSplit=k=>{const o=KOPT(k);return (o.base==="sliding"||o.n===2)};
 
 function enOnly(v){v=String(v||"").trim();if(!v)return"";const m=v.split(/\s+\/\s+/);if(m.length===2&&/[؀-ۿ]/.test(m[0])&&!/[؀-ۿ]/.test(m[1]))return m[1];if(!/[؀-ۿ]/.test(v))return v;
   const lat=v.match(/[A-Za-z][A-Za-z0-9 .,+()\-\/]*[A-Za-z0-9)]/g);const t=enVal(v);if(t)return t;if(lat&&lat.join(" ").length>=3)return lat.join(" ").trim();return v}
@@ -1026,7 +1059,7 @@ function quotePrompt(i,n){return `You are reading page ${i} of ${n} of a price q
 For each item return:
 - ref: the item code as written (e.g. W1, D2, ش1). If none, use the line number as "#3".
 - title: short Arabic description as written.
-- kind: the best match of: sliding2, sliding3, slidingdoor, casement1, casement2, awning, fixed, door1, door2.
+- kind: the best match of these keys: ${KIND_PROMPT}.
 - w_mm, h_mm: width and height in MILLIMETERS. Detect the unit used: cm → ×10, m → ×1000. null if not given.
 - qty: number of units.
 - location: floor/room if written, else "".
@@ -1077,9 +1110,9 @@ function tabShop(c){
     <details ${S.openShop===it.id?"open":""} data-shop="${esc(it.id)}"><summary class="small" style="cursor:pointer;font-weight:600">تعديل بيانات اللوحة</summary>
       <div class="grid" style="margin-top:10px">
         ${shF(it,"ref","الكود")}${shF(it,"title","الوصف")}
-        <label class="fld">النوع<select data-sh="${esc(it.id)}|kind" ${S.canWrite?"":"disabled"}>${Object.entries(KINDS).map(([k,v])=>`<option value="${k}" ${k===it.kind?"selected":""}>${v[0]}</option>`).join("")}</select></label>
+        <label class="fld">النوع<select data-sh="${esc(it.id)}|kind" ${S.canWrite?"":"disabled"}>${(KIND_LIST.some(([k])=>k===it.kind)?KIND_LIST:[[it.kind,KINDS[it.kind]||[it.kind]],...KIND_LIST]).map(([k,v])=>`<option value="${k}" ${k===it.kind?"selected":""}>${v[0]}</option>`).join("")}</select></label>
         <label class="fld">اتجاه الفتح (المفصلات)<select data-sh="${esc(it.id)}|hinge" ${S.canWrite?"":"disabled"}><option value="R" ${it.hinge!=="L"?"selected":""}>يمين</option><option value="L" ${it.hinge==="L"?"selected":""}>يسار</option></select></label>
-        ${shF(it,"w","العرض مم","","number")}${shF(it,"h","الارتفاع مم","","number")}${shF(it,"qty","العدد","","number")}${shF(it,"location","الموقع")}
+        ${shF(it,"w","العرض مم","","number")}${shF(it,"h","الارتفاع مم","","number")}${KOPT(it.kind).fix?shF(it,"fixedH","ارتفاع الجزء الثابت مم","","number"):""}${shF(it,"qty","العدد","","number")}${shF(it,"location","الموقع")}
         <label class="fld">قطاعات القالب<select data-sh="${esc(it.id)}|recipe" ${S.canWrite?"":"disabled"}>${recOpts(it.recipe)}</select></label>
         ${shF(it,"system","نظام الألمنيوم")}${shF(it,"paintColor","لون الدهان")}${shF(it,"paintCode","كود اللون RAL")}${shF(it,"paintFinish","نوع الدهان")}
         ${shF(it,"accType","نوع الإكسسوارات")}${shF(it,"accColor","لون الإكسسوارات")}${shF(it,"glassType","نوع الزجاج")}${shF(it,"glassThk","سماكة الزجاج")}${shF(it,"glassColor","لون الزجاج")}
@@ -1333,7 +1366,8 @@ function tabInvoices(c){
 S.quotes=[];S.section="clients";S.qid=null;S.qd=null;S.qDirty=false;S.qq="";S.qstatus="";S.logoData=null;
 const Q_STATUS=["مسودة","مرسل للعميل","معتمد","مرفوض"];
 const Q_STATUS_CLS={"مسودة":"","مرسل للعميل":"s2","معتمد":"s3","مرفوض":"bad","منتهي":"bad"};
-const Q_TYPES={...Object.fromEntries(Object.entries(KINDS).map(([k,v])=>[k,v[0]])),other:"بند عام / أعمال أخرى"};
+const Q_TYPES={...Object.fromEntries(KIND_LIST.map(([k,v])=>[k,v[0]])),other:"بند عام / أعمال أخرى"};
+const qTypeName=k=>Q_TYPES[k]||(KINDS[k]?KINDS[k][0]:"");
 const PRICING={m2:"بالمتر المربع",unit:"بالحبة",lump:"مقطوعية"};
 const Q_TERMS=`الأسعار بالريال السعودي وغير شاملة ضريبة القيمة المضافة 15% ما لم يُذكر خلاف ذلك.
 المقاسات الواردة تقريبية، والمحاسبة النهائية حسب المقاسات الفعلية بعد الرفع المساحي في الموقع.
@@ -1418,7 +1452,7 @@ function quoteSVGs(q,logo){
     let x=X2;const cy=y+16;
     s+=T(x-5,cy,String(i+1),{size:8.5,anchor:"end",fill:QC.muted});x-=C[0][1];
     if(isWin&&N(it.w)&&N(it.h))s+=`<g>${elevation({...it,hinge:it.hinge||"R"},x-C[1][1]+4,y+5,C[1][1]-8,rh-10,{mini:true})}</g>`;x-=C[1][1];
-    s+=T(x-5,cy,`${it.ref?it.ref+" - ":""}${Q_TYPES[it.type]||""}`,{size:9,anchor:"end",weight:700});dl.forEach((l,k)=>{s+=T(x-5,cy+12+k*11,l,{size:8,anchor:"end",fill:"#333"})});x-=C[2][1];
+    s+=T(x-5,cy,`${it.ref?it.ref+" - ":""}${qTypeName(it.type)}`,{size:9,anchor:"end",weight:700});dl.forEach((l,k)=>{s+=T(x-5,cy+12+k*11,l,{size:8,anchor:"end",fill:"#333"})});x-=C[2][1];
     s+=(N(it.w)&&N(it.h)?`<text x="${sx(x-5)}" y="${sx(cy)}" font-size="8.8" fill="#111" text-anchor="end" direction="ltr" unicode-bidi="bidi-override" font-family="${SF}">${N(it.w)} x ${N(it.h)}</text>`:T(x-5,cy,"—",{size:8.8,anchor:"end"}));x-=C[3][1];
     s+=T(x-5,cy,String(L1.qty),{size:8.8,anchor:"end"});x-=C[4][1];
     s+=T(x-5,cy,L1.totalArea?L1.totalArea.toFixed(2):"—",{size:8.8,anchor:"end"});x-=C[5][1];
@@ -1567,7 +1601,7 @@ function qSheetPrompt(i,n){return `You are reading page ${i} of ${n}: a PRELIMIN
 Precision is the top priority: read every number twice and never guess a digit silently.
 For every opening (window, door, facade, partition…) return:
 - ref: the code/number as written (e.g. "W1", "D2", "1-W3" for floor-code). If none, use "#" + line number.
-- type: best match of sliding2, sliding3, slidingdoor, casement1, casement2, awning, fixed, door1, door2, other.
+- type: best match of these keys: ${KIND_PROMPT}, other (general works / non-window item).
 - desc: short ARABIC description including the room/location if written (e.g. "شباك سحاب - غرفة النوم").
 - w_mm, h_mm: width and height in MILLIMETERS. Detect the unit used on the sheet: centimeters are the usual case (×10), meters (×1000), millimeters (keep). null if not given.
 - qty: count (default 1).
@@ -1847,7 +1881,7 @@ const onField=e=>{const el=e.target;
 document.addEventListener("input",onField);
 document.addEventListener("change",async e=>{
   const el=e.target;onField(e);
-  if(el.dataset.sh&&e.type==="change"){const c=cur();if(!c)return;const i=el.dataset.sh.lastIndexOf("|");const id=el.dataset.sh.slice(0,i),f=el.dataset.sh.slice(i+1);let v=el.value;if(["w","h","qty","rev"].includes(f))v=N(v);
+  if(el.dataset.sh&&e.type==="change"){const c=cur();if(!c)return;const i=el.dataset.sh.lastIndexOf("|");const id=el.dataset.sh.slice(0,i),f=el.dataset.sh.slice(i+1);let v=el.value;if(["w","h","qty","rev","fixedH"].includes(f))v=N(v);
     await shopMutate(c,l=>l.map(it=>{if(it.id!==id)return it;const n={...it,[f]:v};if(f==="kind"&&KINDS[v])n.recipe=KINDS[v][2];return n}));return}
   if(el.dataset.ex&&e.type==="change"){const c=cur();if(!c)return;const i=el.dataset.ex.lastIndexOf("|");await exEdit(c,el.dataset.ex.slice(0,i),el.dataset.ex.slice(i+1),el.value);return}
   if(el.dataset.alurec&&e.type==="change"){const id=el.dataset.alurec,rc=recipeById(el.value);if(!rc)return;await mutateList("alu",l=>l.map(r=>r.id===id?{...r,recipe:rc.id,system:rc.system,type:rc.name}:r));toast("تغيّر قالب الحساب");return}
