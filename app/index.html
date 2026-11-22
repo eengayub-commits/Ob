@@ -1978,7 +1978,9 @@ const onField=e=>{const el=e.target;
     if(fk.startsWith("info:")&&(f==="quoteValue"||f==="quoteVatMode")){const box=document.getElementById("quote-calc");const c=cur();if(box&&c)box.innerHTML=quoteCalcHtml(fk,c)}
     return}
   if(el.dataset&&el.dataset.s&&S.cfgDraft){setPath(S.cfgDraft,el.dataset.s,el.value);if(e.type==="change")render();return}
-  if(el.dataset&&el.dataset.q&&S.qd){if(el.tagName==="SELECT"&&e.type!=="change")return;let v=el.value;if(/\.floor$/.test(el.dataset.q))v=v.toUpperCase();const mm=/^items\.(\d+)\.(type|sys)$/.exec(el.dataset.q);const itm=mm?S.qd.items[+mm[1]]:null;const oldDef=itm?defPrice(itm.type,itm.sys||defSys(S.qd)):0,oldAdd=itm?defAddon(itm.type):0;
+  if(el.dataset&&el.dataset.q&&S.qd){if(el.tagName==="SELECT"&&e.type!=="change")return;let v=el.value;if(/\.floor$/.test(el.dataset.q))v=v.toUpperCase();
+    {const fm=/^items\.(\d+)\.floor$/.exec(el.dataset.q);if(fm&&e.type==="change"){const i0=+fm[1],its=S.qd.items||[],prev=flr(el.defaultValue),nv=flr(v);
+      if(nv!==prev){for(let k=i0+1;k<its.length;k++){const f=flr(its[k].floor);if(f===""||f===prev)its[k].floor=nv;else break}}}}const mm=/^items\.(\d+)\.(type|sys)$/.exec(el.dataset.q);const itm=mm?S.qd.items[+mm[1]]:null;const oldDef=itm?defPrice(itm.type,itm.sys||defSys(S.qd)):0,oldAdd=itm?defAddon(itm.type):0;
     setPath(S.qd,el.dataset.q,v);
     if(itm&&e.type==="change"){if(!N(itm.price)||N(itm.price)===oldDef)itm.price=defPrice(itm.type,itm.sys||defSys(S.qd));if(!N(itm.addon)||N(itm.addon)===oldAdd)itm.addon=defAddon(itm.type)}
     if(e.type==="change"){if(/^items\.\d+\.type$/.test(el.dataset.q)&&v==="other"){const it=getPath(S.qd,el.dataset.q.replace(/\.type$/,""));if(it.pricing==="m2")it.pricing="lump"}render();qScheduleSave()}return}
