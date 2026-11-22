@@ -893,6 +893,7 @@ const KINDS={
   cw_pushout:["كارتن وول مع فتحة بوش اوت","Curtain wall with push-out vent","sar-fix",{base:"cw",cw:"pushout"}],
   cw_door:["كارتن وول مع باب مفصلي","Curtain wall with hinged door","sar-fix",{base:"cw",cw:"door"}],
   cw_swing:["كارتن وول مع باب مروحة","Curtain wall with double-action (swing) door","sar-fix",{base:"cw",cw:"swing"}],
+  pushwin:["شبابيك كارتن وول تفتح للخارج","Push-out window - opens outside","sar-case1",{base:"awning",pushout:1,unit:1}],
   casement1:["شباك مفصلي درفة واحدة","Casement window - 1 sash","sar-case1",{base:"casement",n:1}],
   casement1f:["شباك مفصلي درفة واحدة مع ثابت","Casement window - 1 sash with fixed panel","sar-case1",{base:"casement",n:1,fix:1}],
   casement2:["شباك مفصلي درفتين","Casement window - 2 sashes","sar-case1",{base:"casement",n:2}],
@@ -978,7 +979,7 @@ function elevation(it,X0,Y0,AW,AH,opt={}){const mini=!!opt.mini;
     for(let i=0;i<n;i++){const sxp=ix+i*(swd-ov);g+=sashBox(sxp,iy,swd,ih,s);if(!mini||n<=3){const cy=iy+ih/2,a=Math.min(swd*.3,60);
       const dirR=n===4?i<2:i%2===0;g+=dirR?arrowH(sxp+swd/2-a/2,sxp+swd/2+a/2,cy):arrowH(sxp+swd/2+a/2,sxp+swd/2-a/2,cy)}}}
   else if(o.base==="fixed"){g+=glassPane(ix,iy,iw,ih)+lbl("F (FIXED)",ix+iw/2,iy+ih/2+5,13)}
-  else if(o.base==="awning"){g+=leaf(ix+2,iy+2,iw-4,ih-4,"T")}
+  else if(o.base==="awning"){g+=leaf(ix+2,iy+2,iw-4,ih-4,"T");if(o.pushout)g+=lbl("PUSH-OUT",ix+iw/2,iy+ih*.62,10)}
   else if(o.base==="casement"){const n=o.n||1,gap=2,lw=(iw-(n-1)*gap)/n;for(let i=0;i<n;i++)g+=leaf(ix+i*(lw+gap),iy,lw,ih,n===2?(i===0?"L":"R"):(it.hinge==="L"?"L":"R"))}
   else if(o.base==="door"){const n=o.n||1,gap=2,lw=(iw-(n-1)*gap)/n;for(let i=0;i<n;i++)g+=leaf(ix+i*(lw+gap),iy,lw,ih,n===2?(i===0?"L":"R"):(it.hinge==="L"?"L":"R"),true,o.formica)}
   else if(o.base==="cw"){
@@ -1399,7 +1400,7 @@ const isCompanyName=n=>/^(شركة|مؤسسة|مجموعة|مكتب|مصنع|م�
 function qTitle(q){const c=q.client||{};return c.title||(isCompanyName(c.name)?"السادة":"الأستاذ")}
 function locFmt(v){v=String(v||"").trim();if(/^الرياض\s*-\s*حي$/.test(v))return "الرياض";return v}
 function qSalute(q){const n=String(q.client?.name||"").trim();return n?`عناية ${qTitle(q)}/ ${n}`:"—"}
-const PRICE_LABELS=[["sar_slide","سحاب سرايا 10 سم - سماكة 1.5 مم"],["sar_slide_fix","سحاب مع ثابت - سرايا"],["roy_slide","سحاب رويال 12 سم - سماكة 2 مم"],["roy_slide_fix","سحاب مع ثابت - رويال"],["cw","كارتن وول ثابت - قطاع ترانزوم 9.5 سم"],["pushout","درفة البوش اوت (للدرفة الواحدة)"],["awning","قلاب"],["awning_fix","قلاب مع ثابت"],["fixed","ثابت كامل"],["door","باب مفصلي (كل الأنواع)"],["casement","شباك مفصلي (درفة / درفتين، مع أو بدون ثابت)"],["balustrade","درابزين زجاج 12 مم شفاف"]];
+const PRICE_LABELS=[["sar_slide","سحاب سرايا 10 سم - سماكة 1.5 مم"],["sar_slide_fix","سحاب مع ثابت - سرايا"],["roy_slide","سحاب رويال 12 سم - سماكة 2 مم"],["roy_slide_fix","سحاب مع ثابت - رويال"],["cw","كارتن وول ثابت - قطاع ترانزوم 9.5 سم"],["pushout","درفة البوش اوت / شبابيك كارتن وول تفتح للخارج (للحبة)"],["awning","قلاب"],["awning_fix","قلاب مع ثابت"],["fixed","ثابت كامل"],["door","باب مفصلي (كل الأنواع)"],["casement","شباك مفصلي (درفة / درفتين، مع أو بدون ثابت)"],["balustrade","درابزين زجاج 12 مم شفاف"]];
 const FLOORS={"":"—",B:"B بيزمنت",G:"G أرضي",F:"F أول","2F":"2F ثاني","3F":"3F ثالث",R:"R ملحق"};
 const FLOOR_EN={B:"Basement",G:"Ground",F:"First",S:"Second","2F":"Second",T:"Third","3F":"Third",R:"Roof"};
 const flr=v=>String(v||"").trim().toUpperCase();
@@ -1408,7 +1409,7 @@ const PR=()=>({...DEFAULT_CFG.prices,...(S.cfg.prices||{})});
 function defSys(q){return /رويال|royal/i.test(String(q?.specs?.system||""))?"royal":"saraya"}
 function defPrice(type,sys){const p=PR(),o=KOPT(type);if(type==="other"||!KINDS[type])return 0;
   if(o.base==="sliding"){const r=sys==="royal";return N(o.fix?(r?p.roy_slide_fix:p.sar_slide_fix):(r?p.roy_slide:p.sar_slide))}
-  if(o.base==="cw")return N(p.cw);if(o.base==="balustrade")return N(p.balustrade??400);if(o.base==="awning")return N(o.fix?p.awning_fix:p.awning);if(o.base==="fixed")return N(p.fixed);if(o.base==="door")return N(p.door);if(o.base==="casement")return N(p.casement);return 0}
+  if(o.pushout)return N(p.pushout);if(o.base==="cw")return N(p.cw);if(o.base==="balustrade")return N(p.balustrade??400);if(o.base==="awning")return N(o.fix?p.awning_fix:p.awning);if(o.base==="fixed")return N(p.fixed);if(o.base==="door")return N(p.door);if(o.base==="casement")return N(p.casement);return 0}
 const defAddon=type=>type==="cw_pushout"?N(PR().pushout):0;
 const qMinArea=q=>N(q.minArea)>0?N(q.minArea):1;
 function qLine(q,it){const area=N(it.w)*N(it.h)/1e6;const a1=it.type==='other'?area:Math.max(area,qMinArea(q));const qty=N(it.qty)||1;
@@ -1737,7 +1738,7 @@ async function qSheetRead(){
     for(let i=0;i<pages.length;i++){st.msg=`جارٍ قراءة الصفحة ${i+1} من ${pages.length}… (قد تأخذ دقيقة)`;render();
       const out=await S.sample.json(qSheetPrompt(i+1,pages.length),{images:[pages[i]],modelTier:"complex",signal:st.ctl.signal});
       (out&&out.items||[]).forEach(x=>{const type=Q_TYPES[x.type]?x.type:"sliding2";
-        items.push({id:uid(),ref:String(x.ref||""),floor:flr(x.floor).slice(0,4),type,desc:String(x.desc||"")+(x.unclear?` (رقم غير واضح${x.alt?`، بديل: ${x.alt}`:""})`:""),w:Math.round(N(x.w_mm)),h:Math.round(N(x.h_mm)),qty:Math.max(1,Math.round(N(x.qty)||1)),pricing:type==="other"?"lump":"m2",sys:defSys(q),price:defPrice(type,defSys(q)),addon:defAddon(type),unclear:!!x.unclear})});
+        items.push({id:uid(),ref:String(x.ref||""),floor:flr(x.floor).slice(0,4),type,desc:String(x.desc||"")+(x.unclear?` (رقم غير واضح${x.alt?`، بديل: ${x.alt}`:""})`:""),w:Math.round(N(x.w_mm)),h:Math.round(N(x.h_mm)),qty:Math.max(1,Math.round(N(x.qty)||1)),pricing:type==="other"?"lump":KOPT(type).unit?"unit":"m2",sys:defSys(q),price:defPrice(type,defSys(q)),addon:defAddon(type),unclear:!!x.unclear})});
       if(out&&out.client)for(const k of ["name","phone","project","location"])if(out.client[k]&&!client[k])client[k]=String(out.client[k]);
       if(out&&N(out.stated_total)>0)stated+=N(out.stated_total);
       (out&&out.flags||[]).forEach(t=>t&&flags.push(`ص${i+1}: ${t}`));}
@@ -1988,9 +1989,9 @@ const onField=e=>{const el=e.target;
   if(el.dataset&&el.dataset.s&&S.cfgDraft){setPath(S.cfgDraft,el.dataset.s,el.value);if(e.type==="change")render();return}
   if(el.dataset&&el.dataset.q&&S.qd){if(el.tagName==="SELECT"&&e.type!=="change")return;let v=el.value;if(/\.floor$/.test(el.dataset.q))v=v.toUpperCase();
     {const fm=/^items\.(\d+)\.floor$/.exec(el.dataset.q);if(fm&&e.type==="change"){const i0=+fm[1],its=S.qd.items||[],prev=flr(el.defaultValue),nv=flr(v);
-      if(nv!==prev){for(let k=i0+1;k<its.length;k++){const f=flr(its[k].floor);if(f===""||f===prev)its[k].floor=nv;else break}}}}const mm=/^items\.(\d+)\.(type|sys)$/.exec(el.dataset.q);const itm=mm?S.qd.items[+mm[1]]:null;const oldDef=itm?defPrice(itm.type,itm.sys||defSys(S.qd)):0,oldAdd=itm?defAddon(itm.type):0;
+      if(nv!==prev){for(let k=i0+1;k<its.length;k++){const f=flr(its[k].floor);if(f===""||f===prev)its[k].floor=nv;else break}}}}const mm=/^items\.(\d+)\.(type|sys)$/.exec(el.dataset.q);const itm=mm?S.qd.items[+mm[1]]:null;const oldDef=itm?defPrice(itm.type,itm.sys||defSys(S.qd)):0,oldAdd=itm?defAddon(itm.type):0,oldType=itm?itm.type:"";
     setPath(S.qd,el.dataset.q,v);
-    if(itm&&e.type==="change"){if(!N(itm.price)||N(itm.price)===oldDef)itm.price=defPrice(itm.type,itm.sys||defSys(S.qd));if(!N(itm.addon)||N(itm.addon)===oldAdd)itm.addon=defAddon(itm.type)}
+    if(itm&&e.type==="change"){if(mm[2]==="type"){const no=KOPT(itm.type);if(no.unit)itm.pricing="unit";else if(itm.pricing==="unit"&&KOPT(oldType).unit)itm.pricing="m2"}if(!N(itm.price)||N(itm.price)===oldDef)itm.price=defPrice(itm.type,itm.sys||defSys(S.qd));if(!N(itm.addon)||N(itm.addon)===oldAdd)itm.addon=defAddon(itm.type)}
     if(e.type==="change"){if(/^items\.\d+\.type$/.test(el.dataset.q)&&v==="other"){const it=getPath(S.qd,el.dataset.q.replace(/\.type$/,""));if(it.pricing==="m2")it.pricing="lump"}render();qScheduleSave()}return}
   if(el.id==="qq"){S.qq=el.value;render();return}
   if(el.id==="qstatusFilter"&&e.type==="change"){S.qstatus=el.value;render();return}
