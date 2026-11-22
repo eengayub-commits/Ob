@@ -485,7 +485,7 @@ const P={
 };
 const DEFAULT_CFG={
   barLen:6000, trim:20, kerf:5, aluPrice:0, paintRate:0, glassPrice:0, tapeFactor:1, tapeRoll:100, tapePrice:0,
-  prices:{sar_slide:450,sar_slide_fix:480,roy_slide:570,roy_slide_fix:580,cw:450,pushout:350,awning:350,awning_fix:350,fixed:350,door:550,casement:450},
+  prices:{balustrade:400,sar_slide:450,sar_slide_fix:480,roy_slide:570,roy_slide_fix:580,cw:450,pushout:350,awning:350,awning_fix:350,fixed:350,door:550,casement:450},
   company:{nameAr:"مصنع برج القمة للأعمال المعدنية",nameEn:"AL QIMMA TOWER FACTORY",vat:"",cr:"",address:"",phone:"",email:"",website:"",bank:"",account:"",iban:"",logo:""},
   profiles:[[P.sFrame,1.10],[P.sSash,0.95],[P.sScreen,0.45],[P.sInter,0.40],[P.rFrame,1.65],[P.rSash,1.20],[P.rInter,0.45],[P.rScreen,0.42],[P.cFrame,1.25],[P.cSash,1.05],[P.bead24,0.25],[P.dFrame,1.50],[P.dSash,1.30],[P.dKick,1.10],[P.bead1,0.22]].map(([name,kg])=>({name,kg})),
   recipes:[
@@ -904,6 +904,7 @@ const KINDS={
   door1:["باب مفصلي","Hinged door","sar-door1",{base:"door",n:1}],
   door1ff:["باب مفصلي مع ثابت مع فورمايكا","Hinged door with fixed panel and formica panel","sar-door1",{base:"door",n:1,fix:1,formica:1}],
   door1fm:["باب مفصلي مع فورمايكا","Hinged door with formica panel","sar-door1",{base:"door",n:1,formica:1}],
+  balustrade:["درابزين زجاج 12 مم شفاف","Glass balustrade - 12 mm clear","",{base:"balustrade"}],
   slidingdoor:["باب سحاب درفتين","Sliding door - 2 leaves","sar-slide2",{base:"sliding",n:2,door:1,legacy:1}],
   door2:["باب مفصلي درفتين","Hinged door - 2 leaves","sar-door1",{base:"door",n:2,legacy:1}]
 };
@@ -953,6 +954,11 @@ function elevation(it,X0,Y0,AW,AH,opt={}){const mini=!!opt.mini;
   const o=KOPT(it.kind),door=o.base==="door"||o.door;
   const lbl=(tx,cx,cy,sz=11)=>mini?"":T(cx,cy,tx,{size:sz,anchor:"middle",fill:"#555",weight:600});
   let g="";
+  if(o.base==="balustrade"){const rail=Math.max(50*k,mini?2:5),base=Math.max(80*k,mini?2.5:7),gap=Math.max(15*k,mini?1:2);const n=Math.max(1,Math.round(W/1200));const pw=(w-(n-1)*gap)/n;
+    for(let i=0;i<n;i++){const px=x+i*(pw+gap);g+=glassPane(px,y+rail+gap,pw,h-rail-base-2*gap);if(!mini&&pw>40)g+=R(px+pw*.15,y+h-base-gap-8,10,8,{fill:"#888",stroke:"#555",sw:.5})+R(px+pw*.85-10,y+h-base-gap-8,10,8,{fill:"#888",stroke:"#555",sw:.5})}
+    g+=R(x-2,y,w+4,rail,{fill:"#9aa4ab",stroke:"#333",sw:1})+R(x,y+h-base,w,base,{fill:"#c9cfd3",stroke:"#333",sw:1});
+    if(!mini){g+=lbl("12 mm CLEAR GLASS",x+w/2,y+h/2+4,10)+dimH(x,x+w,y+h+30,`${W}`)+dimV(y,y+h,x+w+30,`${H}`)}
+    return g}
   if(door&&o.base!=="cw"){g+=`<path d="M${sx(x)} ${sx(y+h)} V${sx(y)} H${sx(x+w)} V${sx(y+h)}" fill="#f4f4f4" stroke="#111" stroke-width="1.6"/>`+L(x-8,y+h,x+w+8,y+h,{sw:2})}
   else g+=R(x,y,w,h,{sw:1.6,fill:"#f4f4f4"});
   let ix=x+fw,iy=y+fw,iw=w-2*fw,ih=h-fw-(door&&o.base!=="cw"?0:fw);
@@ -1393,7 +1399,7 @@ const isCompanyName=n=>/^(شركة|مؤسسة|مجموعة|مكتب|مصنع|م�
 function qTitle(q){const c=q.client||{};return c.title||(isCompanyName(c.name)?"السادة":"الأستاذ")}
 function locFmt(v){v=String(v||"").trim();if(/^الرياض\s*-\s*حي$/.test(v))return "الرياض";return v}
 function qSalute(q){const n=String(q.client?.name||"").trim();return n?`عناية ${qTitle(q)}/ ${n}`:"—"}
-const PRICE_LABELS=[["sar_slide","سحاب سرايا 10 سم - سماكة 1.5 مم"],["sar_slide_fix","سحاب مع ثابت - سرايا"],["roy_slide","سحاب رويال 12 سم - سماكة 2 مم"],["roy_slide_fix","سحاب مع ثابت - رويال"],["cw","كارتن وول ثابت - قطاع ترانزوم 9.5 سم"],["pushout","درفة البوش اوت (للدرفة الواحدة)"],["awning","قلاب"],["awning_fix","قلاب مع ثابت"],["fixed","ثابت كامل"],["door","باب مفصلي (كل الأنواع)"],["casement","شباك مفصلي (درفة / درفتين، مع أو بدون ثابت)"]];
+const PRICE_LABELS=[["sar_slide","سحاب سرايا 10 سم - سماكة 1.5 مم"],["sar_slide_fix","سحاب مع ثابت - سرايا"],["roy_slide","سحاب رويال 12 سم - سماكة 2 مم"],["roy_slide_fix","سحاب مع ثابت - رويال"],["cw","كارتن وول ثابت - قطاع ترانزوم 9.5 سم"],["pushout","درفة البوش اوت (للدرفة الواحدة)"],["awning","قلاب"],["awning_fix","قلاب مع ثابت"],["fixed","ثابت كامل"],["door","باب مفصلي (كل الأنواع)"],["casement","شباك مفصلي (درفة / درفتين، مع أو بدون ثابت)"],["balustrade","درابزين زجاج 12 مم شفاف"]];
 const FLOORS={"":"—",B:"B بيزمنت",G:"G أرضي",F:"F أول","2F":"2F ثاني","3F":"3F ثالث",R:"R ملحق"};
 const FLOOR_EN={B:"Basement",G:"Ground",F:"First",S:"Second","2F":"Second",T:"Third","3F":"Third",R:"Roof"};
 const flr=v=>String(v||"").trim().toUpperCase();
@@ -1402,7 +1408,7 @@ const PR=()=>({...DEFAULT_CFG.prices,...(S.cfg.prices||{})});
 function defSys(q){return /رويال|royal/i.test(String(q?.specs?.system||""))?"royal":"saraya"}
 function defPrice(type,sys){const p=PR(),o=KOPT(type);if(type==="other"||!KINDS[type])return 0;
   if(o.base==="sliding"){const r=sys==="royal";return N(o.fix?(r?p.roy_slide_fix:p.sar_slide_fix):(r?p.roy_slide:p.sar_slide))}
-  if(o.base==="cw")return N(p.cw);if(o.base==="awning")return N(o.fix?p.awning_fix:p.awning);if(o.base==="fixed")return N(p.fixed);if(o.base==="door")return N(p.door);if(o.base==="casement")return N(p.casement);return 0}
+  if(o.base==="cw")return N(p.cw);if(o.base==="balustrade")return N(p.balustrade??400);if(o.base==="awning")return N(o.fix?p.awning_fix:p.awning);if(o.base==="fixed")return N(p.fixed);if(o.base==="door")return N(p.door);if(o.base==="casement")return N(p.casement);return 0}
 const defAddon=type=>type==="cw_pushout"?N(PR().pushout):0;
 const qMinArea=q=>N(q.minArea)>0?N(q.minArea):1;
 function qLine(q,it){const area=N(it.w)*N(it.h)/1e6;const a1=it.type==='other'?area:Math.max(area,qMinArea(q));const qty=N(it.qty)||1;
