@@ -716,18 +716,48 @@ const JSPDF="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js
 let jspdfLoad=null;
 function loadJsPdf(){if(window.jspdf)return Promise.resolve(window.jspdf);if(!jspdfLoad){jspdfLoad=addScript(JSPDF).then(()=>window.jspdf);jspdfLoad.catch(()=>{jspdfLoad=null})}return jspdfLoad}
 function canvasBlob(cv,type="image/jpeg",q=.9){return new Promise(r=>cv.toBlob(r,type,q))}
-async function toJpeg(b,maxSide=2400){
+async function toJpeg(b,maxSide=4000){
   const bmp=await createImageBitmap(b);const k=Math.min(1,maxSide/Math.max(bmp.width,bmp.height));
   const cv=document.createElement("canvas");cv.width=Math.round(bmp.width*k);cv.height=Math.round(bmp.height*k);
   const ctx=cv.getContext("2d");ctx.fillStyle="#fff";ctx.fillRect(0,0,cv.width,cv.height);ctx.drawImage(bmp,0,0,cv.width,cv.height);
   return canvasBlob(cv);
+}
+/* high-accuracy page reading: full page + two zoomed halves, then a verification pass */
+async function pageViews(b,maxViews){
+  const bmp=await createImageBitmap(b);const W=bmp.width,H=bmp.height;const portrait=H>=W;
+  const mk=async(sx,sy,sw,sh,max)=>{const k=Math.min(1,max/Math.max(sw,sh));const cv=document.createElement("canvas");cv.width=Math.round(sw*k);cv.height=Math.round(sh*k);const ctx=cv.getContext("2d");ctx.fillStyle="#fff";ctx.fillRect(0,0,cv.width,cv.height);ctx.drawImage(bmp,sx,sy,sw,sh,0,0,cv.width,cv.height);return canvasBlob(cv,"image/jpeg",.92)};
+  const views=[await mk(0,0,W,H,1600)];
+  const n=Math.max(2,Math.min(4,(maxViews||3)-1,Math.ceil(W*H/1.15e6)));const L=portrait?H:W,ov=Math.round(L*.06),step=L/n;
+  for(let k=0;k<n;k++){const a0=Math.max(0,Math.round(k*step-ov)),a1=Math.min(L,Math.round((k+1)*step+ov));
+    views.push(portrait?await mk(0,a0,W,a1-a0,2400):await mk(a0,0,a1-a0,H,2400))}
+  return views;
+}
+async function readPage(promptFn,i,n,blob,signal,listKey,onStage){
+  let maxN=1;try{const lim=await S.sample.limits();maxN=(lim&&lim.images&&lim.images.maxCount)||1}catch(_){}
+  let views=[blob];try{if(maxN>=3)views=await pageViews(blob,Math.min(maxN,5))}catch(_){}
+  const zoomNote=views.length>1?`\nYou receive ${views.length} images of the SAME page: image 1 is the full page (for layout and context); images 2 to ${views.length} are zoomed consecutive strips of the page (in reading order, top to bottom or right to left) that overlap slightly. Read every digit from the zoomed images. List each line ONLY ONCE even if it appears in both zoomed parts.`:"";
+  onStage&&onStage("read");
+  const first=await S.sample.json(promptFn(i,n)+zoomNote,{images:views,modelTier:"complex",signal});
+  if(!first||!Array.isArray(first[listKey]))return first;
+  onStage&&onStage("verify");
+  try{
+    const second=await S.sample.json(`Below is a JSON extraction made from these images (page ${i} of ${n}) of a handwritten / printed site measurement sheet for aluminium & glass works.${zoomNote}
+Re-check EVERY entry in "${listKey}" against the images, digit by digit: codes, widths, heights, quantities, types and floor. Look for lines that were missed, duplicated or merged, and correct any mistake. Keep exactly the same JSON schema and keys as the extraction.
+Add a key "corrections": a list of short ARABIC notes describing each correction you made (e.g. "W3: العرض 1450 وليس 1405"). Use an empty list if everything was already correct.
+Reply with ONLY the corrected JSON.
+
+EXTRACTION:
+${JSON.stringify(first)}`,{images:views,modelTier:"complex",signal});
+    if(second&&Array.isArray(second[listKey])){const corr=(second.corrections||[]).filter(Boolean);second.flags=[...(second.flags||first.flags||[]),...corr.map(c=>"مراجعة: "+c)];return second}
+  }catch(e){if(e&&e.code==="cancelled")throw e}
+  return first;
 }
 async function sheetImages(f){
   const b=await fetchFile(f);const kind=fileKind({name:f.name,type:f.type||b.type});
   if(kind==="img")return [await toJpeg(b)];
   if(kind==="pdf"){
     const lib=await loadPdfJs();const doc=await lib.getDocument({data:new Uint8Array(await b.arrayBuffer())}).promise;const out=[];
-    for(let i=1;i<=doc.numPages;i++){const pg=await doc.getPage(i);const base=pg.getViewport({scale:1});const vp=pg.getViewport({scale:2200/Math.max(base.width,base.height)});
+    for(let i=1;i<=doc.numPages;i++){const pg=await doc.getPage(i);const base=pg.getViewport({scale:1});const vp=pg.getViewport({scale:3200/Math.max(base.width,base.height)});
       const cv=document.createElement("canvas");cv.width=vp.width;cv.height=vp.height;const ctx=cv.getContext("2d");ctx.fillStyle="#fff";ctx.fillRect(0,0,cv.width,cv.height);
       await pg.render({canvasContext:ctx,viewport:vp}).promise;out.push(await canvasBlob(cv))}
     return out;
@@ -761,7 +791,7 @@ async function runExtract(c){
     const rows=[],flags=[],totals=[];
     for(let i=0;i<pages.length;i++){
       ex.msg=`جارٍ قراءة الصفحة ${i+1} من ${pages.length}… (قد تأخذ دقيقة)`;render();
-      const out=await S.sample.json(exPrompt(i+1,pages.length),{images:[pages[i].b],modelTier:"complex",signal:ex.ctl.signal});
+      const out=await readPage(exPrompt,i+1,pages.length,pages[i].b,ex.ctl.signal,"rows",st=>{ex.msg=st==="verify"?`مراجعة أرقام الصفحة ${i+1} من ${pages.length} والتأكد منها…`:`قراءة الصفحة ${i+1} من ${pages.length} بدقة عالية…`;render()});
       (out&&out.rows||[]).forEach(r=>{const w=Math.round(N(r.w_cm)*10),h=Math.round(N(r.h_cm)*10);
         rows.push({id:uid(),ref:String(r.ref||"").trim(),w,h,qty:Math.max(1,Math.round(N(r.qty)||1)),group:GROUPS[r.group]?r.group:"regular",note:String(r.note||""),unclear:!!r.unclear,alt:String(r.alt||""),pending:!!r.pending,page:i+1})});
       (out&&out.flags||[]).forEach(t=>t&&flags.push(`ص${i+1}: ${t}`));
@@ -1796,7 +1826,7 @@ async function qSheetRead(){
     const items=[],flags=[];let client={};let stated=0;
     const last=(q.items||[]).filter(i=>N(i.price)>0).slice(-1)[0];
     for(let i=0;i<pages.length;i++){st.msg=`جارٍ قراءة الصفحة ${i+1} من ${pages.length}… (قد تأخذ دقيقة)`;render();
-      const out=await S.sample.json(qSheetPrompt(i+1,pages.length),{images:[pages[i]],modelTier:"complex",signal:st.ctl.signal});
+      const out=await readPage(qSheetPrompt,i+1,pages.length,pages[i],st.ctl.signal,"items",sg=>{st.msg=sg==="verify"?`مراجعة أرقام الصفحة ${i+1} من ${pages.length} والتأكد منها…`:`قراءة الصفحة ${i+1} من ${pages.length} بدقة عالية…`;render()});
       (out&&out.items||[]).forEach(x=>{const type=Q_TYPES[x.type]?x.type:"sliding2";
         items.push({id:uid(),ref:String(x.ref||""),floor:flr(x.floor).slice(0,4),type,desc:String(x.desc||"")+(x.unclear?` (رقم غير واضح${x.alt?`، بديل: ${x.alt}`:""})`:""),w:Math.round(N(x.w_mm)),h:Math.round(N(x.h_mm)),qty:Math.max(1,Math.round(N(x.qty)||1)),pricing:type==="other"?"lump":KOPT(type).unit?"unit":"m2",sys:defSys(q),price:defPrice(type,defSys(q)),addon:defAddon(type),unclear:!!x.unclear})});
       if(out&&out.client)for(const k of ["name","phone","project","location"])if(out.client[k]&&!client[k])client[k]=String(out.client[k]);
