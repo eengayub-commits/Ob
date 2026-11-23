@@ -154,6 +154,8 @@ tr.unclear td{background:var(--warn-soft)}
 .qprev-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
 .sheet.a4{box-shadow:0 2px 10px rgba(0,0,0,.12);border-radius:4px}
 .qitems td{padding:5px 4px;vertical-align:top}.qitems input.floorin{width:40px;min-width:40px!important;text-align:center;text-transform:uppercase;padding:5px 2px;font-weight:700}.qitems tr.selrow td{background:var(--accent-soft)}
+.tcode{font-family:ui-monospace,Consolas,monospace;font-weight:700;font-size:.78rem;color:var(--accent);background:var(--accent-soft);padding:2px 6px;border-radius:4px;white-space:nowrap;direction:ltr;display:inline-block}
+.codes{padding:8px 0}.codegrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:6px 14px;margin-top:8px;font-size:.88rem}
 .addn{display:inline-flex;gap:4px;align-items:center}.addn input{width:78px!important;max-width:78px;flex:none;padding:6px 8px;text-align:center}.qitems th{padding:8px 4px}.qitems input,.qitems select{padding:5px 6px}
 .qtot{display:flex;flex-direction:column;gap:6px;align-items:flex-end;padding:12px;border-radius:8px;background:var(--surface-2);border:1px solid var(--line)}
 button.armed-ok{background:var(--ok);border-color:var(--ok);color:#fff}
@@ -998,9 +1000,10 @@ function elevation(it,X0,Y0,AW,AH,opt={}){const mini=!!opt.mini;
   else g+=R(x,y,w,h,{sw:1.6,fill:"#f4f4f4"});
   let ix=x+fw,iy=y+fw,iw=w-2*fw,ih=h-fw-(door&&o.base!=="cw"?0:fw);
   let fixH=0;
+  const fixDown=it.fixPos==="down"&&o.base==="sliding";
   if(o.fix&&o.base!=="cw"){fixH=Math.min(ih*.45,Math.max(ih*.18,(N(it.fixedH)||H*.28)*k));
-    g+=glassPane(ix,iy,iw,fixH)+lbl("F",ix+iw/2,iy+fixH/2+4)+R(ix,iy+fixH,iw,bar,{fill:"#f4f4f4",sw:1});
-    iy+=fixH+bar;ih-=fixH+bar}
+    if(fixDown){g+=glassPane(ix,iy+ih-fixH,iw,fixH)+lbl("F",ix+iw/2,iy+ih-fixH/2+4)+R(ix,iy+ih-fixH-bar,iw,bar,{fill:"#f4f4f4",sw:1});ih-=fixH+bar}
+    else{g+=glassPane(ix,iy,iw,fixH)+lbl("F",ix+iw/2,iy+fixH/2+4)+R(ix,iy+fixH,iw,bar,{fill:"#f4f4f4",sw:1});iy+=fixH+bar;ih-=fixH+bar}}
   g+=R(ix,iy,iw,ih,{sw:.8,fill:"#fff"});
   const leaf=(lx,ly,lw,lh,apex,isDoor,formica,swing)=>{const sp=isDoor?Math.max(s,mini?1.5:6):s;let r=R(lx,ly,lw,lh,{sw:1.2,fill:"#fff"});
     if(isDoor){const panel=formica?lh*.45:Math.min(lh*.25,Math.max(250*k,mini?3:14));const gh=lh-2*sp-panel;r+=glassPane(lx+sp,ly+sp,lw-2*sp,gh);
@@ -1033,7 +1036,7 @@ function elevation(it,X0,Y0,AW,AH,opt={}){const mini=!!opt.mini;
   if(mini)return g;
   g+=dimH(x,x+w,y+h+42,`${W}`);
   if(o.base==="sliding"||(o.base==="casement"&&o.n===2)||(o.base==="door"&&o.n===2)){const n=o.n||2;for(let i=0;i<n;i++)g+=dimH(x+i*w/n,x+(i+1)*w/n,y+h+20,`${Math.round(W/n)}`)}
-  if(fixH){const fmm=Math.round(fixH/k+fw/k);g+=dimV(y,y+fw+fixH,x-30,`${fmm}`)+dimV(y+fw+fixH,y+h,x-30,`${H-fmm}`)}
+  if(fixH){const fmm=Math.round(fixH/k+fw/k);if(fixDown)g+=dimV(y,y+h-fw-fixH,x-30,`${H-fmm}`)+dimV(y+h-fw-fixH,y+h,x-30,`${fmm}`);else g+=dimV(y,y+fw+fixH,x-30,`${fmm}`)+dimV(y+fw+fixH,y+h,x-30,`${H-fmm}`)}
   g+=dimV(y,y+h,x+w+30,`${H}`);
   return g;
 }
@@ -1472,7 +1475,13 @@ function qTitle(q){const c=q.client||{};return c.title||(isCompanyName(c.name)?"
 function locFmt(v){v=String(v||"").trim();if(/^الرياض\s*-\s*حي$/.test(v))return "الرياض";return v}
 function qSalute(q){const n=String(q.client?.name||"").trim();return n?`عناية ${qTitle(q)}/ ${n}`:"—"}
 const PRICE_LABELS=[["sar_slide","سحاب سرايا 10 سم - سماكة 1.5 مم"],["sar_slide_fix","سحاب مع ثابت - سرايا"],["roy_slide","سحاب رويال 12 سم - سماكة 2 مم"],["roy_slide_fix","سحاب مع ثابت - رويال"],["cw","كارتن وول ثابت - قطاع ترانزوم 9.5 سم"],["pushout","درفة البوش اوت / شبابيك كارتن وول تفتح للخارج (للحبة)"],["awning","قلاب"],["awning_fix","قلاب مع ثابت"],["fixed","ثابت كامل"],["door","باب مفصلي (كل الأنواع)"],["casement","شباك مفصلي (درفة / درفتين، مع أو بدون ثابت)"],["balustrade","درابزين زجاج 12 مم شفاف"]];
-const FLOORS={"":"—",B:"B بيزمنت",G:"G أرضي",F:"F أول","2F":"2F ثاني","3F":"3F ثالث",R:"R ملحق"};
+const FLOORS={"":"—",B:"B قبو",G:"G أرضي",F:"F أول","2F":"2F ثاني","3F":"3F ثالث",R:"R ملحق"};
+const CODE_TABLE=[["S.R","سحاب رويال","Royal sliding"],["S.R+F UP","سحاب رويال مع ثابت علوي","Royal sliding with top fixed"],["S.R+F DO","سحاب رويال مع ثابت سفلي","Royal sliding with bottom fixed"],["S.S","سحاب سرايا","Saraya sliding"],["S.S+F UP","سحاب سرايا مع ثابت علوي","Saraya sliding with top fixed"],["S.S+F DO","سحاب سرايا مع ثابت سفلي","Saraya sliding with bottom fixed"],["G","قلاب","Top-hung"],["G+F","قلاب مع ثابت","Top-hung with fixed"],["F","ثابت كامل","Fixed"],["D","باب مفصلي","Hinged door"],["D+F","باب مفصلي مع ثابت","Hinged door with fixed"],["H","مفصلي","Casement"],["H+F","مفصلي مع ثابت","Casement with fixed"],["C","كارتن وول","Curtain wall"],["C+P","كارتن وول مع بوش اوت","Curtain wall with push-out"]];
+const FLOOR_TABLE=[["B","القبو","Basement"],["G","الأرضي","Ground"],["F","الأول","First"],["S","الثاني","Second"],["T","الثالث","Third"],["R","الروف (السطح)","Roof"]];
+function typeCode(it,q){const o=KOPT(it.type);if(!KINDS[it.type])return"";const sy=(it.sys||defSys(q))==="royal"?"R":"S";
+  if(o.base==="sliding")return `S.${sy}`+(o.fix?`+F ${it.fixPos==="down"?"DO":"UP"}`:"");
+  if(o.base==="awning")return o.pushout?"P":o.fix?"G+F":"G";if(o.base==="fixed")return"F";if(o.base==="door")return o.fix?"D+F":"D";if(o.base==="casement")return o.fix?"H+F":"H";
+  if(o.base==="cw")return o.cw==="pushout"?"C+P":o.cw==="fixed"?"C":"C+D";if(o.base==="balustrade")return"BL";return""}
 const FLOOR_EN={B:"Basement",G:"Ground",F:"First",S:"Second","2F":"Second",T:"Third","3F":"Third",R:"Roof"};
 const flr=v=>String(v||"").trim().toUpperCase();
 const SYS_OPTS={saraya:"سرايا 10 سم",royal:"رويال 12 سم"};
@@ -1634,7 +1643,7 @@ function quoteSVGs(q,logo,stamp,sign){
     s+=T(x-C[2][2]/2,cy,flr(it.floor)||"—",{size:9,anchor:"middle",weight:700})+(FLOOR_EN[flr(it.floor)]?EN(x-C[2][2]/2,cy+10,FLOOR_EN[flr(it.floor)],{size:5.4,anchor:"middle"}):"");x-=C[2][2];
     const sysAr=KOPT(it.type).base==="sliding"?((it.sys||defSys(q))==="royal"?" - رويال 12 سم":" - سرايا 10 سم"):"",sysEn=sysAr?((it.sys||defSys(q))==="royal"?" - Royal 12 cm":" - Saraya 10 cm"):"";
     s+=T(x-5,cy,qTypeName(it.type),{size:9,anchor:"end",weight:700});let ly=cy+10.5;
-    if(typeEn){s+=EN(x-5,ly,typeEn,{size:7.6});ly+=11}
+    if(typeEn){s+=EN(x-5,ly,typeEn+(typeCode(it,q)?`   (${typeCode(it,q)})`:""),{size:7.6});ly+=11}
     dl.forEach(l=>{s+=T(x-5,ly,l,{size:8,anchor:"end",fill:"#333"});ly+=11});
     de.forEach(l=>{s+=EN(x-5,ly,l,{size:7.6});ly+=11});x-=C[3][2];
     s+=T(x-5,cy,String(L1.qty),{size:8.8,anchor:"end",weight:600});x-=C[4][2];
@@ -1671,6 +1680,13 @@ function quoteSVGs(q,logo,stamp,sign){
     terms.forEach((tx,i)=>{const ls=wrapText(tx,96);const le=wrapText(termsE[i]||"",110);ensure(ls.length*12+le.length*10+5);
       ls.forEach((l,k)=>{s+=T(X2-(k?14:0),y,(k?"":`${i+1}. `)+l,{size:8.6,anchor:"end"});y+=12});le.forEach(l=>{s+=EN(X2-14,y-1,l,{size:7.2});y+=10});y+=4});y+=6}
   if(q.notes){const ls=wrapText(q.notes,96).slice(0,6);const le=wrapText(enOf(q.notes,q.notesEn),110).slice(0,6);ensure(36+ls.length*12+le.length*10);secTitle("ملاحظات","NOTES");ls.forEach(l=>{s+=T(X2,y,l,{size:8.8,anchor:"end"});y+=12});le.forEach(l=>{s+=EN(X2,y-1,l,{size:7.4});y+=10});y+=8}
+  {ensure(40+Math.ceil(CODE_TABLE.length/3)*15+70);secTitle("جدول الرموز","CODES");
+    const cw3=W/3;CODE_TABLE.forEach(([c,a,e],k)=>{const col=k%3,row=Math.floor(k/3);const xr=X2-col*cw3;const yy=y+row*20;
+      s+=`<rect x="${xr-cw3+3}" y="${yy}" width="${cw3-6}" height="18" rx="3" fill="${row%2?"#fff":QC.soft}"/>`+`<text x="${sx(xr-cw3+10)}" y="${sx(yy+12.5)}" font-size="8.4" font-weight="700" fill="${QC.teal}" font-family="${SF}">${esc(c)}</text>`+T(xr-8,yy+9,a,{size:7.8,anchor:"end"})+EN(xr-8,yy+16.5,e,{size:5.8})});
+    y+=Math.ceil(CODE_TABLE.length/3)*20+8;
+    s+=T(X2,y+10,"الأدوار:",{size:8.6,anchor:"end",weight:700,fill:QC.teal})+EN(X2,y+19,"Floors",{size:6.6,weight:700,fill:QC.teal});
+    const fw6=(W-50)/6;FLOOR_TABLE.forEach(([c,a,e],k)=>{const xr=X2-50-k*fw6;s+=`<text x="${sx(xr-fw6+6)}" y="${sx(y+13)}" font-size="9" font-weight="700" fill="${QC.teal}" font-family="${SF}">${c}</text>`+T(xr-4,y+10,a,{size:7.8,anchor:"end"})+EN(xr-4,y+18,e,{size:5.8})});
+    y+=34}
   ensure(210);
   if(N(q.deliveryDays)){secTitle("مدة التنفيذ","DELIVERY PERIOD");s+=`<rect x="${X1}" y="${y}" width="${W}" height="34" rx="4" fill="#fff" stroke="${QC.teal}" stroke-width=".8"/>`+T(X2-8,y+15,`مدة التنفيذ ${N(q.deliveryDays)} يوم عمل بعد استلام الدفعة الأولى`,{size:9.6,anchor:"end",weight:600})+EN(X2-8,y+27,`Delivery period: ${N(q.deliveryDays)} working days after receipt of the first payment`,{size:7.4});y+=46}
   if(co.iban||co.bank){s+=`<rect x="${X1}" y="${y}" width="${W}" height="52" rx="4" fill="${QC.soft}"/>`+T(X2-8,y+15,`حسابنا في ${co.bank||""} باسم ${co.nameAr}`,{size:9.4,anchor:"end",weight:700})+T(X2-8,y+30,`${co.account?`رقم الحساب: ${iso(co.account)}   ·   `:""}الآيبان: ${iso(co.iban||"")}`,{size:9,anchor:"end"})+EN(X2-8,y+44,`Our account at ${bankEn(co.bank)||co.bank||""} in the name of ${co.nameEn}   ·   ${co.account?`Account No.: ${co.account}   ·   `:""}IBAN: ${co.iban||""}`,{size:7.2});y+=62}
@@ -1739,10 +1755,13 @@ function quoteEditor(){
       ${qIn("date","تاريخ العرض","date")}${qIn("validDays","مدة صلاحية العرض (يوم)","number")}${qIn("deliveryDays","مدة التنفيذ (يوم عمل بعد الدفعة الأولى)","number")}${qIn("minArea","أقل مساحة محسوبة للقطعة م² (افتراضي 1)","number")}${qIn("preparedBy","معدّ العرض")}${qIn("preparedRole","المسمى")}
     </div></div>
     <div class="card"><h3>البنود <span class="toolbar">${W_&&S.sample?(S.ex["qtr:"+S.qid]&&S.ex["qtr:"+S.qid].busy?`<span class="spin" aria-hidden="true"></span><span class="small">جارٍ الترجمة…</span>`:`<button data-act="q-translate">ترجمة النصوص للإنجليزي</button>`):""}${W_&&S.qsel.size?(S.confirm==="q-delsel"?`<button class="danger armed" data-act="q-delsel">تأكيد حذف ${S.qsel.size} بند</button>`:`<button class="danger" data-act="q-delsel">حذف المحدد (${S.qsel.size})</button>`):""}${W_?`<span class="addn"><input id="q-addn" type="number" min="1" max="200" inputmode="numeric" placeholder="العدد" aria-label="عدد البنود المراد إضافتها"><button data-act="q-addn">إضافة بنود</button></span><button data-act="q-add">+ بند</button>`:""}</span></h3><datalist id="floors-dl"><option value="B">بيزمنت</option><option value="G">أرضي</option><option value="F">أول</option><option value="S">ثاني</option><option value="T">ثالث</option><option value="R">روف / سطح</option></datalist>
-      <div class="tablebox"><table class="qitems"><thead><tr><th><input type="checkbox" data-qselall="1" aria-label="تحديد كل البنود" ${(q.items||[]).length&&(q.items||[]).every(it=>S.qsel.has(it.id))?"checked":""}></th><th>الكود</th><th>الدور</th><th>النوع</th><th>النظام</th><th>الوصف (عربي / English)</th><th>العرض مم</th><th>الارتفاع مم</th><th>العدد</th><th>التسعير</th><th>السعر</th><th>المساحة م²</th><th>الإجمالي</th><th></th></tr></thead><tbody>
-      ${(q.items||[]).map((it,i)=>{const L1=qLine(q,it);return `<tr class="${it.unclear?"unclear":""}${S.qsel.has(it.id)?" selrow":""}"><td><input type="checkbox" data-qsel="${esc(it.id)}" ${S.qsel.has(it.id)?"checked":""} aria-label="تحديد البند"></td><td>${qCell(`items.${i}.ref`,"text","56px")}</td><td>${qCell(`items.${i}.floor`,"text","40px",'list="floors-dl" maxlength="4" class="floorin" dir="ltr"')}</td><td>${qSel(`items.${i}.type`,Q_TYPES,"128px")}</td><td>${KOPT(it.type).base==="sliding"?qSel(`items.${i}.sys`,SYS_OPTS,"92px"):`<span class="muted small">—</span>`}</td><td>${qCell(`items.${i}.desc`,"text","150px",'placeholder="الوصف بالعربي"')}<div style="margin-top:4px">${qCell(`items.${i}.descEn`,"text","150px",'dir="ltr" placeholder="English description"')}</div></td><td>${qCell(`items.${i}.w`,"number","70px")}</td><td>${qCell(`items.${i}.h`,"number","70px")}</td><td>${qCell(`items.${i}.qty`,"number","50px")}</td><td>${qSel(`items.${i}.pricing`,PRICING,"110px")}</td><td>${qCell(`items.${i}.price`,"number","80px")}${N(it.price)!==defPrice(it.type,it.sys||defSys(q))&&it.type!=="other"&&defPrice(it.type,it.sys||defSys(q))?`<div class="small muted" title="السعر الافتراضي">افتراضي ${defPrice(it.type,it.sys||defSys(q))}</div>`:""}${it.type==="cw_pushout"||N(it.addon)?`<div class="small">+ بوش اوت ${qCell(`items.${i}.addon`,"number","60px")}</div>`:""}</td><td class="num">${L1.totalArea?L1.totalArea.toFixed(2):"—"}</td><td><b>${M(L1.total)}</b></td>
+      <div class="tablebox"><table class="qitems"><thead><tr><th><input type="checkbox" data-qselall="1" aria-label="تحديد كل البنود" ${(q.items||[]).length&&(q.items||[]).every(it=>S.qsel.has(it.id))?"checked":""}></th><th>الكود</th><th>الدور</th><th>النوع</th><th>الرمز</th><th>النظام</th><th>الوصف (عربي / English)</th><th>العرض مم</th><th>الارتفاع مم</th><th>العدد</th><th>التسعير</th><th>السعر</th><th>المساحة م²</th><th>الإجمالي</th><th></th></tr></thead><tbody>
+      ${(q.items||[]).map((it,i)=>{const L1=qLine(q,it);return `<tr class="${it.unclear?"unclear":""}${S.qsel.has(it.id)?" selrow":""}"><td><input type="checkbox" data-qsel="${esc(it.id)}" ${S.qsel.has(it.id)?"checked":""} aria-label="تحديد البند"></td><td>${qCell(`items.${i}.ref`,"text","56px")}</td><td>${qCell(`items.${i}.floor`,"text","40px",'list="floors-dl" maxlength="4" class="floorin" dir="ltr"')}</td><td>${qSel(`items.${i}.type`,Q_TYPES,"128px")}</td><td><span class="tcode">${esc(typeCode(it,q)||"—")}</span></td><td>${KOPT(it.type).base==="sliding"?qSel(`items.${i}.sys`,SYS_OPTS,"92px"):`<span class="muted small">—</span>`}${KOPT(it.type).base==="sliding"&&KOPT(it.type).fix?`<div style="margin-top:4px">${qSel(`items.${i}.fixPos`,{up:"ثابت علوي",down:"ثابت سفلي"},"92px")}</div>`:""}</td><td>${qCell(`items.${i}.desc`,"text","150px",'placeholder="الوصف بالعربي"')}<div style="margin-top:4px">${qCell(`items.${i}.descEn`,"text","150px",'dir="ltr" placeholder="English description"')}</div></td><td>${qCell(`items.${i}.w`,"number","70px")}</td><td>${qCell(`items.${i}.h`,"number","70px")}</td><td>${qCell(`items.${i}.qty`,"number","50px")}</td><td>${qSel(`items.${i}.pricing`,PRICING,"110px")}</td><td>${qCell(`items.${i}.price`,"number","80px")}${N(it.price)!==defPrice(it.type,it.sys||defSys(q))&&it.type!=="other"&&defPrice(it.type,it.sys||defSys(q))?`<div class="small muted" title="السعر الافتراضي">افتراضي ${defPrice(it.type,it.sys||defSys(q))}</div>`:""}${it.type==="cw_pushout"||N(it.addon)?`<div class="small">+ بوش اوت ${qCell(`items.${i}.addon`,"number","60px")}</div>`:""}</td><td class="num">${L1.totalArea?L1.totalArea.toFixed(2):"—"}</td><td><b>${M(L1.total)}</b></td>
         <td>${W_?`<span class="toolbar" style="gap:2px;flex-wrap:nowrap"><button class="ghost" data-act="q-mv" data-i="${i}" data-d="-1" ${i?"":"disabled"} aria-label="لأعلى">↑</button><button class="ghost" data-act="q-mv" data-i="${i}" data-d="1" ${i<q.items.length-1?"":"disabled"} aria-label="لأسفل">↓</button>${S.confirm==="qi:"+it.id?`<button class="danger armed" data-act="q-del" data-i="${i}" data-id="${esc(it.id)}">تأكيد</button>`:`<button class="danger ghost" data-act="q-del" data-i="${i}" data-id="${esc(it.id)}">حذف</button>`}</span>`:""}</td></tr>`}).join("")}
       </tbody></table></div>
+      <details class="codes"><summary class="small" style="cursor:pointer;font-weight:600">جدول الرموز (البنود والأدوار)</summary>
+        <div class="codegrid">${CODE_TABLE.map(([c,a,e])=>`<div><span class="tcode">${c}</span> ${a} <span class="small muted" dir="ltr">${e}</span></div>`).join("")}</div>
+        <div class="codegrid" style="margin-top:8px"><b class="small">الأدوار:</b>${FLOOR_TABLE.map(([c,a,e])=>`<div><span class="tcode">${c}</span> ${a} <span class="small muted" dir="ltr">${e}</span></div>`).join("")}</div></details>
       <div class="qtot"><dl class="kv">
         <dt>المجموع</dt><dd>${M(t.sub)}</dd>
         <dt>الخصم</dt><dd>${W_?qCell("discount","number","110px"):M(t.disc)}</dd>
