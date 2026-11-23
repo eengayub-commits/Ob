@@ -424,6 +424,7 @@ function recOpts(selId,blank){return (blank?`<option value="">— اختر ال�
 function recCell(r){const rc=recipeById(r.recipe);
   if(S.canWrite)return `<select data-alurec="${esc(r.id)}" aria-label="قالب الحساب" style="min-width:210px">${recOpts(rc?rc.id:"",!rc)}</select>${!rc&&(r.system||r.type)?`<div class="small muted">${esc([r.system,r.type].filter(Boolean).join(" "))}</div>`:""}`;
   return rc?esc(rc.name):`<span class="pill bad">بدون قالب</span> ${esc([r.system,r.type].filter(Boolean).join(" "))}`}
+function mCell(r,i,f,w,extra="",num=false){let v=r[f];if(num&&!N(v))v="";const id=`mf-${i}-${f}`;return `<input id="${id}" data-alu="${esc(r.id)}|${f}" type="${num?"number":"text"}" value="${esc(v??"")}" style="min-width:${w};width:${w}" ${num?'inputmode="numeric" min="0"':""} ${extra} ${S.canWrite?"":"disabled"} aria-label="${f}">`}
 function tabMeas(c){
   const gk="glass:"+c._id,ak="alu:"+c._id,mk="mfin:"+c._id;
   const G=c.glass||[],A=c.alu||[];
@@ -431,10 +432,14 @@ function tabMeas(c){
   const aQty=sum(A,r=>N(r.qty)||1),aArea=sum(A,r=>area(r.w,r.h,r.qty));
   return `${sheetsCard(c)}<div class="card"><div class="toolbar">${chk(mk,"final","المقاسات نهائية ومعتمدة للتصنيع",c.measFinal)}${inp(mk,"date","تاريخ الاعتماد",c.measFinalDate,"date")}${S.canWrite?`<button data-act="save-mfin">حفظ</button>`:""}${c.measFinal?`<span class="ok-badge">✓ معتمدة للتصنيع</span>`:`<span class="note">مقاسات أولية، لا تُرسل للتصنيع قبل الاعتماد</span>`}</div></div>
   <div class="card"><h3><span>مقاسات الألمنيوم النهائية <span class="small muted">بالمليمتر</span></span><span class="toolbar">${A.length||G.length?`<button data-act="pdf-dl" data-src="meas" ${S.pdfBusy?"disabled":""}>${S.pdfBusy?"جارٍ إنشاء PDF…":"تنزيل المقاسات PDF"}</button>${S.canWrite&&S.assets?`<button data-act="pdf-save" data-src="meas" ${S.pdfBusy?"disabled":""}>حفظ PDF في ملف العميل</button>`:""}`:""}</span></h3>
-    <div class="tablebox"><table><thead><tr><th>المرجع</th><th>النوع (قالب الحساب)</th><th>العرض</th><th>الارتفاع</th><th>العدد</th><th>المساحة م²</th><th>ملاحظة</th><th></th></tr></thead><tbody>
-    ${A.map(r=>`<tr><td><b>${esc(r.ref)}</b></td><td>${recCell(r)}</td><td class="num">${esc(r.w)}</td><td class="num">${esc(r.h)}</td><td class="num">${esc(r.qty||1)}</td><td class="num">${area(r.w,r.h,r.qty).toFixed(2)}</td><td>${esc(r.note||"")}</td><td>${del("alu:"+r.id)}</td></tr>`).join("")||`<tr><td colspan="8" class="muted">أضف مقاسات الشبابيك والأبواب.</td></tr>`}
-    </tbody><tfoot><tr><td colspan="4">الإجمالي</td><td class="num">${aQty}</td><td class="num">${aArea.toFixed(2)}</td><td colspan="2"></td></tr></tfoot></table></div>
-    ${S.canWrite?`<div class="addrow">${inp(ak,"ref","المرجع (W1…)","")}<label class="fld" style="grid-column:span 2">النوع (قالب الحساب)<select ${F(ak,"recipe")}>${recOpts(val(ak,"recipe",(S.cfg.recipes[0]||{}).id))}</select></label>${inp(ak,"w","العرض مم","","number",'min="0" inputmode="numeric"')}${inp(ak,"h","الارتفاع مم","","number",'min="0" inputmode="numeric"')}${inp(ak,"qty","العدد","1","number",'min="1" inputmode="numeric"')}${inp(ak,"note","ملاحظة","")}<button class="primary" data-act="add-alu">+ إضافة</button></div>`:""}
+    ${S.canWrite?`<div class="toolbar" style="justify-content:flex-start">${S.msel.size?(S.confirm==="m-delsel"?`<button class="danger armed" data-act="m-delsel">تأكيد حذف ${S.msel.size} بند</button>`:`<button class="danger" data-act="m-delsel">حذف المحدد (${S.msel.size})</button>`):""}<span class="addn"><input id="m-addn" type="number" min="1" max="200" inputmode="numeric" placeholder="العدد" aria-label="عدد البنود المراد إضافتها"><button data-act="m-addn">إضافة بنود</button></span><button data-act="m-add">+ بند</button></div>`:""}
+    <div class="tablebox"><table class="qitems mitems"><thead><tr>${S.canWrite?`<th><input type="checkbox" data-mselall="1" aria-label="تحديد الكل" ${A.length&&A.every(r=>S.msel.has(r.id))?"checked":""}></th>`:""}<th>الكود</th><th>الدور</th><th>النوع (قالب الحساب)</th><th>العرض مم</th><th>الارتفاع مم</th><th>العدد</th><th>المساحة م²</th><th>ملاحظة</th><th></th></tr></thead><tbody>
+    ${A.map((r,i)=>`<tr class="${S.msel.has(r.id)?"selrow":""}">${S.canWrite?`<td><input type="checkbox" data-msel="${esc(r.id)}" ${S.msel.has(r.id)?"checked":""} aria-label="تحديد"></td>`:""}
+      <td>${mCell(r,i,"ref","64px")}</td><td>${mCell(r,i,"floor","40px",'list="floors-dl2" maxlength="4" class="floorin" dir="ltr"')}</td><td>${recCell(r)}</td>
+      <td>${mCell(r,i,"w","74px","",true)}</td><td>${mCell(r,i,"h","74px","",true)}</td><td>${mCell(r,i,"qty","52px","",true)}</td>
+      <td class="num">${area(r.w,r.h,r.qty).toFixed(2)}</td><td>${mCell(r,i,"note","150px")}</td><td>${del("alu:"+r.id)}</td></tr>`).join("")||`<tr><td colspan="10" class="muted">أضف مقاسات الشبابيك والأبواب، أو اكتب العدد واضغط «إضافة بنود».</td></tr>`}
+    </tbody><tfoot><tr><td colspan="${S.canWrite?6:5}">الإجمالي</td><td class="num">${aQty}</td><td class="num">${aArea.toFixed(2)}</td><td colspan="2"></td></tr></tfoot></table></div>
+    <datalist id="floors-dl2"><option value="B">قبو</option><option value="G">أرضي</option><option value="F">أول</option><option value="S">ثاني</option><option value="T">ثالث</option><option value="R">روف / سطح</option></datalist>
   </div>
   <div class="card"><h3>مقاسات الزجاج النهائية <span class="small muted">بالمليمتر</span></h3>
     <div class="tablebox"><table><thead><tr><th>المرجع</th><th>النوع</th><th>السماكة</th><th>اللون</th><th>العرض</th><th>الارتفاع</th><th>العدد</th><th>المساحة م²</th><th></th></tr></thead><tbody>
@@ -1414,7 +1419,7 @@ function tabInvoices(c){
 }
 
 /* ---------- preliminary quotations (عروض الأسعار المبدئية) ---------- */
-S.qsel=new Set();S.quotes=[];S.section="clients";S.qid=null;S.qd=null;S.qDirty=false;S.qq="";S.qstatus="";S.logoData=null;
+S.qsel=new Set();S.msel=new Set();S.quotes=[];S.section="clients";S.qid=null;S.qd=null;S.qDirty=false;S.qq="";S.qstatus="";S.logoData=null;
 const Q_STATUS=["مسودة","مرسل للعميل","معتمد","مرفوض"];
 const Q_STATUS_CLS={"مسودة":"","مرسل للعميل":"s2","معتمد":"s3","مرفوض":"bad","منتهي":"bad"};
 const Q_TYPES={...Object.fromEntries(KIND_LIST.map(([k,v])=>[k,v[0]])),other:"بند عام / أعمال أخرى"};
@@ -1965,6 +1970,11 @@ async function act(el){
   }
   if(!c)return;
   if(a==="export-calc"){exportCalc(c);return}
+  if(a==="m-add"||a==="m-addn"){let n=1;if(a==="m-addn"){const inp_=document.getElementById("m-addn");n=Math.min(200,Math.max(0,Math.round(N(inp_&&inp_.value))));if(!n){toast("اكتب عدد البنود أولاً");inp_&&inp_.focus();return}}
+    const list=[...(c.alu||[])];const start=list.length;for(let k=0;k<n;k++){const last=list[list.length-1]||{};const rc=recipeById(last.recipe)||S.cfg.recipes[0]||{};list.push({id:uid(),ref:"W"+(list.length+1),floor:last.floor||"",recipe:rc.id||"",system:rc.system||"",type:rc.name||"",w:0,h:0,qty:1,note:""})}
+    if(await write(c._id,{alu:list})){toast(n>1?`أُضيف ${n} بند`:"أُضيف بند");setTimeout(()=>{const f=document.getElementById(`mf-${start}-w`);if(f){f.focus();f.scrollIntoView({block:"center"})}},50)}return}
+  if(a==="m-delsel"){if(!S.msel.size)return;if(S.confirm!=="m-delsel"){S.confirm="m-delsel";render();clearTimeout(act._t);act._t=setTimeout(()=>{S.confirm=null;render()},5000);return}
+    S.confirm=null;const n=S.msel.size;const list=(c.alu||[]).filter(r=>!S.msel.has(r.id));S.msel.clear();if(await write(c._id,{alu:list}))toast(`حُذف ${n} بند`);return}
   if(a==="ex-run"){runExtract(c);return}
   if(a==="shop-quote"){readQuote(c);return}
   if(a==="add-inv"){const fk="sinv:"+c._id;const d=need(fk,[["desc","البيان"],["amount","المبلغ"]]);if(!d)return;if(N(d.amount)<=0){toast("المبلغ يجب أن يكون أكبر من صفر");return}
@@ -2073,7 +2083,7 @@ async function upload(files){
   return out;
 }
 
-function go(id,tab){S.id=id;S.tab=tab||"info";S.confirm=null;try{history.replaceState(null,"","#c-"+id)}catch(e){location.hash="c-"+id}render();window.scrollTo(0,0)}
+function go(id,tab){S.msel=new Set();S.id=id;S.tab=tab||"info";S.confirm=null;try{history.replaceState(null,"","#c-"+id)}catch(e){location.hash="c-"+id}render();window.scrollTo(0,0)}
 function fromHash(){const h=location.hash;const m=/^#c-([A-Za-z0-9_.~:@+-]+)$/.exec(h);const mq=/^#q-([A-Za-z0-9_.~:@+-]+)$/.exec(h);S.id=m?m[1]:null;if(!m)S.tab="info";
   if(mq){S.section="quotes";if(S.qid!==mq[1]){S.qid=mq[1];const q=S.quotes.find(x=>x._id===mq[1]);S.qd=q?clone(q):null}}else{S.qid=null;S.qd=null;if(h==="#quotes")S.section="quotes"}render()}
 
@@ -2083,6 +2093,7 @@ document.addEventListener("click",e=>{const el=e.target.closest("[data-act]");if
 const NAV_SEL='input:not([type=file]):not([type=checkbox]):not([type=hidden]):not([disabled]),select:not([disabled])';
 window.addEventListener("keydown",e=>{
   const el=e.target;if(el&&el.id==="q-addn"){if(e.key==="Enter"){e.preventDefault();e.stopPropagation();act({dataset:{act:"q-addn"}})}return}
+  if(el&&el.id==="m-addn"){if(e.key==="Enter"){e.preventDefault();e.stopPropagation();act({dataset:{act:"m-addn"}})}return}
   if(!el||!el.matches||!el.matches(NAV_SEL)||el.id==="q"||el.id==="qq"||e.isComposing||e.altKey||e.ctrlKey||e.metaKey)return;
   let dir=0;
   if(e.key==="Enter")dir=e.shiftKey?-1:1;
@@ -2149,6 +2160,14 @@ document.addEventListener("change",async e=>{
     if(got.length&&cid===S.id){if(await mutateFiles(cat,l=>l.concat(got)))toast(got.length===1?"رُفع الملف":"رُفعت "+got.length+" ملفات")}
     render();return;
   }
+  if(el.dataset.alu&&e.type==="change"){const c=cur();if(!c)return;const i0=el.dataset.alu.lastIndexOf("|");const id=el.dataset.alu.slice(0,i0),f=el.dataset.alu.slice(i0+1);
+    let v=toLat(el.value);if(["w","h","qty"].includes(f))v=N(v)||(f==="qty"?1:0);if(f==="floor")v=flr(v);
+    const list=(c.alu||[]).map(r=>({...r}));const idx=list.findIndex(r=>r.id===id);if(idx<0)return;
+    if(f==="floor"){const prev=flr(el.defaultValue);list[idx].floor=v;if(v!==prev){for(let k=idx+1;k<list.length;k++){const fl=flr(list[k].floor);if(fl===""||fl===prev)list[k].floor=v;else break}}}
+    else list[idx][f]=v;
+    await write(c._id,{alu:list});return}
+  if(el.dataset.mselall){const c=cur();if(el.checked)(c&&c.alu||[]).forEach(r=>S.msel.add(r.id));else S.msel.clear();S.confirm=null;render();return}
+  if(el.dataset.msel){if(el.checked)S.msel.add(el.dataset.msel);else S.msel.delete(el.dataset.msel);S.confirm=null;render();return}
   if(el.dataset.qselall&&S.qd){if(el.checked)(S.qd.items||[]).forEach(it=>S.qsel.add(it.id));else S.qsel.clear();S.confirm=null;render();return}
   if(el.dataset.qsel&&S.qd){if(el.checked)S.qsel.add(el.dataset.qsel);else S.qsel.delete(el.dataset.qsel);S.confirm=null;render();return}
   if(el.dataset.qup&&el.files&&el.files.length){qSheetUpload([...el.files]);return}
