@@ -189,7 +189,8 @@ const app=document.getElementById("app");
 
 /* ---------- helpers ---------- */
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const N=v=>{const n=parseFloat(String(v??"").replace(/,/g,""));return isFinite(n)?n:0};
+const toLat=v=>String(v??"").replace(/[\u0660-\u0669]/g,d=>d.charCodeAt(0)-0x660).replace(/[\u06F0-\u06F9]/g,d=>d.charCodeAt(0)-0x6F0).replace(/\u066B/g,".").replace(/\u066C/g,",");
+const N=v=>{const n=parseFloat(toLat(v).replace(/,/g,""));return isFinite(n)?n:0};
 const money=n=>N(n).toLocaleString("en-US",{maximumFractionDigits:2});
 const M=n=>`<span class="num">${money(n)}</span><span class="cur">ر.س</span>`;
 const uid=()=>Math.random().toString(36).slice(2,9)+Date.now().toString(36).slice(-5);
@@ -599,15 +600,15 @@ function csvCell(v){v=String(v??"");return /[",\n]/.test(v)?'"'+v.replace(/"/g,'
 async function exportCalc(c){
   const T=takeoff(c,S.cfg);const rows=[];const alu=c.colors?.alu||{};
   rows.push([CO().nameAr+" - حساب الكميات"],["العميل",c.name||""],["رقم الملف",c.fileNo||""],["لون الألمنيوم",[alu.color,alu.code].filter(Boolean).join(" ")],[]);
-  rows.push(["١ - حصر الألمنيوم"],["القطاع","عدد القطع","الطول الصافي م","عدد العيدان","الوزن كجم"]);
+  rows.push(["1 - حصر الألمنيوم"],["القطاع","عدد القطع","الطول الصافي م","عدد العيدان","الوزن كجم"]);
   T.profiles.forEach(p=>rows.push([p.name,p.pieces,(p.net/1000).toFixed(2),p.nb,p.kg.toFixed(1)]));
   rows.push(["الإجمالي","","",T.bars,T.kg.toFixed(1)],[],["Cutting List"],["القطاع","العود","القطع (طول×عدد)","المستخدم مم","المتبقي مم"]);
   T.profiles.forEach(p=>{p.bars.forEach((b,i)=>rows.push([p.name,i+1,groupBar(b).map(e=>`${e.len}×${e.n} (${[...e.refs].join("/")})`).join(" + "),b.used,b.off]));p.over.forEach(o=>rows.push([p.name,"أطول من العود",`${o.len} (${o.ref})`,"",""]))});
-  rows.push([],["٢ - الدهان"],["عدد العيدان",T.bars],["الوزن كجم",T.kg.toFixed(1)],["التكلفة",T.cost.paint.toFixed(2)],[]);
-  [["acc","٣ - الإكسسوارات"],["screw","٤ - المسامير والزوايا"]].forEach(([k,t])=>{rows.push([t],["الصنف","الكمية","الوحدة","سعر الوحدة","الإجمالي"]);T.acc.filter(a=>a.cat===k).forEach(a=>rows.push([a.name,a.qty,a.unit,a.price,a.total.toFixed(2)]));rows.push([])});
-  rows.push(["٥ - تيب الحماية"],["طول التيب م",T.tape.m.toFixed(1)],["عدد الرولات",T.tape.rolls],[]);
-  rows.push(["٦ - الربل"],["الصنف","الكمية","الوحدة","سعر الوحدة","الإجمالي"]);T.acc.filter(a=>a.cat==="rubber").forEach(a=>rows.push([a.name,a.qty,a.unit,a.price,a.total.toFixed(2)]));
-  rows.push([],["٧ - مقاسات الزجاج"],["المرجع","المواصفة","العرض مم","الارتفاع مم","العدد","المساحة م²"]);T.glass.forEach(x=>rows.push([x.ref,x.spec,x.w,x.h,x.qty,x.m2.toFixed(2)]));
+  rows.push([],["2 - الدهان"],["عدد العيدان",T.bars],["الوزن كجم",T.kg.toFixed(1)],["التكلفة",T.cost.paint.toFixed(2)],[]);
+  [["acc","3 - الإكسسوارات"],["screw","4 - المسامير والزوايا"]].forEach(([k,t])=>{rows.push([t],["الصنف","الكمية","الوحدة","سعر الوحدة","الإجمالي"]);T.acc.filter(a=>a.cat===k).forEach(a=>rows.push([a.name,a.qty,a.unit,a.price,a.total.toFixed(2)]));rows.push([])});
+  rows.push(["5 - تيب الحماية"],["طول التيب م",T.tape.m.toFixed(1)],["عدد الرولات",T.tape.rolls],[]);
+  rows.push(["6 - الربل"],["الصنف","الكمية","الوحدة","سعر الوحدة","الإجمالي"]);T.acc.filter(a=>a.cat==="rubber").forEach(a=>rows.push([a.name,a.qty,a.unit,a.price,a.total.toFixed(2)]));
+  rows.push([],["7 - مقاسات الزجاج"],["المرجع","المواصفة","العرض مم","الارتفاع مم","العدد","المساحة م²"]);T.glass.forEach(x=>rows.push([x.ref,x.spec,x.w,x.h,x.qty,x.m2.toFixed(2)]));
   rows.push(["الإجمالي","","","",sum(T.glass,x=>x.qty),T.m2.toFixed(2)]);
   const text="﻿"+rows.map(r=>r.map(csvCell).join(",")).join("\r\n");
   try{await S.downloads.save({filename:`حساب-كميات-${(c.fileNo||c.name||"ملف").replace(/[\\/:*?"<>|]/g,"-")}.csv`,data:text})}
@@ -975,7 +976,7 @@ function newShopItem(c,o){const kind=KINDS[o.kind]?o.kind:"sliding2";return{id:u
 const SF="Tahoma, 'Segoe UI', Arial, sans-serif";
 const iso=v=>"\u2066"+String(v??"")+"\u2069";
 const sx=n=>Math.round(n*10)/10;
-function T(x,y,s,{size=10,anchor="start",weight=400,fill="#111",rot}={}){const ar=/[؀-ۿ]/.test(String(s));const dir=ar&&anchor!=="start"?' direction="rtl"':"";const an=ar&&anchor==="end"?"start":anchor;return `<text x="${sx(x)}" y="${sx(y)}" font-size="${size}" font-weight="${weight}" fill="${fill}" text-anchor="${an}"${dir} font-family="${SF}"${rot?` transform="rotate(${rot} ${sx(x)} ${sx(y)})"`:""}>${esc(s)}</text>`}
+function T(x,y,s,{size=10,anchor="start",weight=400,fill="#111",rot}={}){s=toLat(s);const ar=/[؀-ۿ]/.test(String(s));const dir=ar&&anchor!=="start"?' direction="rtl"':"";const an=ar&&anchor==="end"?"start":anchor;return `<text x="${sx(x)}" y="${sx(y)}" font-size="${size}" font-weight="${weight}" fill="${fill}" text-anchor="${an}"${dir} font-family="${SF}"${rot?` transform="rotate(${rot} ${sx(x)} ${sx(y)})"`:""}>${esc(s)}</text>`}
 function R(x,y,w,h,{stroke="#111",sw=1,fill="none",dash}={}){return `<rect x="${sx(x)}" y="${sx(y)}" width="${sx(Math.max(0,w))}" height="${sx(Math.max(0,h))}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"${dash?` stroke-dasharray="${dash}"`:""}/>`}
 function L(x1,y1,x2,y2,{stroke="#111",sw=1,dash}={}){return `<line x1="${sx(x1)}" y1="${sx(y1)}" x2="${sx(x2)}" y2="${sx(y2)}" stroke="${stroke}" stroke-width="${sw}"${dash?` stroke-dasharray="${dash}"`:""}/>`}
 function glassPane(x,y,w,h){let g=R(x,y,w,h,{fill:"#e6f1f6",stroke:"#555",sw:.8});const d=Math.min(w,h);if(d>30){const o=Math.min(w,h)*.18;g+=L(x+o,y+o*2.2,x+o*2.2,y+o,{stroke:"#8fb3c4",sw:.8})+L(x+o,y+o*3,x+o*3,y+o,{stroke:"#8fb3c4",sw:.8})}return g}
@@ -1201,19 +1202,19 @@ function tabCalc(c){
   const byCat=k=>T.acc.filter(a=>a.cat===k);
   const head=calcHead(c,T,cfg,`<div class="stats"><div class="stat"><span>الوحدات</span><b class="num">${T.units}</b></div><div class="stat"><span>عيدان الألمنيوم</span><b class="num">${T.bars}</b></div><div class="stat"><span>وزن الألمنيوم</span><b><span class="num">${money(Math.round(T.kg*10)/10)}</span><span class="cur">كجم</span></b></div><div class="stat"><span>مساحة الزجاج</span><b><span class="num">${T.m2.toFixed(2)}</span><span class="cur">م²</span></b></div><div class="stat"><span>تكلفة المواد التقديرية</span><b>${M(T.cost.total)}</b></div></div>`);
   const sec=(n,t,body)=>`<div class="card"><h3><span><span class="step">${n}</span> ${t}</span></h3>${body}</div>`;
-  const s1=sec("١","حساب الألمنيوم",`<div class="tablebox"><table><thead><tr><th>القطاع</th><th>اللون</th><th>عدد القطع</th><th>الطول الصافي م</th><th>عدد العيدان</th><th>الهدر</th><th>الوزن كجم</th><th>التكلفة</th></tr></thead><tbody>
+  const s1=sec("1","حساب الألمنيوم",`<div class="tablebox"><table><thead><tr><th>القطاع</th><th>اللون</th><th>عدد القطع</th><th>الطول الصافي م</th><th>عدد العيدان</th><th>الهدر</th><th>الوزن كجم</th><th>التكلفة</th></tr></thead><tbody>
     ${T.profiles.map(p=>`<tr><td><b>${esc(p.name)}</b></td><td>${esc(alu.code||alu.color||"—")}</td><td class="num">${p.pieces}</td><td class="num">${(p.net/1000).toFixed(2)}</td><td class="num"><b>${p.nb}</b>${p.over.length?` <span class="pill bad">${p.over.length} أطول من العود</span>`:""}</td><td class="num">${(p.waste*100).toFixed(0)}%</td><td class="num">${p.kgm?p.kg.toFixed(1):"—"}</td><td>${p.kgm?priced(p.cost):"—"}</td></tr>`).join("")||`<tr><td colspan="8" class="muted">لا توجد قطع.</td></tr>`}
     </tbody><tfoot><tr><td colspan="4">الإجمالي</td><td class="num">${T.bars}</td><td></td><td class="num">${T.kg.toFixed(1)}</td><td>${priced(T.cost.alu)}</td></tr></tfoot></table></div>
     <div><button data-act="tab" data-tab="cut">عرض خطة القص Cutting List ←</button></div>`);
-  const s2=sec("٢","حساب الدهان",`<dl class="kv"><dt>اللون</dt><dd>${esc(colorTxt)}${alu.finish?" · "+esc(alu.finish):""}</dd><dt>عدد العيدان للدهان</dt><dd class="num">${T.bars}</dd><dt>الوزن الإجمالي</dt><dd><span class="num">${T.kg.toFixed(1)}</span> كجم</dd><dt>سعر الدهان للكيلو</dt><dd>${cfg.paintRate?M(cfg.paintRate):`<span class="muted small">أدخل السعر</span>`}</dd><dt>تكلفة الدهان</dt><dd>${priced(T.cost.paint)}</dd></dl>`);
-  const s3=sec("٣","حساب الإكسسوارات",accTable(byCat("acc"),"لا توجد إكسسوارات.",priced));
-  const s4=sec("٤","حساب المسامير والزوايا",accTable(byCat("screw"),"لا توجد مسامير أو زوايا في القوالب. أضفها من «قوالب الحساب».",priced));
+  const s2=sec("2","حساب الدهان",`<dl class="kv"><dt>اللون</dt><dd>${esc(colorTxt)}${alu.finish?" · "+esc(alu.finish):""}</dd><dt>عدد العيدان للدهان</dt><dd class="num">${T.bars}</dd><dt>الوزن الإجمالي</dt><dd><span class="num">${T.kg.toFixed(1)}</span> كجم</dd><dt>سعر الدهان للكيلو</dt><dd>${cfg.paintRate?M(cfg.paintRate):`<span class="muted small">أدخل السعر</span>`}</dd><dt>تكلفة الدهان</dt><dd>${priced(T.cost.paint)}</dd></dl>`);
+  const s3=sec("3","حساب الإكسسوارات",accTable(byCat("acc"),"لا توجد إكسسوارات.",priced));
+  const s4=sec("4","حساب المسامير والزوايا",accTable(byCat("screw"),"لا توجد مسامير أو زوايا في القوالب. أضفها من «قوالب الحساب».",priced));
   const tp=T.tape;
-  const s5=sec("٥","حساب تيب الحماية",`<dl class="kv"><dt>طول قطاعات الألمنيوم الصافي</dt><dd><span class="num">${tp.aluM.toFixed(1)}</span> م</dd><dt>معامل التيب</dt><dd class="num">${tp.factor} م تيب / م ألمنيوم</dd><dt>طول التيب المطلوب</dt><dd><span class="num">${tp.m.toFixed(1)}</span> م</dd><dt>عدد الرولات</dt><dd><b class="num">${tp.rolls}</b> رول (<span class="num">${tp.roll}</span> م للرول)</dd><dt>التكلفة</dt><dd>${priced(tp.cost)}</dd></dl>${byCat("tape").length?accTable(byCat("tape"),"",priced):""}`);
-  const s6=sec("٦","حساب الزجاج",`<div class="tablebox"><table><thead><tr><th>المرجع</th><th>المواصفة</th><th>العرض مم</th><th>الارتفاع مم</th><th>العدد</th><th>المساحة م²</th><th></th></tr></thead><tbody>
+  const s5=sec("5","حساب تيب الحماية",`<dl class="kv"><dt>طول قطاعات الألمنيوم الصافي</dt><dd><span class="num">${tp.aluM.toFixed(1)}</span> م</dd><dt>معامل التيب</dt><dd class="num">${tp.factor} م تيب / م ألمنيوم</dd><dt>طول التيب المطلوب</dt><dd><span class="num">${tp.m.toFixed(1)}</span> م</dd><dt>عدد الرولات</dt><dd><b class="num">${tp.rolls}</b> رول (<span class="num">${tp.roll}</span> م للرول)</dd><dt>التكلفة</dt><dd>${priced(tp.cost)}</dd></dl>${byCat("tape").length?accTable(byCat("tape"),"",priced):""}`);
+  const s6=sec("6","حساب الزجاج",`<div class="tablebox"><table><thead><tr><th>المرجع</th><th>المواصفة</th><th>العرض مم</th><th>الارتفاع مم</th><th>العدد</th><th>المساحة م²</th><th></th></tr></thead><tbody>
     ${T.glass.map(x=>`<tr><td><b>${esc(x.ref)}</b></td><td>${esc(x.spec)}</td><td class="num">${x.w}</td><td class="num">${x.h}</td><td class="num">${x.qty}</td><td class="num">${x.m2.toFixed(2)}</td><td class="small muted">${x.src==="manual"?"يدوي":""}</td></tr>`).join("")||`<tr><td colspan="7" class="muted">لا يوجد زجاج.</td></tr>`}
     </tbody><tfoot><tr><td colspan="4">الإجمالي</td><td class="num">${sum(T.glass,x=>x.qty)}</td><td class="num">${T.m2.toFixed(2)}</td><td>${priced(T.cost.glass)}</td></tr></tfoot></table></div>`);
-  const s7=sec("٧","حساب الربل",accTable(byCat("rubber"),"لا يوجد ربل في القوالب.",priced));
+  const s7=sec("7","حساب الربل",accTable(byCat("rubber"),"لا يوجد ربل في القوالب.",priced));
   const k=calc(c);const net=N(c.quoteNet)||k.contract;const C=T.cost;
   const s8=`<div class="card"><h3>التكلفة التقديرية للمواد</h3>
     <dl class="kv"><dt>الألمنيوم</dt><dd>${M(C.alu)}</dd><dt>الدهان</dt><dd>${M(C.paint)}</dd><dt>الإكسسوارات</dt><dd>${M(C.acc)}</dd><dt>المسامير والزوايا</dt><dd>${M(C.screw)}</dd><dt>تيب الحماية</dt><dd>${M(C.tape)}</dd><dt>الزجاج</dt><dd>${M(C.glass)}</dd><dt>الربل</dt><dd>${M(C.rubber)}</dd><dt>إجمالي المواد</dt><dd style="font-size:1.1rem">${M(C.total)}</dd>
@@ -1662,8 +1663,8 @@ function quoteSVGs(q,logo,stamp,sign){
   ensure(190);y+=10;
   const tb=[["المجموع","Subtotal",t.sub],...(t.disc?[["الخصم","Discount",-t.disc],["الصافي بعد الخصم","Net after discount",t.net]]:[]),["ضريبة القيمة المضافة 15%","VAT 15%",t.vat]];
   const TX=X1,TW=250;
-  s+=T(X2,y+12,`إجمالي المساحة: ${t.area.toFixed(2)} م٢   ·   عدد الوحدات: ${t.qty}`,{size:8.8,anchor:"end",fill:QC.muted})+EN(X2,y+23,`Total area: ${t.area.toFixed(2)} m²   ·   Units: ${t.qty}`,{size:7.4});
-  if((q.items||[]).some(it=>it.type!=="other"&&it.pricing==="m2"&&N(it.w)&&N(it.h)&&N(it.w)*N(it.h)/1e6<qMinArea(q))){const ma=qMinArea(q);s+=T(X2,y+38,`* أي شباك مساحته أقل من ${ma} م٢ يُحسب ${ma} م٢`,{size:8,anchor:"end",fill:QC.muted})+EN(X2,y+48,`* Any unit smaller than ${ma} m² is charged as ${ma} m²`,{size:7})}
+  s+=T(X2,y+12,`إجمالي المساحة: ${t.area.toFixed(2)} م2   ·   عدد الوحدات: ${t.qty}`,{size:8.8,anchor:"end",fill:QC.muted})+EN(X2,y+23,`Total area: ${t.area.toFixed(2)} m²   ·   Units: ${t.qty}`,{size:7.4});
+  if((q.items||[]).some(it=>it.type!=="other"&&it.pricing==="m2"&&N(it.w)&&N(it.h)&&N(it.w)*N(it.h)/1e6<qMinArea(q))){const ma=qMinArea(q);s+=T(X2,y+38,`* أي شباك مساحته أقل من ${ma} م2 يُحسب ${ma} م2`,{size:8,anchor:"end",fill:QC.muted})+EN(X2,y+48,`* Any unit smaller than ${ma} m² is charged as ${ma} m²`,{size:7})}
   tb.forEach(([l,e,v])=>{s+=T(TX+TW-8,y+12,l,{size:9,anchor:"end"})+EN(TX+TW-8,y+22,e,{size:6.8})+T(TX+8,y+16,`${v<0?"- ":""}${m2f(Math.abs(v))} SAR`,{size:9.2,weight:600})+L(TX,y+26,TX+TW,y+26,{stroke:QC.line,sw:.5});y+=27});
   s+=`<rect x="${TX}" y="${y+2}" width="${TW}" height="34" rx="4" fill="${QC.teal}"/>`+T(TX+TW-8,y+17,"الإجمالي شامل الضريبة",{size:10.5,anchor:"end",weight:700,fill:"#fff"})+EN(TX+TW-8,y+29,"Grand total incl. VAT",{size:7.4,fill:"#d7e7ef"})+T(TX+8,y+24,`${m2f(t.total)} SAR`,{size:11.5,weight:700,fill:"#fff"});y+=48;
   wrapText(tafqeet(t.total),90).forEach(l=>{s+=T(X2,y,l,{size:9.2,anchor:"end",weight:600,fill:QC.bronze});y+=13});
@@ -2115,7 +2116,10 @@ document.addEventListener("keydown",e=>{
   if(e.key==="Enter"){const el=e.target.closest("tr[data-act],li[data-act]");if(el){act(el);return}
     const row=e.target.closest(".addrow");if(row&&e.target.tagName==="INPUT"){const b=row.querySelector("button[data-act]");if(b){e.preventDefault();act(b)}}}
 });
+document.addEventListener("beforeinput",e=>{const el=e.target;if(!el||el.tagName!=="INPUT"||el.type!=="number"||!e.data||!/[\u0660-\u0669\u06F0-\u06F9\u066B]/.test(e.data))return;
+  e.preventDefault();const v=toLat(e.data);let sel=null;try{sel=el.selectionStart}catch(_){}el.value=String(el.value||"")+v;el.dispatchEvent(new Event("input",{bubbles:true}))},true);
 const onField=e=>{const el=e.target;
+  if(e.type==="input"&&el&&(el.tagName==="INPUT"||el.tagName==="TEXTAREA")&&el.type!=="file"&&/[\u0660-\u0669\u06F0-\u06F9\u066B]/.test(el.value)){let a=null,b=null;try{a=el.selectionStart;b=el.selectionEnd}catch(_){}el.value=toLat(el.value);try{if(a!=null)el.setSelectionRange(a,b)}catch(_){}}
   if(el.dataset&&el.dataset.f){const i=el.dataset.f.indexOf("|");const fk=el.dataset.f.slice(0,i),f=el.dataset.f.slice(i+1);(S.draft[fk]=S.draft[fk]||{})[f]=el.type==="checkbox"?el.checked:el.value;
     if(fk.startsWith("info:")&&(f==="quoteValue"||f==="quoteVatMode")){const box=document.getElementById("quote-calc");const c=cur();if(box&&c)box.innerHTML=quoteCalcHtml(fk,c)}
     return}
