@@ -773,7 +773,8 @@ For every window/door line return:
 - w_cm, h_cm: width and height exactly as written, in cm (decimals allowed, e.g. 145.5).
 - qty: count (default 1).
 - group: "bath_door" for bathroom windows with sandblasted glass (سانديلاست) and for doors; "small_green" for measurements highlighted in green; otherwise "regular".
-- note: any text written beside the line (e.g. pending approval such as "بانتظار اعتماد ...").
+- note: any text written beside the line (e.g. pending approval such as "بانتظار اعتماد ..."). If an item code from the list below is written, put it at the start of the note (e.g. "S.R+F UP").
+${CODE_PROMPT}
 - unclear: true if any digit is uncertain; alt: your alternative reading in that case.
 - pending: true if the line is marked pending / unconfirmed / C.O.
 Also return:
@@ -1482,6 +1483,9 @@ function typeCode(it,q){const o=KOPT(it.type);if(!KINDS[it.type])return"";const 
   if(o.base==="sliding")return `S.${sy}`+(o.fix?`+F ${it.fixPos==="down"?"DO":"UP"}`:"");
   if(o.base==="awning")return o.pushout?"C+P":o.fix?"G+F":"G";if(o.base==="fixed")return"F";if(o.base==="door")return o.fix?"D+F":"D";if(o.base==="casement")return o.fix?"H+F":"H";
   if(o.base==="cw")return o.cw==="pushout"?"C+P":o.cw==="fixed"?"C":"C+D";if(o.base==="balustrade")return"HAND";return""}
+const CODE_PROMPT=`The sales representatives use these short CODES on their sheets (codes may appear alone or combined with a floor letter, e.g. "G-S.R+F UP" or "S.R+F UP / G"):
+Item codes: S.R = Royal sliding (type sliding2, sys "royal"); S.R+F UP = Royal sliding with TOP fixed panel (sliding2f, sys "royal", fixPos "up"); S.R+F DO = Royal sliding with BOTTOM fixed panel (sliding2f, sys "royal", fixPos "down"); S.S = Saraya sliding (sliding2, sys "saraya"); S.S+F UP = Saraya sliding with top fixed (sliding2f, sys "saraya", fixPos "up"); S.S+F DO = Saraya sliding with bottom fixed (sliding2f, sys "saraya", fixPos "down"); G = top-hung / قلاب (awning); G+F = top-hung with fixed (awningf); F = fully fixed window (fixed); D = hinged door (door1); D+F = hinged door with fixed panel (door1f); H = casement / مفصلي (casement1, or casement2 if two sashes are noted); H+F = casement with fixed (casement1f / casement2f); C = curtain wall (cw_fixed); C+P = curtain wall with push-out (cw_pushout; if it is a separate push-out window counted per piece use pushwin); C+D = curtain wall with door (cw_door); HAND = glass balustrade (balustrade). For sliding types with 3 or 4 sashes use sliding3/sliding4 (with "f" when fixed).
+Floor codes: B = basement (قبو), G = ground (أرضي), F = first (أول), S = second (ثاني), T = third (ثالث), R = roof (روف/سطح). Note: a lone "G" or "F" next to a size may be a floor OR an item code — decide from the column/position on the sheet.`;
 const FLOOR_EN={B:"Basement",G:"Ground",F:"First",S:"Second","2F":"Second",T:"Third","3F":"Third",R:"Roof"};
 const flr=v=>String(v||"").trim().toUpperCase();
 const SYS_OPTS={saraya:"سرايا 10 سم",royal:"رويال 12 سم"};
@@ -1643,7 +1647,7 @@ function quoteSVGs(q,logo,stamp,sign){
     s+=T(x-C[2][2]/2,cy,flr(it.floor)||"—",{size:9,anchor:"middle",weight:700})+(FLOOR_EN[flr(it.floor)]?EN(x-C[2][2]/2,cy+10,FLOOR_EN[flr(it.floor)],{size:5.4,anchor:"middle"}):"");x-=C[2][2];
     const sysAr=KOPT(it.type).base==="sliding"?((it.sys||defSys(q))==="royal"?" - رويال 12 سم":" - سرايا 10 سم"):"",sysEn=sysAr?((it.sys||defSys(q))==="royal"?" - Royal 12 cm":" - Saraya 10 cm"):"";
     s+=T(x-5,cy,qTypeName(it.type),{size:9,anchor:"end",weight:700});let ly=cy+10.5;
-    if(typeEn){s+=EN(x-5,ly,typeEn+(typeCode(it,q)?`   (${typeCode(it,q)})`:""),{size:7.6});ly+=11}
+    if(typeEn){s+=EN(x-5,ly,typeEn,{size:7.6});ly+=11}
     dl.forEach(l=>{s+=T(x-5,ly,l,{size:8,anchor:"end",fill:"#333"});ly+=11});
     de.forEach(l=>{s+=EN(x-5,ly,l,{size:7.6});ly+=11});x-=C[3][2];
     s+=T(x-5,cy,String(L1.qty),{size:8.8,anchor:"end",weight:600});x-=C[4][2];
@@ -1680,13 +1684,6 @@ function quoteSVGs(q,logo,stamp,sign){
     terms.forEach((tx,i)=>{const ls=wrapText(tx,96);const le=wrapText(termsE[i]||"",110);ensure(ls.length*12+le.length*10+5);
       ls.forEach((l,k)=>{s+=T(X2-(k?14:0),y,(k?"":`${i+1}. `)+l,{size:8.6,anchor:"end"});y+=12});le.forEach(l=>{s+=EN(X2-14,y-1,l,{size:7.2});y+=10});y+=4});y+=6}
   if(q.notes){const ls=wrapText(q.notes,96).slice(0,6);const le=wrapText(enOf(q.notes,q.notesEn),110).slice(0,6);ensure(36+ls.length*12+le.length*10);secTitle("ملاحظات","NOTES");ls.forEach(l=>{s+=T(X2,y,l,{size:8.8,anchor:"end"});y+=12});le.forEach(l=>{s+=EN(X2,y-1,l,{size:7.4});y+=10});y+=8}
-  {ensure(40+Math.ceil(CODE_TABLE.length/3)*15+70);secTitle("جدول الرموز","CODES");
-    const cw3=W/3;CODE_TABLE.forEach(([c,a,e],k)=>{const col=k%3,row=Math.floor(k/3);const xr=X2-col*cw3;const yy=y+row*20;
-      s+=`<rect x="${xr-cw3+3}" y="${yy}" width="${cw3-6}" height="18" rx="3" fill="${row%2?"#fff":QC.soft}"/>`+`<text x="${sx(xr-cw3+10)}" y="${sx(yy+12.5)}" font-size="8.4" font-weight="700" fill="${QC.teal}" font-family="${SF}">${esc(c)}</text>`+T(xr-8,yy+9,a,{size:7.8,anchor:"end"})+EN(xr-8,yy+16.5,e,{size:5.8})});
-    y+=Math.ceil(CODE_TABLE.length/3)*20+8;
-    s+=T(X2,y+10,"الأدوار:",{size:8.6,anchor:"end",weight:700,fill:QC.teal})+EN(X2,y+19,"Floors",{size:6.6,weight:700,fill:QC.teal});
-    const fw6=(W-50)/6;FLOOR_TABLE.forEach(([c,a,e],k)=>{const xr=X2-50-k*fw6;s+=`<text x="${sx(xr-fw6+6)}" y="${sx(y+13)}" font-size="9" font-weight="700" fill="${QC.teal}" font-family="${SF}">${c}</text>`+T(xr-4,y+10,a,{size:7.8,anchor:"end"})+EN(xr-4,y+18,e,{size:5.8})});
-    y+=34}
   ensure(210);
   if(N(q.deliveryDays)){secTitle("مدة التنفيذ","DELIVERY PERIOD");s+=`<rect x="${X1}" y="${y}" width="${W}" height="34" rx="4" fill="#fff" stroke="${QC.teal}" stroke-width=".8"/>`+T(X2-8,y+15,`مدة التنفيذ ${N(q.deliveryDays)} يوم عمل بعد استلام الدفعة الأولى`,{size:9.6,anchor:"end",weight:600})+EN(X2-8,y+27,`Delivery period: ${N(q.deliveryDays)} working days after receipt of the first payment`,{size:7.4});y+=46}
   if(co.iban||co.bank){s+=`<rect x="${X1}" y="${y}" width="${W}" height="52" rx="4" fill="${QC.soft}"/>`+T(X2-8,y+15,`حسابنا في ${co.bank||""} باسم ${co.nameAr}`,{size:9.4,anchor:"end",weight:700})+T(X2-8,y+30,`${co.account?`رقم الحساب: ${iso(co.account)}   ·   `:""}الآيبان: ${iso(co.iban||"")}`,{size:9,anchor:"end"})+EN(X2-8,y+44,`Our account at ${bankEn(co.bank)||co.bank||""} in the name of ${co.nameEn}   ·   ${co.account?`Account No.: ${co.account}   ·   `:""}IBAN: ${co.iban||""}`,{size:7.2});y+=62}
@@ -1701,6 +1698,26 @@ function quoteSVGs(q,logo,stamp,sign){
   return pages.map((p,i)=>p.replace("{{PAGE}}",`Page ${i+1} / ${pages.length}   ·   ${q.no}${q.rev?`-R${q.rev}`:""}`));
 }
 
+function codesSVG(logo){
+  const co=CO();const X1=30,X2=565,W=X2-X1;let s=`<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 595 842" width="595" height="842"><rect width="595" height="842" fill="#fff"/><rect x="0" y="0" width="595" height="6" fill="${QC.teal}"/><rect x="0" y="6" width="595" height="2" fill="${QC.bronze}"/>`;
+  if(logo)s+=`<image href="${esc(logo)}" xlink:href="${esc(logo)}" x="${X2-52}" y="20" width="52" height="52" preserveAspectRatio="xMidYMid meet"/>`;
+  s+=T(X2-60,44,co.nameAr,{size:15,anchor:"end",weight:700})+T(X2-60,60,"لجميع أعمال الألمنيوم والزجاج والسيكوريت",{size:8.5,anchor:"end",fill:QC.muted})+T(X1,44,co.nameEn,{size:11,weight:700})+T(X1,58,"ALUMINIUM & GLASS WORKS",{size:7.5,fill:QC.muted});
+  s+=L(X1,82,X2,82,{stroke:QC.line,sw:.8});
+  s+=T(X2,116,"جدول رموز البنود والأدوار",{size:20,anchor:"end",weight:700,fill:QC.teal})+T(X1,116,"ITEM & FLOOR CODES",{size:13,weight:700,fill:QC.teal});
+  s+=T(X2,136,"لاستخدام رافعي المقاسات في الموقع: اكتب رمز الدور ثم رمز البند بجانب كل مقاس",{size:9,anchor:"end",fill:QC.muted})+`<text x="${X2}" y="150" font-size="7.8" fill="${QC.muted}" text-anchor="end" font-family="${SF}">For site measurement: write the floor code then the item code next to each size</text>`;
+  let y=164;const head=(a,e)=>{s+=`<rect x="${X1}" y="${y}" width="${W}" height="26" rx="4" fill="${QC.teal}"/>`+T(X2-10,y+17,a,{size:11,anchor:"end",weight:700,fill:"#fff"})+`<text x="${X1+10}" y="${y+17}" font-size="9.5" font-weight="700" fill="#fff" font-family="${SF}">${e}</text>`;y+=26};
+  const row=(c,a,e,i)=>{s+=`<rect x="${X1}" y="${y}" width="${W}" height="20" fill="${i%2?"#fff":QC.soft}"/>`+`<text x="${X1+12}" y="${y+14.5}" font-size="11.5" font-weight="700" fill="${QC.teal}" font-family="Consolas, 'Courier New', monospace">${esc(c)}</text>`+T(X2-10,y+14,a,{size:10.2,anchor:"end",weight:600})+`<text x="${X1+150}" y="${y+14}" font-size="9" fill="#444" font-family="${SF}">${esc(e)}</text>`+L(X1,y+20,X2,y+20,{stroke:QC.line,sw:.4});y+=20};
+  head("رموز البنود","ITEM CODES");CODE_TABLE.forEach((r,i)=>row(r[0],r[1],r[2],i));y+=14;
+  head("رموز الأدوار","FLOOR CODES");FLOOR_TABLE.forEach((r,i)=>row(r[0],r[1],r[2],i));y+=14;
+  s+=`<rect x="${X1}" y="${y}" width="${W}" height="62" rx="6" fill="#fff" stroke="${QC.bronze}" stroke-dasharray="4 3"/>`+T(X2-10,y+18,"أمثلة:",{size:10,anchor:"end",weight:700,fill:QC.bronze});
+  [["G   S.R+F UP   1600 × 1800   2","الأرضي - سحاب رويال مع ثابت علوي - عرض 1600 × ارتفاع 1800 - عدد 2"],["F   H   600 × 600   4","الأول - مفصلي - عرض 600 × ارتفاع 600 - عدد 4"]].forEach(([c,a],k)=>{const yy=y+36+k*18;s+=`<text x="${X1+12}" y="${yy}" font-size="10.5" font-weight="700" fill="${QC.teal}" font-family="Consolas, 'Courier New', monospace">${esc(c)}</text>`+T(X2-10,yy,a,{size:9,anchor:"end"})});
+  s+=L(X1,808,X2,808,{stroke:QC.line,sw:.6})+T(297,822,"مصنع برج القمة للأعمال المعدنية - الرياض - حي السلي",{size:8,anchor:"middle",fill:QC.muted});
+  return s+"</svg>";
+}
+async function codesPdf(){if(S.pdfBusy)return;S.pdfBusy=true;render();
+  try{const {jsPDF}=await loadJsPdf();const logo=await logoHref(true);const pdf=new jsPDF({unit:"mm",format:"a4",orientation:"portrait",compress:true});pdf.addImage(await svgToJpeg(codesSVG(logo),3.5,595,842),"JPEG",0,0,210,297);
+    const b=pdf.output("blob");if(S.downloads)await S.downloads.save({filename:"جدول-رموز-البنود-والأدوار.pdf",data:b});else toast("التنزيل غير متاح هنا")}catch(e){if(!(e&&e.code==="declined"))toast("تعذّر إنشاء ملف PDF")}
+  S.pdfBusy=false;render()}
 async function quotePdfBlob(q){const {jsPDF}=await loadJsPdf();const logo=await logoHref(true);const pdf=new jsPDF({unit:"mm",format:"a4",orientation:"portrait",compress:true});
   const co=CO();const stamp=await assetDataUrl(co.stamp),sign=await assetDataUrl(co.signature);const pgs=quoteSVGs(q,logo,stamp,sign);for(let i=0;i<pgs.length;i++){if(i)pdf.addPage("a4","portrait");pdf.addImage(await svgToJpeg(pgs[i],3.5,595,842),"JPEG",0,0,210,297)}return pdf.output("blob")}
 const qFileName=q=>`عرض-سعر-${q.no}${q.rev?`-R${q.rev}`:""}-${(q.client?.name||"").trim()}.pdf`.replace(/[\\/:*?"<>|]/g,"-");
@@ -1724,7 +1741,7 @@ function quotesListView(){
   `<div class="tablebox"><table><thead><tr><th>رقم العرض</th><th>التاريخ</th><th>العميل</th><th>المشروع / الموقع</th><th>الإجمالي شامل الضريبة</th><th>صالح حتى</th><th>الحالة</th></tr></thead><tbody>
   ${rows.map(q=>{const st=qStatus(q);return `<tr class="click" data-act="q-open" data-id="${esc(q._id)}" tabindex="0"><td class="fileno num">${esc(q.no)}${q.rev?`-R${q.rev}`:""}</td><td class="num">${esc(q.date)}</td><td><b>${esc(q.client?.name||"بدون اسم")}</b></td><td>${esc([q.client?.project,q.client?.location].filter(Boolean).join(" - ")||"—")}</td><td>${M(tot(q))}</td><td class="num ${st==="منتهي"?"neg":""}">${qValidUntil(q)}</td><td><span class="pill ${Q_STATUS_CLS[st]||""}">${esc(st)}</span></td></tr>`}).join("")||`<tr><td colspan="7" class="muted">لا توجد نتائج مطابقة</td></tr>`}
   </tbody></table></div>`;
-  return `${sectionNav()}${stats}<div class="toolbar">${S.canWrite?`<button data-act="q-new">+ عرض من ورقة مقاسات المندوب</button>`:""}<input id="qq" type="search" placeholder="ابحث برقم العرض أو اسم العميل أو المشروع" value="${esc(S.qq)}" aria-label="بحث"><select id="qstatusFilter" aria-label="الحالة"><option value="">كل الحالات</option>${[...Q_STATUS,"منتهي"].map(x=>`<option ${x===S.qstatus?"selected":""}>${x}</option>`).join("")}</select></div>${table}`;
+  return `${sectionNav()}${stats}<div class="toolbar">${S.canWrite?`<button data-act="q-new">+ عرض من ورقة مقاسات المندوب</button>`:""}<button data-act="codes-pdf" ${S.pdfBusy?"disabled":""}>${S.pdfBusy?"جارٍ التجهيز…":"تنزيل جدول الرموز PDF"}</button><input id="qq" type="search" placeholder="ابحث برقم العرض أو اسم العميل أو المشروع" value="${esc(S.qq)}" aria-label="بحث"><select id="qstatusFilter" aria-label="الحالة"><option value="">كل الحالات</option>${[...Q_STATUS,"منتهي"].map(x=>`<option ${x===S.qstatus?"selected":""}>${x}</option>`).join("")}</select></div>${table}`;
 }
 function qIn(path,label,type="text",extra=""){const v=getPath(S.qd,path);return `<label class="fld">${label}<input id="${"qf-"+path.replace(/[^a-zA-Z0-9_-]/g,"_")}" data-q="${esc(path)}" type="${type}" value="${esc(v??"")}" ${type==="number"?'step="any" inputmode="decimal"':""} ${extra} ${S.canWrite&&S.qd.status!=="معتمد"?"":"disabled"}></label>`}
 function qCell(path,type="text",w="",extra=""){let v=getPath(S.qd,path);if(/^items\.\d+\.(w|h)$/.test(path)&&!N(v))v="";return `<input id="${"qf-"+path.replace(/[^a-zA-Z0-9_-]/g,"_")}" data-q="${esc(path)}" type="${type}" value="${esc(v??"")}" style="${w?`min-width:${w}`:""}" ${type==="number"?'step="any" inputmode="decimal"':""} ${extra} ${S.canWrite&&S.qd.status!=="معتمد"?"":"disabled"} aria-label="${esc(path)}">`}
@@ -1818,6 +1835,9 @@ Precision is the top priority: read every number twice and never guess a digit s
 For every opening (window, door, facade, partition…) return:
 - ref: the code/number as written (e.g. "W1", "D2"). If none, use "#" + line number.
 - floor: the floor of the opening if written: "B" basement (بيزمنت/قبو), "G" ground (أرضي), "F" first (أول), "S" second (ثاني), "T" third (ثالث), "R" roof (روف/سطح/ملحق); "" if not written.
+- sys: "royal" or "saraya" for sliding windows if known from the code or text, else "".
+- fixPos: "up" or "down" for sliding windows with a fixed panel (from F UP / F DO), else "".
+${CODE_PROMPT}
 - type: best match of these keys: ${KIND_PROMPT}, other (general works / non-window item).
 - desc: short ARABIC description including the room/location if written (e.g. "شباك سحاب - غرفة النوم").
 - w_mm, h_mm: width and height in MILLIMETERS. Detect the unit used on the sheet: centimeters are the usual case (×10), meters (×1000), millimeters (keep). null if not given.
@@ -1829,7 +1849,7 @@ Also return:
 - stated_total: total pieces written on the sheet (number) or null.
 - flags: short ARABIC notes about unclear digits (best reading + alternative), unit assumptions, missing sizes, unusual sizes compared to similar openings, anything a salesperson should double-check.
 Reply with ONLY this JSON:
-{"items":[{"ref":"W1","floor":"G","type":"sliding2","desc":"","w_mm":1500,"h_mm":1200,"qty":1,"unclear":false,"alt":""}],"client":{"name":"","phone":"","project":"","location":""},"unit":"cm","stated_total":null,"flags":[]}`}
+{"items":[{"ref":"W1","floor":"G","type":"sliding2f","sys":"royal","fixPos":"up","desc":"","w_mm":1500,"h_mm":1200,"qty":1,"unclear":false,"alt":""}],"client":{"name":"","phone":"","project":"","location":""},"unit":"cm","stated_total":null,"flags":[]}`}
 async function qSheetUpload(files){
   if(!S.assets){toast("رفع الملفات متاح لمن يملك صلاحية «محرر»");return}
   S.busy.qsheet=true;render();const got=await upload(files);S.busy.qsheet=false;
@@ -1847,7 +1867,7 @@ async function qSheetRead(){
     for(let i=0;i<pages.length;i++){st.msg=`جارٍ قراءة الصفحة ${i+1} من ${pages.length}… (قد تأخذ دقيقة)`;render();
       const out=await readPage(qSheetPrompt,i+1,pages.length,pages[i],st.ctl.signal,"items",sg=>{st.msg=sg==="verify"?`مراجعة أرقام الصفحة ${i+1} من ${pages.length} والتأكد منها…`:`قراءة الصفحة ${i+1} من ${pages.length} بدقة عالية…`;render()});
       (out&&out.items||[]).forEach(x=>{const type=Q_TYPES[x.type]?x.type:"sliding2";
-        items.push({id:uid(),ref:String(x.ref||""),floor:flr(x.floor).slice(0,4),type,desc:String(x.desc||"")+(x.unclear?` (رقم غير واضح${x.alt?`، بديل: ${x.alt}`:""})`:""),w:Math.round(N(x.w_mm)),h:Math.round(N(x.h_mm)),qty:Math.max(1,Math.round(N(x.qty)||1)),pricing:type==="other"?"lump":KOPT(type).unit?"unit":"m2",sys:defSys(q),price:defPrice(type,defSys(q)),addon:defAddon(type),unclear:!!x.unclear})});
+        items.push({id:uid(),ref:String(x.ref||""),floor:flr(x.floor).slice(0,4),type,desc:String(x.desc||"")+(x.unclear?` (رقم غير واضح${x.alt?`، بديل: ${x.alt}`:""})`:""),w:Math.round(N(x.w_mm)),h:Math.round(N(x.h_mm)),qty:Math.max(1,Math.round(N(x.qty)||1)),pricing:type==="other"?"lump":KOPT(type).unit?"unit":"m2",sys:(x.sys==="royal"||x.sys==="saraya")?x.sys:defSys(q),fixPos:x.fixPos==="down"?"down":"up",price:defPrice(type,(x.sys==="royal"||x.sys==="saraya")?x.sys:defSys(q)),addon:defAddon(type),unclear:!!x.unclear})});
       if(out&&out.client)for(const k of ["name","phone","project","location"])if(out.client[k]&&!client[k])client[k]=String(out.client[k]);
       if(out&&N(out.stated_total)>0)stated+=N(out.stated_total);
       (out&&out.flags||[]).forEach(t=>t&&flags.push(`ص${i+1}: ${t}`));}
@@ -1884,6 +1904,7 @@ async function act(el){
     if(S.qid&&!S.id){await qSaveNow();S.qid=null;S.qd=null;S.section="quotes";try{history.replaceState(null,"","#quotes")}catch(e){location.hash="quotes"}render();window.scrollTo(0,0);return}
     location.hash="";S.id=null;render();window.scrollTo(0,0);return}
   if(a==="sec"){S.section=el.dataset.sec;try{history.replaceState(null,"",S.section==="quotes"?"#quotes":location.pathname)}catch(e){}render();return}
+  if(a==="codes-pdf"){codesPdf();return}
   if(a==="q-new"){if(!db)return;const ref=db.collection("quotes").doc();const q=newQuote();try{await ref.set(q);S.everWrote=true}catch(e){handleWriteErr(e);return}S.section="quotes";S.quotes=[...S.quotes,{...q,_id:ref.id}];openQuote(ref.id);toast("أُنشئ العرض "+q.no);return}
   if(a==="q-open"){openQuote(el.dataset.id);return}
   if(S.qid&&S.qd&&!S.id){const q=S.qd;
