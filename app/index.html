@@ -142,6 +142,12 @@ body.dragging::after{content:"أفلت الملفات هنا للتحليل وا
 .missbox{display:flex;flex-direction:column;gap:6px;border:1px solid var(--warn-soft);border-inline-start:3px solid var(--warn);border-radius:8px;padding:10px 12px}.missbox>b{color:var(--warn);font-size:.86rem}
 .miss-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px}.fld.miss input{width:100%}
 .ord-sec{display:flex;flex-direction:column;gap:8px;padding:10px 0;border-top:1px solid var(--line)}.ord-sec:first-of-type{border-top:0}.ord-sec>b{font-size:.92rem}.fld.need input{border-color:var(--warn);background:var(--warn-soft)}
+.stages{display:flex;align-items:center;gap:4px;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px 10px}
+.stage{display:inline-flex;align-items:center;gap:6px;border:0;background:none;padding:6px 10px;border-radius:999px;font-size:.84rem;color:var(--muted);font-weight:600}
+.stage .sn{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:.72rem;background:var(--surface-2);border:1px solid var(--line)}
+.stage.done{color:var(--ok)}.stage.done .sn{background:var(--ok-soft);border-color:transparent;color:var(--ok)}
+.stage.on{background:var(--accent);color:var(--accent-ink)}.stage.on .sn{background:var(--accent-ink);color:var(--accent);border-color:transparent}.sarrow{color:var(--line);font-size:.8rem}
+.next-step{display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--line);padding-top:10px}
 .order-box{display:flex;flex-direction:column;gap:8px;border:1px solid var(--line);border-radius:10px;padding:12px;background:var(--surface-2)}
 .ib-act{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap}
 .vatbox{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding:12px 14px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2)}
@@ -216,7 +222,7 @@ const BUY_CATS=["ألمنيوم","زجاج","إكسسوارات","مواد تر�
 const PAY_METHODS=["تحويل بنكي","نقدي","شيك","شبكة"];
 const ALU_SYSTEMS=["سرايا","رويال","كرتن وول","سكوريت","أخرى"];
 const ITEM_TYPES=["شباك سحاب","شباك مفصلي","شباك ثابت","باب سحاب","باب مفصلي","واجهة","أخرى"];
-const TABS=[["info","البيانات"],["docs","العقد وعرض السعر"],["pay","الدفعات"],["colors","الاعتمادات"],["meas","المقاسات"],["shop","المخططات Shop Drawings"],["calc","حساب الكميات"],["aorder","طلب الألمنيوم"],["gorder","طلب الزجاج"],["cut","Cutting List"],["inst","مواعيد التركيب"],["buy","المشتريات والأرباح"],["photos","الصور والفيديو"],["handover","محضر التسليم"],["invoices","فواتير المبيعات وكشوفات الحساب"]];
+const TABS=[["info","البيانات"],["pre","المقاسات الأولية"],["docs","العقد وعرض السعر"],["colors","الاعتمادات"],["meas","المقاسات النهائية"],["shop","المخططات Shop Drawings"],["calc","حساب الكميات"],["cut","Cutting List"],["aorder","طلب الألمنيوم والدهان"],["glassm","مقاسات الزجاج"],["gorder","طلب الزجاج"],["pay","الدفعات"],["inst","مواعيد التركيب"],["buy","المشتريات والأرباح"],["photos","الصور والفيديو"],["handover","محضر التسليم"],["invoices","فواتير المبيعات وكشوفات الحساب"]];
 const MAX_BYTES=20*1024*1024;
 const VAT_RATE=0.15;
 const VAT_MODES=["قبل الضريبة","شامل الضريبة"];
@@ -380,8 +386,8 @@ function listView(){
 
 function clientView(c){
   const k=calc(c);
-  const counts={docs:(c.files?.contract?.length||0)+(c.files?.quote?.length||0)+(c.files?.drawings?.length||0)+(c.files?.other?.length||0),pay:(c.payments||[]).length,inst:(c.installs||[]).length,meas:(c.glass||[]).length+(c.alu||[]).length+((c.files||{}).measSheets||[]).length,invoices:(c.salesInvoices||[]).length,photos:(c.files?.photos||[]).length+(c.files?.photosAfter||[]).length+(c.files?.videos||[]).length,shop:((c.shop&&c.shop.items)||[]).length,buy:(c.purchases||[]).length};
-  const body={info:tabInfo,docs:tabDocs,colors:tabColors,pay:tabPay,inst:tabInst,meas:tabMeas,calc:tabCalc,cut:tabCut,handover:tabHandover,invoices:tabInvoices,shop:tabShop,photos:tabPhotos,buy:tabBuy,aorder:tabAOrder,gorder:tabGOrder}[S.tab]||tabInfo;
+  const counts={docs:(c.files?.contract?.length||0)+(c.files?.quote?.length||0)+(c.files?.drawings?.length||0)+(c.files?.other?.length||0),pay:(c.payments||[]).length,inst:(c.installs||[]).length,pre:(c.prelim||[]).length,meas:(c.alu||[]).length,glassm:(c.glass||[]).length,invoices:(c.salesInvoices||[]).length,photos:(c.files?.photos||[]).length+(c.files?.photosAfter||[]).length+(c.files?.videos||[]).length,shop:((c.shop&&c.shop.items)||[]).length,buy:(c.purchases||[]).length};
+  const body={info:tabInfo,docs:tabDocs,colors:tabColors,pay:tabPay,inst:tabInst,meas:tabMeas,calc:tabCalc,cut:tabCut,handover:tabHandover,invoices:tabInvoices,shop:tabShop,photos:tabPhotos,buy:tabBuy,aorder:tabAOrder,gorder:tabGOrder,pre:tabPre,glassm:tabGlassM}[S.tab]||tabInfo;
   return `<section class="head">
       <div><div class="fileno">ملف رقم <span class="num">${esc(c.fileNo||"—")}</span></div><h2>${esc(c.name||"بدون اسم")}${c.project?` <span class="proj-name">· ${esc(c.project)}</span>`:""}</h2>
       <div class="small muted">تاريخ التعميد: <span class="num">${esc(c.approvalDate||"—")}</span> ${c.location?"· "+esc(c.location):""} ${locLink(c)} ${c.phone?`· <span class="num">${esc(c.phone)}</span>`:""}</div></div>
@@ -498,8 +504,8 @@ function tabMeas(c){
   const G=c.glass||[],A=c.alu||[];
   const gQty=sum(G,r=>N(r.qty)||1),gArea=sum(G,r=>area(r.w,r.h,r.qty));
   const aQty=sum(A,r=>N(r.qty)||1),aArea=sum(A,r=>area(r.w,r.h,r.qty));
-  return `${sheetsCard(c)}${ordersLinks(c)}<div class="card"><div class="toolbar">${chk(mk,"final","المقاسات نهائية ومعتمدة للتصنيع",c.measFinal)}${inp(mk,"date","تاريخ الاعتماد",c.measFinalDate,"date")}${S.canWrite?`<button data-act="save-mfin">حفظ</button>`:""}${c.measFinal?`<span class="ok-badge">✓ معتمدة للتصنيع</span>`:`<span class="note">مقاسات أولية، لا تُرسل للتصنيع قبل الاعتماد</span>`}</div></div>
-  <div class="card"><h3><span>مقاسات الألمنيوم النهائية <span class="small muted">بالمليمتر</span></span><span class="toolbar">${A.length||G.length?`<button data-act="pdf-dl" data-src="meas" ${S.pdfBusy?"disabled":""}>${S.pdfBusy?"جارٍ إنشاء PDF…":"تنزيل المقاسات PDF"}</button>${S.canWrite&&S.assets?`<button data-act="pdf-save" data-src="meas" ${S.pdfBusy?"disabled":""}>حفظ PDF في ملف العميل</button>`:""}`:""}</span></h3>
+  return `${stageBar(c)}${sheetsCard(c)}<div class="card"><div class="toolbar">${chk(mk,"final","المقاسات نهائية ومعتمدة للتصنيع",c.measFinal)}${inp(mk,"date","تاريخ الاعتماد",c.measFinalDate,"date")}${S.canWrite?`<button data-act="save-mfin">حفظ</button>`:""}${c.measFinal?`<span class="ok-badge">✓ معتمدة للتصنيع</span>`:`<span class="note">مقاسات أولية، لا تُرسل للتصنيع قبل الاعتماد</span>`}</div></div>
+  <div class="card"><h3><span>المقاسات النهائية للألمنيوم <span class="small muted">مقاسات التصنيع المعتمدة بالمليمتر</span></span><span class="toolbar">${A.length||G.length?`<button data-act="pdf-dl" data-src="meas" ${S.pdfBusy?"disabled":""}>${S.pdfBusy?"جارٍ إنشاء PDF…":"تنزيل المقاسات PDF"}</button>${S.canWrite&&S.assets?`<button data-act="pdf-save" data-src="meas" ${S.pdfBusy?"disabled":""}>حفظ PDF في ملف العميل</button>`:""}`:""}</span></h3>
     ${S.canWrite?`<div class="toolbar" style="justify-content:flex-start">${S.msel.size?(S.confirm==="m-delsel"?`<button class="danger armed" data-act="m-delsel">تأكيد حذف ${S.msel.size} بند</button>`:`<button class="danger" data-act="m-delsel">حذف المحدد (${S.msel.size})</button>`):""}<span class="addn"><input id="m-addn" type="number" min="1" max="200" inputmode="numeric" placeholder="العدد" aria-label="عدد البنود المراد إضافتها"><button data-act="m-addn">إضافة بنود</button></span><button data-act="m-add">+ بند</button></div>`:""}
     <div class="tablebox"><table class="qitems mitems"><thead><tr>${S.canWrite?`<th><input type="checkbox" data-mselall="1" aria-label="تحديد الكل" ${A.length&&A.every(r=>S.msel.has(r.id))?"checked":""}></th>`:""}<th>الكود</th><th>الدور</th><th>النوع (قالب الحساب)</th><th>العرض مم</th><th>الارتفاع مم</th><th>العدد</th><th>المساحة م²</th><th>ملاحظة</th><th></th></tr></thead><tbody>
     ${A.map((r,i)=>`<tr class="${S.msel.has(r.id)?"selrow":""}">${S.canWrite?`<td><input type="checkbox" data-msel="${esc(r.id)}" ${S.msel.has(r.id)?"checked":""} aria-label="تحديد"></td>`:""}
@@ -509,11 +515,8 @@ function tabMeas(c){
     </tbody><tfoot><tr><td colspan="${S.canWrite?6:5}">الإجمالي</td><td class="num">${aQty}</td><td class="num">${aArea.toFixed(2)}</td><td colspan="2"></td></tr></tfoot></table></div>
     <datalist id="floors-dl2"><option value="B">قبو</option><option value="G">أرضي</option><option value="F">أول</option><option value="S">ثاني</option><option value="T">ثالث</option><option value="R">روف / سطح</option></datalist>
   </div>
-  <div class="card"><h3>مقاسات الزجاج النهائية <span class="small muted">بالمليمتر</span></h3>
-    <div class="tablebox"><table><thead><tr><th>المرجع</th><th>النوع</th><th>السماكة</th><th>اللون</th><th>العرض</th><th>الارتفاع</th><th>العدد</th><th>المساحة م²</th><th></th></tr></thead><tbody>
-    ${G.map(r=>`<tr><td><b>${esc(r.ref)}</b></td><td>${esc(r.type||"")}</td><td>${esc(r.thick||"")}</td><td>${esc(r.color||"")}</td><td class="num">${esc(r.w)}</td><td class="num">${esc(r.h)}</td><td class="num">${esc(r.qty||1)}</td><td class="num">${area(r.w,r.h,r.qty).toFixed(2)}</td><td>${del("glass:"+r.id)}</td></tr>`).join("")||`<tr><td colspan="9" class="muted">أضف مقاسات ألواح الزجاج.</td></tr>`}
-    </tbody><tfoot><tr><td colspan="6">الإجمالي</td><td class="num">${gQty}</td><td class="num">${gArea.toFixed(2)}</td><td></td></tr></tfoot></table></div>
-    ${S.canWrite?`<div class="addrow">${inp(gk,"ref","المرجع","")}${inp(gk,"type","النوع (دبل / سنجل)",val(gk,"type","دبل"))}${inp(gk,"thick","السماكة","6مم")}${inp(gk,"color","اللون",(c.colors?.glass?.color)||"")}${inp(gk,"w","العرض مم","","number",'min="0" inputmode="numeric"')}${inp(gk,"h","الارتفاع مم","","number",'min="0" inputmode="numeric"')}${inp(gk,"qty","العدد","1","number",'min="1" inputmode="numeric"')}<button class="primary" data-act="add-glass">+ إضافة</button></div>`:""}
+  ${S.canWrite&&!A.length&&(c.prelim||[]).length?`<div class="card"><div class="toolbar" style="justify-content:flex-start"><span>عندك <b class="num">${c.prelim.length}</b> بند في المقاسات الأولية.</span><button class="primary" data-act="p-final">ابدأ المقاسات النهائية منها</button></div></div>`:""}
+  ${A.length?`<div class="card" style="flex-direction:row;gap:8px;flex-wrap:wrap;align-items:center"><b>الخطوة التالية:</b>${c.measFinal?"":`<span class="small muted">اعتمد المقاسات النهائية أولاً (المربع أعلاه)، ثم</span>`}<button data-act="tab" data-tab="aorder">طلب الألمنيوم والدهان ←</button><button class="ghost" data-act="tab" data-tab="glassm">مقاسات الزجاج ←</button></div>`:""}
   </div>`;
 }
 
@@ -856,28 +859,30 @@ Also return:
 - stated_total: a total count of pieces written on the page (number) or null; stated_total_text: that text as written.
 - flags: short notes IN ARABIC about widths/heights that break the pattern of similar units, missing floors or skipped numbers, unreadable digits (give best reading + alternative), and pending items. Empty list if none.
 Reply with ONLY this JSON:
-{"sheet_type":"aluminium","rows":[{"ref":"14-D3","w_cm":145.5,"h_cm":120,"qty":1,"group":"regular","note":"","unclear":false,"alt":"","pending":false,"glass_type":"","thickness":""}],"stated_total":null,"stated_total_text":"","flags":[]}
+{"sheet_type":"aluminium","rows":[{"ref":"14-D3","w_cm":145.5,"h_cm":120,"qty":1,"group":"regular","type":"sliding2","note":"","unclear":false,"alt":"","pending":false,"glass_type":"","thickness":""}],"stated_total":null,"stated_total_text":"","flags":[]}
+type (aluminium sheets): best match from this list, using the item code or written description: ${KIND_LIST.map(([k,v])=>k+" = "+v[1]).join("; ")}; use "other" when unsure.
 sheet_type: "glass" when the sheet is a GLASS cutting / order list (titles such as زجاج، Glass، سيكوريت، دبل، مقاسات الزجاج، or a glass supplier form listing pane sizes with glass type/thickness); otherwise "aluminium" (window/door opening sizes). For glass sheets fill glass_type (e.g. "دبل 24 مم سيكوريت", "SN-70T") and thickness when written on the line or in the header.`}
 function sampleErr(e){const c=e&&e.code;return({not_granted:"لم يُسمح لـ Claude بقراءة الكشف. اسمح له من نافذة الإذن ثم أعد المحاولة.",images_unavailable:"قراءة الصور غير متاحة في هذا العرض. افتح البرنامج داخل Claude.",image_rejected:"تعذّر قراءة الصورة. ارفعها بصيغة JPG أو PNG.",rate_limited:"طلبات كثيرة، انتظر دقيقة ثم أعد المحاولة.",cancelled:"أُوقفت القراءة.",invalid_json:"لم تُفهم نتيجة القراءة، أعد المحاولة.",session_expired:"انتهت الجلسة، أعد تحميل الصفحة."})[c]||"تعذّرت قراءة الكشف، أعد المحاولة.";}
 
 async function runExtract(c){
-  const sheets=(c.files||{}).measSheets||[];if(!sheets.length){toast("ارفع صورة الكشف أولاً");return}
+  const XK=exKeys();
+  const sheets=(c.files||{})[XK.f]||[];if(!sheets.length){toast("ارفع صورة الكشف أولاً");return}
   if(!S.sample){toast("قراءة الكشوف متاحة فقط داخل Claude");return}
-  const cid=c._id;S.exPages[cid]=null;const ex=S.ex[cid]={busy:true,msg:"جارٍ تجهيز الصفحات…",ctl:new AbortController()};render();
+  const cid=c._id;S.exPages[cid+XK.e]=null;const ex=S.ex[cid+XK.e]={busy:true,msg:"جارٍ تجهيز الصفحات…",ctl:new AbortController()};render();
   try{
     const pages=[];for(const f of sheets){const imgs=await sheetImages(f);imgs.forEach(b=>pages.push({b,src:f.name}))}
     if(!pages.length)throw{code:"image_rejected"};
     const rows=[],flags=[],totals=[],kinds=[];
     const prevPend=((S.clients.find(x=>x._id===cid)||c).pendingSite||[]).map(p=>p.ref).filter(Boolean);
-    const cc=S.clients.find(x=>x._id===cid)||c;const userNotes=[cc.measNote,...((cc.measExtract&&cc.measExtract.chat)||[]).filter(m=>m.role==="user").map(m=>m.text)].filter(Boolean);
+    const cc=S.clients.find(x=>x._id===cid)||c;const userNotes=[cc[XK.n],...((cc[XK.e]&&cc[XK.e].chat)||[]).filter(m=>m.role==="user").map(m=>m.text)].filter(Boolean);
     const glassHint=sheets.some(f=>/glass|زجاج|سيكوريت/i.test(f.name||""))||userNotes.some(t=>/زجاج|glass/i.test(t));
-    const notesTxt=(userNotes.length?`\nINSTRUCTIONS FROM THE FACTORY ENGINEER (follow them, they override defaults):\n- ${userNotes.join("\n- ")}`:"")+(glassHint?`\nThis is very likely a GLASS sheet (the word glass / زجاج appears): set sheet_type "glass".`:"")+`\nIf the word "GLASS" or "زجاج" is written anywhere on the sheet (title, header, column), sheet_type MUST be "glass".`;
+    const notesTxt=(XK.st==="glass"?`\nThis is a GLASS sizes sheet (glass cutting sizes): set sheet_type "glass" and fill glass_type / thickness.`:XK.st==="pre"?`\nThis is a PRELIMINARY site measurement sheet used for a price quotation.`:"")+(userNotes.length?`\nINSTRUCTIONS FROM THE FACTORY ENGINEER (follow them, they override defaults):\n- ${userNotes.join("\n- ")}`:"")+(glassHint?`\nThis is very likely a GLASS sheet (the word glass / زجاج appears): set sheet_type "glass".`:"")+`\nIf the word "GLASS" or "زجاج" is written anywhere on the sheet (title, header, column), sheet_type MUST be "glass".`;
     const pf=prevPend.length?(a,b)=>exPrompt(a,b)+notesTxt+`\nNOTE: a previous survey of this project listed these openings WITHOUT sizes because they were not ready on site yet: ${prevPend.join(", ")}. Look for them carefully on this sheet and read their sizes if now written. An opening written without a size means it is still not ready on site: return it with w_cm and h_cm null and do NOT mention it in flags.`:(a,b)=>exPrompt(a,b)+notesTxt+`\nAn opening written without a size means it is not ready on site yet: return it with w_cm and h_cm null and do NOT mention it in flags.`;
     for(let i=0;i<pages.length;i++){
       ex.msg=`جارٍ قراءة الصفحة ${i+1} من ${pages.length}… (قد تأخذ دقيقة)`;render();
       const out=await readPage(pf,i+1,pages.length,pages[i].b,ex.ctl.signal,"rows",st=>{ex.msg=st==="verify"?`مراجعة أرقام الصفحة ${i+1} من ${pages.length} والتأكد منها…`:`قراءة الصفحة ${i+1} من ${pages.length} بدقة عالية…`;render()});
       (out&&out.rows||[]).forEach(r=>{const w=Math.round(N(r.w_cm)*10),h=Math.round(N(r.h_cm)*10);
-        rows.push({id:uid(),ref:toLat(String(r.ref||"")).trim(),w,h,qty:Math.max(1,Math.round(N(r.qty)||1)),group:GROUPS[r.group]?r.group:"regular",note:toLat(String(r.note||"")),unclear:!!r.unclear,alt:toLat(String(r.alt||"")),pending:!!r.pending,page:i+1,gtype:toLat(String(r.glass_type||"")),thick:toLat(String(r.thickness||""))})});
+        rows.push({id:uid(),ref:toLat(String(r.ref||"")).trim(),w,h,qty:Math.max(1,Math.round(N(r.qty)||1)),group:GROUPS[r.group]?r.group:"regular",note:toLat(String(r.note||"")),unclear:!!r.unclear,alt:toLat(String(r.alt||"")),pending:!!r.pending,page:i+1,gtype:toLat(String(r.glass_type||"")),thick:toLat(String(r.thickness||"")),type:KINDS[r.type]?r.type:""})});
       if(out&&out.sheet_type)kinds.push(out.sheet_type==="glass"?"glass":"alu");
       (out&&out.flags||[]).forEach(t=>t&&flags.push(`ص${i+1}: ${t}`));
       if(out&&out.stated_total!=null&&N(out.stated_total)>0)totals.push({page:i+1,n:N(out.stated_total),txt:String(out.stated_total_text||"")});
@@ -888,11 +893,12 @@ async function runExtract(c){
     const allRows=[...rows];rows.length=0;readyRows.forEach(r=>rows.push(r));
     const count=sum(rows,r=>r.qty);
     totals.forEach(t=>{const pc=sum(allRows.filter(r=>r.page===t.page),r=>r.qty);if(pc!==t.n)flags.unshift(`ص${t.page}: المكتوب في الكشف ${t.n} قطعة${t.txt?` («${t.txt}»)`:""} لكن المستخرج ${pc}. راجع الأسطر الناقصة أو الزائدة.`)});
-    const kind=glassHint||kinds.filter(k=>k==="glass").length>kinds.length/2?"glass":"alu";
-    const res={rows,flags,count,kind,chat:(cc.measExtract&&cc.measExtract.chat)||[],at:new Date().toISOString(),pages:pages.length};
-    S.ex[cid]={busy:false};await write(cid,{measExtract:res,pendingSite:pend});
+    const kind=XK.st==="glass"?"glass":"alu";
+    if(XK.st!=="glass"&&(glassHint||kinds.filter(k=>k==="glass").length>kinds.length/2))flags.unshift("يبدو أن هذا كشف زجاج. ارفعه في تبويب «مقاسات الزجاج» ليُضاف للزجاج.");
+    const res={rows,flags,count,kind,chat:(cc[XK.e]&&cc[XK.e].chat)||[],at:new Date().toISOString(),pages:pages.length};
+    S.ex[cid+XK.e]={busy:false};await write(cid,{[XK.e]:res,pendingSite:pend});
     toast(`استُخرج ${rows.length} سطر (${count} قطعة)${done.length?`. اكتملت مقاسات ${done.join("، ")} من الحصر السابق`:""}`);
-  }catch(e){S.ex[cid]={busy:false,err:sampleErr(e)}}
+  }catch(e){S.ex[cid+XK.e]={busy:false,err:sampleErr(e)}}
   render();
 }
 
@@ -901,15 +907,14 @@ function exRecipeDefault(r){const ids=(S.cfg.recipes||[]).map(x=>x.id);const pic
   return pick("sar-slide2")}
 
 function sheetsCard(c){
-  const sheets=(c.files||{}).measSheets||[];const ex=S.ex[c._id]||{};const X=c.measExtract;
+  const XK=exKeys();
+  const sheets=(c.files||{})[XK.f]||[];const ex=S.ex[c._id+XK.e]||{};const X=c[XK.e];
   const canAI=!!S.sample;
   let review="";
   if(X&&X.rows){
     const byG=k=>X.rows.filter(r=>r.group===k);
     review=`<div class="exbox">
       <h3>نتيجة القراءة <span class="small muted"><span class="num">${X.rows.length}</span> سطر · <span class="num">${X.count}</span> قطعة · بالمليمتر</span></h3>
-      <div class="toolbar" style="justify-content:flex-start;gap:6px"><span class="small muted">نوع الكشف:</span>${[["alu","مقاسات ألمنيوم"],["glass","مقاسات زجاج"]].map(([k,l])=>`<button class="${(X.kind||"alu")===k?"primary":"ghost"}" data-act="ex-kind" data-k="${k}" ${S.canWrite?"":"disabled"}>${l}</button>`).join("")}
-      ${X.kind==="glass"&&X.appliedAt&&exMovable(c,X).length&&S.canWrite?`<button class="danger" data-act="ex-move">نقل ${exMovable(c,X).length} سطر أُضيفت للألمنيوم بالخطأ إلى الزجاج</button>`:""}</div>
       ${exIssues(X)}
       ${S.canWrite?`<div class="toolbar" style="justify-content:flex-start">${S.exsel.size?(S.confirm==="ex-delsel"?`<button class="danger armed" data-act="ex-delsel">تأكيد حذف ${S.exsel.size} بند</button>`:`<button class="danger" data-act="ex-delsel">حذف المحدد (${S.exsel.size})</button>`):""}<span class="addn"><input id="ex-addn" type="number" min="1" max="200" inputmode="numeric" placeholder="العدد" aria-label="عدد البنود المراد إضافتها"><button data-act="ex-addn">إضافة بنود</button></span><button data-act="ex-add">+ بند</button></div>`:""}
       ${Object.keys(GROUPS).filter(k=>byG(k).length).map(k=>`<h3 style="margin-top:4px">${X.kind==="glass"&&k==="regular"?"ألواح الزجاج":GROUPS[k]}</h3>
@@ -924,16 +929,16 @@ function sheetsCard(c){
         <td>${S.canWrite?`<button class="danger ghost" data-act="ex-del" data-id="${esc(r.id)}">حذف</button>`:""}</td></tr>`).join("")}
       </tbody><tfoot><tr><td colspan="${S.canWrite?5:4}">الإجمالي</td><td class="num">${sum(byG(k),r=>r.qty)}</td><td class="num">${sum(byG(k),r=>area(r.w,r.h,r.qty)).toFixed(2)}</td><td colspan="3"></td></tr></tfoot></table></div>`).join("")}
       <div class="toolbar">
-        ${S.canWrite?`<button class="primary" data-act="ex-apply">${X.kind==="glass"?"إضافة إلى مقاسات الزجاج":"إضافة إلى مقاسات الألمنيوم"}</button>`:""}
+        ${S.canWrite?`<button class="primary" data-act="ex-apply">${XK.st==="glass"?"إضافة إلى مقاسات الزجاج":XK.st==="pre"?"إضافة إلى المقاسات الأولية":"إضافة إلى المقاسات النهائية"}</button>`:""}
         <button data-act="pdf-dl" data-src="ex" ${S.pdfBusy?"disabled":""}>${S.pdfBusy?"جارٍ إنشاء PDF…":"تنزيل PDF"}</button>
         ${S.canWrite&&S.assets?`<button data-act="pdf-save" data-src="ex" ${S.pdfBusy?"disabled":""}>حفظ PDF في ملف العميل</button>`:""}
         <span style="flex:1"></span>${S.canWrite?del("exclear:"+c._id,"مسح النتيجة"):""}
       </div>${exChatBox(c,X)}</div>`;
   }
-  return `<div class="card"><h3>كشف المقاسات اليدوي ${uploader("measSheets","رفع صور الكشف أو PDF","image/*,application/pdf")}</h3>
+  return `<div class="card"><h3>${XK.st==="glass"?"كشف مقاسات الزجاج":XK.st==="pre"?"كشف المقاسات الأولية (المندوب)":"كشف المقاسات النهائية"} ${uploader(XK.f,"رفع صور الكشف أو PDF","image/*,application/pdf")}</h3>
     <p class="small muted" style="margin:0">ارفع صور كشف الموقع المكتوب بخط اليد (بالسنتيمتر). يقرأه Claude ويحوّله للمليمتر ويطلع لك ملف PDF مرتّب، مع ملاحظات على الأرقام غير الواضحة والمجاميع.</p>
-    ${fileList(c,"measSheets")}
-    ${sheets.length&&S.canWrite&&canAI&&!ex.busy?`<label class="fld exnote"><span>ملاحظاتك لـ Claude قبل القراءة (اختياري)</span><textarea data-cf="measNote" rows="2" placeholder="مثال: هذا كشف زجاج · المقاسات بالملي · تجاهل الأسطر المشطوبة · الدور الأول F">${esc(c.measNote||"")}</textarea></label>`:""}
+    ${fileList(c,XK.f)}
+    ${sheets.length&&S.canWrite&&canAI&&!ex.busy?`<label class="fld exnote"><span>ملاحظاتك لـ Claude قبل القراءة (اختياري)</span><textarea data-cf="${XK.n}" rows="2" placeholder="مثال: هذا كشف زجاج · المقاسات بالملي · تجاهل الأسطر المشطوبة · الدور الأول F">${esc(c[XK.n]||"")}</textarea></label>`:""}
     <div class="toolbar">${sheets.length&&S.canWrite?(ex.busy?`<span class="spin" aria-hidden="true"></span><span class="small">${esc(ex.msg||"")}</span><button data-act="ex-stop">إيقاف</button>`:canAI?`<button class="primary" data-act="ex-run">${X?"إعادة قراءة الكشف":"قراءة الكشف وتحويله"}</button>`:`<span class="small muted">قراءة الكشف تعمل عند فتح البرنامج داخل Claude.</span>`):""}
       ${ex.err?`<span class="small neg">${esc(ex.err)}</span>`:""}</div>
     ${review}
@@ -957,9 +962,10 @@ function exIssues(X){
 function exIn(r,f,w,type="text",pre="ex"){let v=r[f];if(type==="number"&&!N(v))v="";return `<input id="${pre}-${esc(r.id)}-${f}" data-ex="${esc(r.id)}|${f}" type="${type}" value="${esc(v??"")}" style="min-width:${w};width:${w}" ${type==="number"?'inputmode="numeric" min="0"':""} ${S.canWrite?"":"disabled"} aria-label="${f}">`}
 
 async function exEdit(c,id,f,v){
-  const X=clone(c.measExtract||{rows:[]});const r=X.rows.find(x=>x.id===id);if(!r)return;
+  const XK=exKeys();
+  const X=clone(c[XK.e]||{rows:[]});const r=X.rows.find(x=>x.id===id);if(!r)return;
   r[f]=["w","h","qty"].includes(f)?N(v):toLat(v);if((f==="w"||f==="h")&&N(r.w)>0&&N(r.h)>0){r.unclear=false;r.ok=!!r.ref}X.count=sum(X.rows,x=>x.qty);
-  await write(c._id,{measExtract:X});
+  await write(c._id,{[XK.e]:X});
 }
 
 /* ---- PDF builder: typed tables (mm) + original sheet pages ---- */
@@ -1006,7 +1012,8 @@ async function buildMeasPdf(c,sections,sheetBlobs){
   return pdf.output("blob");
 }
 function pdfSections(c,src){
-  if(src==="ex"){const X=c.measExtract||{rows:[]};return Object.keys(GROUPS).map(k=>({title:GROUPS[k],rows:X.rows.filter(r=>r.group===k).map(r=>({ref:r.ref,w:r.w,h:r.h,qty:r.qty,note:[r.pending?"بانتظار الاعتماد":"",r.unclear?`غير واضح${r.alt?" / بديل "+r.alt:""}`:"",r.note].filter(Boolean).join(" · "),flag:r.unclear||r.pending}))}))}
+  const XK=exKeys();
+  if(src==="ex"){const X=c[XK.e]||{rows:[]};return Object.keys(GROUPS).map(k=>({title:GROUPS[k],rows:X.rows.filter(r=>r.group===k).map(r=>({ref:r.ref,w:r.w,h:r.h,qty:r.qty,note:[r.pending?"بانتظار الاعتماد":"",r.unclear?`غير واضح${r.alt?" / بديل "+r.alt:""}`:"",r.note].filter(Boolean).join(" · "),flag:r.unclear||r.pending}))}))}
   const A=c.alu||[];const secs=Object.keys(GROUPS).map(k=>({title:"الألمنيوم - "+GROUPS[k],rows:A.filter(r=>(r.group||"regular")===k).map(r=>({ref:r.ref,w:r.w,h:r.h,qty:r.qty||1,note:[recipeById(r.recipe)?.name||r.type||"",r.note].filter(Boolean).join(" · ")}))}));
   secs.push({title:"الزجاج",rows:(c.glass||[]).map(r=>({ref:r.ref,w:r.w,h:r.h,qty:r.qty||1,note:[r.type,r.thick,r.color].filter(Boolean).join(" ")}))});
   return secs;
@@ -1014,7 +1021,7 @@ function pdfSections(c,src){
 async function makePdf(c,src,mode){
   if(S.pdfBusy)return;S.pdfBusy=true;render();
   try{
-    let blobs=[];if(src==="ex"){for(const f of (c.files||{}).measSheets||[]){try{blobs=blobs.concat(await sheetImages(f))}catch(e){}}}
+    let blobs=[];if(src==="ex"){for(const f of (c.files||{})[exKeys().f]||[]){try{blobs=blobs.concat(await sheetImages(f))}catch(e){}}}
     const pdf=await buildMeasPdf(c,pdfSections(c,src),blobs);
     const name=`مقاسات-${(c.fileNo||c.name||"ملف").replace(/[\\/:*?"<>|]/g,"-")}.pdf`;
     if(mode==="save"){const r=await S.assets.upload(new File([pdf],name,{type:"application/pdf"}));await mutateFiles("measPdf",l=>l.concat([{id:r.id,name,type:"application/pdf",size:r.sizeBytes,at:new Date().toISOString()}]));toast("حُفظ ملف PDF في ملف العميل")}
@@ -1929,6 +1936,11 @@ async function approveQuote(){
   const files={};
   if(S.assets){try{const b=await quotePdfBlob(q);const name=qFileName(q);const r=await S.assets.upload(new File([b],name,{type:"application/pdf"}));files.quote=[{id:r.id,name,type:"application/pdf",size:r.sizeBytes,at:new Date().toISOString()}]}catch(e){}}
   const alu=(q.items||[]).filter(it=>it.type!=="other"&&KINDS[it.type]&&N(it.w)&&N(it.h)).map(it=>{const rc=recipeById(KINDS[it.type][2]);return{id:uid(),ref:it.ref||"",w:N(it.w),h:N(it.h),qty:N(it.qty)||1,recipe:rc?rc.id:"",system:rc?rc.system:"",type:rc?rc.name:"",group:"regular",floor:it.floor||"",note:[it.floor?`الدور ${it.floor}`:"",it.desc].filter(Boolean).join(" - ")}});
+  const lc=q.linkedClient&&S.clients.find(x=>x._id===q.linkedClient);
+  if(lc){const patch={quoteNo:q.no+(q.rev?`-R${q.rev}`:""),quoteValue:t.net,quoteVatMode:"قبل الضريبة",quoteNet:t.net,quoteVat:t.vat,quoteTotal:t.total,contractValue:t.total,quoteId:S.qid,status:"تم التعميد",approvalDate:lc.approvalDate||today()};
+    if(files.quote){patch.files={...(lc.files||{}),quote:[...((lc.files||{}).quote||[]),...files.quote]}}
+    if(!(lc.colors&&(lc.colors.alu?.color||lc.colors.glass?.type)))patch.colors={alu:{color:sp.paintColor||"",code:sp.paintCode||"",finish:sp.paintFinish||"",system:[sp.system,sp.profileThk].filter(Boolean).join(" - ")},glass:{type:sp.glassType||"",thickness:sp.glassThk||"",color:sp.glassColor||""},acc:{brand:sp.accType||"",color:sp.accColor||""}};
+    try{await write(lc._id,patch);S.qd={...S.qd,status:"معتمد",clientId:lc._id,approvedAt:new Date().toISOString()};await qSaveNow();S.qid=null;S.qd=null;S.section="clients";go(lc._id,"meas");toast("تم تعميد العرض وتحديث ملف العميل. الخطوة التالية: المقاسات النهائية")}catch(e){handleWriteErr(e)}return}
   const doc={name:q.client.name.trim(),phone:q.client.phone||"",location:locFmt(q.client.location)||q.client.project||"",project:q.client.project||"",fileNo,approvalDate:today(),status:"تم التعميد",
     quoteNo:q.no+(q.rev?`-R${q.rev}`:""),quoteValue:t.net,quoteVatMode:"قبل الضريبة",quoteNet:t.net,quoteVat:t.vat,quoteTotal:t.total,contractValue:t.total,quoteId:S.qid,
     colors:{alu:{color:sp.paintColor||"",code:sp.paintCode||"",finish:sp.paintFinish||"",system:[sp.system,sp.profileThk].filter(Boolean).join(" - ")},glass:{type:sp.glassType||"",thickness:sp.glassThk||"",color:sp.glassColor||""},acc:{brand:sp.accType||"",color:sp.accColor||""}},
@@ -2010,7 +2022,7 @@ function need(fk,fields){const d=S.draft[fk]||{};for(const[f,l]of fields){if(!St
 function rowFrom(fk,defaults){return{...defaults,...(S.draft[fk]||{})}}
 
 async function act(el){
-  const a=el.dataset.act;const c=cur();
+  const a=el.dataset.act;const c=cur();const XK=exKeys();
   if(a==="open"){go(el.dataset.id,el.dataset.tab||"info");return}
   if(a==="back"){if(S.settings){S.settings=false;S.confirm=null;render();window.scrollTo(0,0);return}
     if(S.qid&&!S.id){await qSaveNow();S.qid=null;S.qd=null;S.section="quotes";try{history.replaceState(null,"","#quotes")}catch(e){location.hash="quotes"}render();window.scrollTo(0,0);return}
@@ -2080,11 +2092,11 @@ async function act(el){
     const list=[...(c.alu||[])];const start=list.length;for(let k=0;k<n;k++){const last=list[list.length-1]||{};const rc=recipeById(last.recipe)||S.cfg.recipes[0]||{};list.push({id:uid(),ref:"W"+(list.length+1),floor:last.floor||"",recipe:rc.id||"",system:rc.system||"",type:rc.name||"",w:0,h:0,qty:1,note:""})}
     if(await write(c._id,{alu:list})){toast(n>1?`أُضيف ${n} بند`:"أُضيف بند");setTimeout(()=>{const f=document.getElementById(`mf-${start}-w`);if(f){f.focus();f.scrollIntoView({block:"center"})}},50)}return}
   if(a==="ex-add"||a==="ex-addn"){let n=1;if(a==="ex-addn"){const inp_=document.getElementById("ex-addn");n=Math.min(200,Math.max(0,Math.round(N(inp_&&inp_.value))));if(!n){toast("اكتب عدد البنود أولاً");inp_&&inp_.focus();return}}
-    const X=clone(c.measExtract||{rows:[]});X.rows=X.rows||[];const last=X.rows[X.rows.length-1]||{};let firstId=null;
+    const X=clone(c[XK.e]||{rows:[]});X.rows=X.rows||[];const last=X.rows[X.rows.length-1]||{};let firstId=null;
     for(let k=0;k<n;k++){const r={id:uid(),ref:"W"+(X.rows.length+1),w:0,h:0,qty:1,group:last.group||"regular",recipe:last.recipe||"",note:"",unclear:false,alt:"",pending:false};if(!firstId)firstId=r.id;X.rows.push(r)}
-    X.count=sum(X.rows,x=>x.qty);if(await write(c._id,{measExtract:X})){toast(n>1?`أُضيف ${n} بند`:"أُضيف بند");setTimeout(()=>{const f=document.getElementById(`ex-${firstId}-w`);if(f){f.focus();f.scrollIntoView({block:"center"})}},50)}return}
+    X.count=sum(X.rows,x=>x.qty);if(await write(c._id,{[XK.e]:X})){toast(n>1?`أُضيف ${n} بند`:"أُضيف بند");setTimeout(()=>{const f=document.getElementById(`ex-${firstId}-w`);if(f){f.focus();f.scrollIntoView({block:"center"})}},50)}return}
   if(a==="ex-delsel"){if(!S.exsel.size)return;if(S.confirm!=="ex-delsel"){S.confirm="ex-delsel";render();clearTimeout(act._t);act._t=setTimeout(()=>{S.confirm=null;render()},5000);return}
-    S.confirm=null;const n=S.exsel.size;const X=clone(c.measExtract||{rows:[]});X.rows=X.rows.filter(r=>!S.exsel.has(r.id));X.count=sum(X.rows,r=>r.qty);S.exsel.clear();if(await write(c._id,{measExtract:X}))toast(`حُذف ${n} بند`);return}
+    S.confirm=null;const n=S.exsel.size;const X=clone(c[XK.e]||{rows:[]});X.rows=X.rows.filter(r=>!S.exsel.has(r.id));X.count=sum(X.rows,r=>r.qty);S.exsel.clear();if(await write(c._id,{[XK.e]:X}))toast(`حُذف ${n} بند`);return}
   if(a==="m-delsel"){if(!S.msel.size)return;if(S.confirm!=="m-delsel"){S.confirm="m-delsel";render();clearTimeout(act._t);act._t=setTimeout(()=>{S.confirm=null;render()},5000);return}
     S.confirm=null;const n=S.msel.size;const list=(c.alu||[]).filter(r=>!S.msel.has(r.id));S.msel.clear();if(await write(c._id,{alu:list}))toast(`حُذف ${n} بند`);return}
   if(a==="ex-run"){runExtract(c);return}
@@ -2107,15 +2119,17 @@ async function act(el){
   if(a==="shop-move"){const id=el.dataset.id,dd=+el.dataset.d;await shopMutate(c,l=>{const i=l.findIndex(x=>x.id===id),j=i+dd;if(i<0||j<0||j>=l.length)return l;const t=l[i];l[i]=l[j];l[j]=t;return l});return}
   if(a==="ex-stop"){const ex=S.ex[c._id];ex&&ex.ctl&&ex.ctl.abort();return}
   if(a==="pdf-dl"||a==="pdf-save"){makePdf(c,el.dataset.src,a==="pdf-save"?"save":"dl");return}
-  if(a==="ex-del"){const X=clone(c.measExtract||{rows:[]});X.rows=X.rows.filter(r=>r.id!==el.dataset.id);X.count=sum(X.rows,r=>r.qty);await write(c._id,{measExtract:X});return}
+  if(a==="ex-del"){const X=clone(c[XK.e]||{rows:[]});X.rows=X.rows.filter(r=>r.id!==el.dataset.id);X.count=sum(X.rows,r=>r.qty);await write(c._id,{[XK.e]:X});return}
   if(a==="ex-apply"){
-    const X=c.measExtract;if(!X||!X.rows.length){toast("لا توجد أسطر للإضافة");return}
+    const X=c[XK.e];if(!X||!X.rows.length){toast("لا توجد أسطر للإضافة");return}
     const bad=X.rows.find(r=>!r.ref&&exReady(r));if(bad){toast("أكمل الكود لكل الأسطر أولاً");return}
-    if(X.kind==="glass"){const add=X.rows.filter(exReady).map(r=>exGlassRow(c,r));
-      if(await write(c._id,{glass:[...(c.glass||[]),...add],measExtract:{...X,appliedAt:new Date().toISOString()}}))toast(`أُضيف ${add.length} سطر إلى مقاسات الزجاج`);return}
+    if(XK.st==="pre"){const add=X.rows.filter(exReady).map(r=>{const s=splitRef(r.ref);return{id:uid(),ref:s.ref,floor:s.floor,type:r.type||"sliding2",w:N(r.w),h:N(r.h),qty:N(r.qty)||1,note:[r.note,r.pending?"بانتظار الاعتماد":""].filter(Boolean).join(" · ")}});
+      if(await write(c._id,{prelim:[...(c.prelim||[]),...add],[XK.e]:{...X,appliedAt:new Date().toISOString()}}))toast(`أُضيف ${add.length} بند إلى المقاسات الأولية`);return}
+    if(XK.st==="glass"||X.kind==="glass"){const add=X.rows.filter(exReady).map(r=>exGlassRow(c,r));
+      if(await write(c._id,{glass:[...(c.glass||[]),...add],[XK.e]:{...X,appliedAt:new Date().toISOString()}}))toast(`أُضيف ${add.length} سطر إلى مقاسات الزجاج`);return}
     const notReady=X.rows.filter(r=>!exReady(r));const pend=[...(c.pendingSite||[])];notReady.forEach(r=>{if(!pend.some(p=>p.ref&&p.ref===r.ref))pend.push({ref:r.ref,qty:r.qty,group:r.group,note:r.note,at:new Date().toISOString()})});
-    const add=X.rows.filter(exReady).map(r=>{const rc=recipeById(r.recipe||exRecipeDefault(r));return{id:uid(),ref:r.ref,w:N(r.w),h:N(r.h),qty:N(r.qty)||1,recipe:rc?rc.id:"",system:rc?rc.system:"",type:rc?rc.name:"",group:r.group,note:[r.pending?"بانتظار الاعتماد":"",r.unclear?"رقم غير واضح":"",r.note].filter(Boolean).join(" · ")}});
-    if(await write(c._id,{alu:[...(c.alu||[]),...add],pendingSite:pend,measExtract:{...X,appliedAt:new Date().toISOString()}}))toast(`أُضيف ${add.length} سطر إلى مقاسات الألمنيوم`);
+    const add=X.rows.filter(exReady).map(r=>{const rc=recipeById(r.recipe||(r.type&&KINDS[r.type]?KINDS[r.type][2]:"")||exRecipeDefault(r));return{id:uid(),ref:r.ref,w:N(r.w),h:N(r.h),qty:N(r.qty)||1,recipe:rc?rc.id:"",system:rc?rc.system:"",type:rc?rc.name:"",group:r.group,note:[r.pending?"بانتظار الاعتماد":"",r.unclear?"رقم غير واضح":"",r.note].filter(Boolean).join(" · ")}});
+    if(await write(c._id,{alu:[...(c.alu||[]),...add],pendingSite:pend,[XK.e]:{...X,appliedAt:new Date().toISOString()}}))toast(`أُضيف ${add.length} سطر إلى مقاسات الألمنيوم`);
     return;
   }
   if(a==="save-info"){
@@ -2177,8 +2191,8 @@ async function act(el){
     if(await mutateList("purchases",l=>{l.push({id:uid(),date:r.date,supplier:r.supplier,invoiceNo:r.invoiceNo,category:r.category,amount:N(r.amount),note:r.note})})){delete S.draft[fk];render();toast("تم تسجيل الفاتورة. يمكنك إرفاق نسختها من الجدول")}
     return;
   }
-  if(a==="ex-ok"&&c){const X=clone(c.measExtract||{rows:[]});const r=X.rows.find(x=>x.id===el.dataset.id);if(r){r.ok=true;r.unclear=false;await write(c._id,{measExtract:X})}return}
-  if(a==="ex-flagok"&&c){const X=clone(c.measExtract||{rows:[]});X.flagsOk=[...(X.flagsOk||[]),+el.dataset.id];await write(c._id,{measExtract:X});return}
+  if(a==="ex-ok"&&c){const X=clone(c[XK.e]||{rows:[]});const r=X.rows.find(x=>x.id===el.dataset.id);if(r){r.ok=true;r.unclear=false;await write(c._id,{[XK.e]:X})}return}
+  if(a==="ex-flagok"&&c){const X=clone(c[XK.e]||{rows:[]});X.flagsOk=[...(X.flagsOk||[]),+el.dataset.id];await write(c._id,{[XK.e]:X});return}
   if(a==="new-proj"&&c){if(!db)return;
     const y=new Date().getFullYear();const nums=S.clients.map(x=>{const m=/(\d+)$/.exec(x.fileNo||"");return m?+m[1]:0});const next=`${y}-${String((Math.max(0,...nums)||0)+1).padStart(3,"0")}`;
     const key=c.clientKey||c._id;const n=projectsOf(c).length+1;if(!c.clientKey)await write(c._id,{clientKey:key,...(c.project?{}:{project:"مشروع 1"})});
@@ -2191,17 +2205,41 @@ async function act(el){
     if(await write(c._id,{clientKey:key,...(c.project?{}:{project:"مشروع "+(projectsOf(o).length+1)})}))toast("تم ربط الملفين كمشاريع لنفس العميل");return}
   if(a==="unlink-proj"&&c){if(S.confirm!=="unlink"){S.confirm="unlink";render();clearTimeout(act._t);act._t=setTimeout(()=>{S.confirm=null;render()},5000);toast("اضغط «فصل هذا المشروع» مرة أخرى للتأكيد",{kind:"warn"});return}
     S.confirm=null;if(await write(c._id,{clientKey:""}))toast("تم فصل المشروع وأصبح ملفاً مستقلاً");return}
-  if(a==="ex-kind"&&c){const X=clone(c.measExtract||{rows:[]});X.kind=el.dataset.k;await write(c._id,{measExtract:X});return}
+  if((a==="p-add"||a==="p-addn"||a==="g-add"||a==="g-addn")&&c){const isP=a[0]==="p";let n=1;if(a.endsWith("addn")){const inp_=document.getElementById(a[0]+"-addn");n=Math.min(200,Math.max(0,Math.round(N(inp_&&inp_.value))));if(!n){toast("اكتب عدد البنود أولاً");inp_&&inp_.focus();return}}
+    const fld=isP?"prelim":"glass";const list=[...(c[fld]||[])];const start=list.length;const g=c.colors?.glass||{};
+    for(let k=0;k<n;k++){const last=list[list.length-1]||{};list.push(isP?{id:uid(),ref:"W"+(list.length+1),floor:last.floor||"",type:last.type||"sliding2",w:0,h:0,qty:1,note:""}:{id:uid(),ref:"G"+(list.length+1),type:last.type||g.type||"",thick:last.thick||g.thickness||"",color:last.color||g.color||"",w:0,h:0,qty:1})}
+    if(await write(c._id,{[fld]:list})){toast(n>1?`أُضيف ${n} بند`:"أُضيف بند");setTimeout(()=>{const f=document.getElementById(`${isP?"p":"g"}f-${start}-w`);if(f){f.focus();f.scrollIntoView({block:"center"})}},60)}return}
+  if((a==="p-delsel"||a==="g-delsel")&&c){const isP=a[0]==="p";const set=isP?S.psel:S.gsel;if(!set.size)return;if(S.confirm!==a){S.confirm=a;render();clearTimeout(act._t);act._t=setTimeout(()=>{S.confirm=null;render()},5000);return}
+    S.confirm=null;const fld=isP?"prelim":"glass";const n=set.size;const list=(c[fld]||[]).filter(r=>!set.has(r.id));set.clear();if(await write(c._id,{[fld]:list}))toast(`حُذف ${n} بند`);return}
+  if(a==="p-final"&&c){const P=c.prelim||[];if(!P.length)return;if((c.alu||[]).length&&S.confirm!=="p-final"){S.confirm="p-final";toast(`المقاسات النهائية فيها ${(c.alu||[]).length} بند. اضغط مرة ثانية لإضافة المقاسات الأولية عليها`,{kind:"warn"});clearTimeout(act._t);act._t=setTimeout(()=>{S.confirm=null},5000);return}
+    S.confirm=null;const add=P.filter(r=>r.type!=="other").map(r=>{const rc=recipeForType(r.type);return{id:uid(),ref:r.ref,floor:r.floor||"",w:N(r.w),h:N(r.h),qty:N(r.qty)||1,recipe:rc.id||"",system:rc.system||"",type:rc.name||"",group:"regular",note:r.note||""}});
+    if(await write(c._id,{alu:[...(c.alu||[]),...add]})){S.tab="meas";render();toast(`نُسخ ${add.length} بند إلى المقاسات النهائية. عدّل المقاسات حسب القياس النهائي ثم اعتمدها`)}return}
+  if(a==="p-openq"&&c){if(c.quoteId)openQuote(c.quoteId);return}
+  if(a==="p-quote"&&c){if(!db)return;const P=c.prelim||[];if(!P.length)return;
+    const mk=q=>P.map(r=>{const ty=KINDS[r.type]||r.type==="other"?r.type:"sliding2";const sy=defSys(q);return{id:uid(),ref:r.ref||"",floor:r.floor||"",type:ty,sys:sy,desc:r.note||"",w:N(r.w),h:N(r.h),qty:N(r.qty)||1,pricing:ty==="other"?"lump":"m2",price:ty==="other"?0:defPrice(ty,sy),addon:defAddon(ty)}});
+    const ex=c.quoteId&&S.quotes.find(x=>x._id===c.quoteId);
+    if(ex){if(ex.status==="معتمد"){toast("عرض السعر المرتبط معتمد، أنشئ مراجعة جديدة له من شاشة العرض",{kind:"warn"});openQuote(ex._id);return}
+      const n={...clone(ex),items:mk(ex)};delete n._id;try{await db.collection("quotes").doc(ex._id).update({items:n.items,updatedAt:new Date().toISOString()})}catch(e){handleWriteErr(e);return}S.quotes=S.quotes.map(x=>x._id===ex._id?{...x,items:n.items}:x);openQuote(ex._id);toast("تم تحديث بنود عرض السعر من المقاسات الأولية");return}
+    const q=newQuote();q.client={...q.client,name:c.name||"",phone:c.phone||"",project:c.project||"",location:c.location||q.client.location};q.items=mk(q);q.linkedClient=c._id;
+    const ref=db.collection("quotes").doc();try{await ref.set(q);S.everWrote=true}catch(e){handleWriteErr(e);return}
+    S.quotes=[...S.quotes,{...q,_id:ref.id}];await write(c._id,{quoteId:ref.id,quoteNo:q.no});openQuote(ref.id);toast(`أُنشئ عرض السعر ${q.no} من المقاسات الأولية. راجع الأسعار ثم نزّله`);return}
+  if(a==="g-fromcalc"&&c){const T=takeoff(c,S.cfg);const add=T.glass.filter(x=>x.src!=="manual").map(x=>({id:uid(),ref:x.ref,type:(c.colors?.glass?.type)||"",thick:(c.colors?.glass?.thickness)||"",color:(c.colors?.glass?.color)||"",w:x.w,h:x.h,qty:x.qty}));
+    if(!add.length){toast("لا يوجد زجاج محسوب. تأكد من قوالب الحساب في المقاسات النهائية");return}
+    if((c.glass||[]).length&&S.confirm!=="g-fromcalc"){S.confirm="g-fromcalc";toast(`سيُضاف ${add.length} لوح فوق المقاسات الحالية. اضغط مرة ثانية للتأكيد`,{kind:"warn"});clearTimeout(act._t);act._t=setTimeout(()=>{S.confirm=null},5000);return}
+    S.confirm=null;if(await write(c._id,{glass:[...(c.glass||[]),...add]}))toast(`أُضيف ${add.length} لوح زجاج محسوب من المقاسات النهائية`);return}
+  if(a==="ex-kind"&&c){const X=clone(c[XK.e]||{rows:[]});X.kind=el.dataset.k;await write(c._id,{[XK.e]:X});return}
   if(a==="ex-move"&&c){const X=c.measExtract||{rows:[]};const mv=exMovable(c,X);if(!mv.length)return;
     const add=mv.map(a=>exGlassRow(c,X.rows.find(r=>r.ref===a.ref&&N(r.w)===N(a.w)&&N(r.h)===N(a.h))||a));
     if(await write(c._id,{alu:(c.alu||[]).filter(a=>!mv.includes(a)),glass:[...(c.glass||[]),...add]}))toast(`تم نقل ${mv.length} سطر من مقاسات الألمنيوم إلى مقاسات الزجاج`);return}
   if(a==="exc-send"&&c){const t=document.getElementById("exc-in");await exChat(c,t&&t.value);return}
   if(a==="exc-stop"&&c){const s=S.ex["chat:"+c._id];s&&s.ctl&&s.ctl.abort();return}
-  if(a==="ao-pdf"&&c){await aluOrderPdf(c,"dl");return}
+  if(a==="ao-pdf"&&c){await aluOrderPdf(c,"dl");write(c._id,{aluOrderedAt:new Date().toISOString()});return}
+  if((a==="po-pdf"||a==="po-save")&&c){const T=takeoff(c,S.cfg);const rows=aluOrderRows(c,T);if(!rows.length){toast("لا توجد قطاعات للدهان");return}const al=c.colors?.alu||{};if(!(al.code||al.color)){toast("أدخل كود اللون أولاً",{kind:"warn"});return}
+    const y=new Date().getFullYear();await svgPdf(c,[logoHref(true).then(l=>aluOrderSVG(c,rows,l,{title:"أمر دهان قطاعات ألمنيوم",en:"POWDER COATING ORDER",supLabel:"المصبغة",supplier:c.paintSupplier||"",no:`PNT-${y}-${String(c.fileNo||"").replace(/^\d{4}-/,"")}`,notes:[`اللون المطلوب: ${[al.color,al.code?("RAL "+String(al.code).replace(/^RAL\s*/i,"")):""].filter(Boolean).join(" - ")}${al.finish?" · "+al.finish:""}`,"الرجاء دهان جميع العيدان بنفس الدفعة ونفس درجة اللون.","تغليف القطاعات بعد الدهان بنايلون حماية.","يُرجى إرفاق شهادة اللون مع التسليم."]}))],`أمر-دهان-${c.fileNo||""}-${clientTitle(c)}.pdf`,a==="po-save"?"save":"dl","other","تم حفظ أمر الدهان في «مستندات أخرى»");write(c._id,{paintOrderedAt:new Date().toISOString()});return}
   if(a==="ao-save"&&c){await aluOrderPdf(c,"save");return}
-  if(a==="ao-xlsx"&&c){await aluOrderXlsx(c);return}
-  if(a==="go-xlsx"&&c){await glassOrderXlsx(c);return}
-  if(a==="go-pdf"&&c){await glassOrderPdf(c,"dl");return}
+  if(a==="ao-xlsx"&&c){await aluOrderXlsx(c);if(!orderMissing(c,"alu").length)write(c._id,{aluOrderedAt:new Date().toISOString()});return}
+  if(a==="go-xlsx"&&c){await glassOrderXlsx(c);if(!orderMissing(c,"glass").filter(m=>m.k!=="@co").length)write(c._id,{glassOrderedAt:new Date().toISOString()});return}
+  if(a==="go-pdf"&&c){await glassOrderPdf(c,"dl");if(!orderMissing(c,"glass").filter(m=>m.k!=="@co").length)write(c._id,{glassOrderedAt:new Date().toISOString()});return}
   if(a==="go-save"&&c){await glassOrderPdf(c,"save");return}
   if(a==="g-src"&&c){await write(c._id,{glassSrc:el.dataset.k});return}
   if(a==="ib-apply"){await inboxApply(el.dataset.id);return}
@@ -2214,10 +2252,10 @@ async function act(el){
     if(S.confirm!==key){S.confirm=key;render();clearTimeout(act._t);act._t=setTimeout(()=>{S.confirm=null;render()},4000);return}
     S.confirm=null;const[type,x,y]=key.split(":");
     if(type==="shop"){await shopMutate(c,l=>l.filter(it=>it.id!==x));return}
-    if(type==="exclear"){await write(c._id,{measExtract:null});return}
+    if(type==="exclear"){await write(c._id,{[XK.e]:null});return}
     if(type==="client"){try{await db.collection("clients").doc(c._id).delete();location.hash="";S.id=null;render();toast("حُذف ملف العميل")}catch(e){handleWriteErr(e)}return}
     if(type==="file"){await mutateFiles(x,l=>l.filter(f=>f.id!==y));return}
-    const field={sinv:"salesInvoices",pay:"payments",inst:"installs",alu:"alu",glass:"glass",buy:"purchases"}[type];
+    const field={sinv:"salesInvoices",pay:"payments",inst:"installs",alu:"alu",glass:"glass",buy:"purchases",pre:"prelim"}[type];
     if(field)await mutateList(field,l=>l.filter(r=>r.id!==x));
     return;
   }
@@ -2233,7 +2271,7 @@ async function upload(files){
   return out;
 }
 
-function go(id,tab){S.msel=new Set();S.exsel=new Set();S.id=id;S.tab=tab||"info";S.confirm=null;try{history.replaceState(null,"","#c-"+id)}catch(e){location.hash="c-"+id}render();window.scrollTo(0,0)}
+function go(id,tab){S.msel=new Set();S.exsel=new Set();S.psel=new Set();S.gsel=new Set();S.id=id;S.tab=tab||"info";S.confirm=null;try{history.replaceState(null,"","#c-"+id)}catch(e){location.hash="c-"+id}render();window.scrollTo(0,0)}
 function fromHash(){const h=location.hash;const m=/^#c-([A-Za-z0-9_.~:@+-]+)$/.exec(h);const mq=/^#q-([A-Za-z0-9_.~:@+-]+)$/.exec(h);S.id=m?m[1]:null;if(!m)S.tab="info";
   if(mq){S.section="quotes";if(S.qid!==mq[1]){S.qid=mq[1];const q=S.quotes.find(x=>x._id===mq[1]);S.qd=q?clone(q):null}}else{S.qid=null;S.qd=null;if(h==="#quotes")S.section="quotes"}render()}
 
@@ -2244,6 +2282,7 @@ const NAV_SEL='input:not([type=file]):not([type=checkbox]):not([type=hidden]):no
 window.addEventListener("keydown",e=>{
   const el=e.target;if(el&&el.id==="q-addn"){if(e.key==="Enter"){e.preventDefault();e.stopPropagation();act({dataset:{act:"q-addn"}})}return}
   if(el&&el.id==="exc-in"){if(e.key==="Enter"&&(e.ctrlKey||e.metaKey)){e.preventDefault();e.stopPropagation();act({dataset:{act:"exc-send"}})}else e.stopPropagation();return}
+  if(el&&(el.id==="p-addn"||el.id==="g-addn")){if(e.key==="Enter"){e.preventDefault();e.stopPropagation();act({dataset:{act:el.id}})}return}
   if(el&&el.id==="ex-addn"){if(e.key==="Enter"){e.preventDefault();e.stopPropagation();act({dataset:{act:"ex-addn"}})}return}
   if(el&&el.id==="m-addn"){if(e.key==="Enter"){e.preventDefault();e.stopPropagation();act({dataset:{act:"m-addn"}})}return}
   if(!el||!el.matches||!el.matches(NAV_SEL)||el.id==="q"||el.id==="qq"||e.isComposing||e.altKey||e.ctrlKey||e.metaKey)return;
@@ -2323,7 +2362,7 @@ document.addEventListener("change",async e=>{
   if(el.dataset.inst&&e.type==="change"){const id=el.dataset.inst,v=el.value;await mutateList("installs",l=>l.map(r=>r.id===id?{...r,status:v}:r));toast("تم تحديث حالة الموعد");return}
   if(el.dataset.aord!=null&&e.type==="change"){const c=cur();if(!c)return;const o={...(c.aluOrder||{})};o[el.dataset.aord]=el.value===""?null:Math.max(0,Math.round(N(el.value)));await write(c._id,{aluOrder:o});return}
   if(el.dataset.miss&&e.type==="change"){const c=cur();if(!c)return;const k=el.dataset.miss,v=toLat(el.value).trim();
-    if(k==="@alucode"){const co=clone(c.colors||{});co.alu=co.alu||{};co.alu.code=v;await write(c._id,{colors:co});return}
+    if(k==="@alucode"||k==="@alufinish"){const co=clone(c.colors||{});co.alu=co.alu||{};co.alu[k==="@alucode"?"code":"finish"]=v;await write(c._id,{colors:co});return}
     if(k.startsWith("@gspec:")){const g={...(c.glassSpecEn||{})};g[k.slice(7)]=v.toUpperCase();await write(c._id,{glassSpecEn:g});return}return}
   if(el.dataset.cf&&e.type==="change"){const c=cur();if(!c)return;await write(c._id,{[el.dataset.cf]:el.value.trim()});return}
   if(el.dataset.inbox&&el.files&&el.files.length){const fs=[...el.files];el.value="";await inboxAdd(fs);return}
@@ -2334,13 +2373,20 @@ document.addEventListener("change",async e=>{
     if(got.length&&cid===S.id){if(await mutateFiles(cat,l=>l.concat(got)))toast(got.length===1?"رُفع الملف":"رُفعت "+got.length+" ملفات")}
     render();return;
   }
+  if((el.dataset.pre||el.dataset.gl)&&e.type==="change"){const c=cur();if(!c)return;const isP=!!el.dataset.pre;const ds=isP?el.dataset.pre:el.dataset.gl;const i0=ds.lastIndexOf("|");const id=ds.slice(0,i0),f=ds.slice(i0+1);const fld=isP?"prelim":"glass";
+    let v=toLat(el.value);if(["w","h","qty"].includes(f))v=N(v)||(f==="qty"?1:0);if(f==="floor")v=flr(v);
+    const list=(c[fld]||[]).map(r=>({...r}));const idx=list.findIndex(r=>r.id===id);if(idx<0)return;
+    if(f==="floor"){const prev=flr(el.defaultValue);list[idx].floor=v;if(v!==prev){for(let k=idx+1;k<list.length;k++){const fl=flr(list[k].floor);if(fl===""||fl===prev)list[k].floor=v;else break}}}
+    else list[idx][f]=v;await write(c._id,{[fld]:list});return}
   if(el.dataset.alu&&e.type==="change"){const c=cur();if(!c)return;const i0=el.dataset.alu.lastIndexOf("|");const id=el.dataset.alu.slice(0,i0),f=el.dataset.alu.slice(i0+1);
     let v=toLat(el.value);if(["w","h","qty"].includes(f))v=N(v)||(f==="qty"?1:0);if(f==="floor")v=flr(v);
     const list=(c.alu||[]).map(r=>({...r}));const idx=list.findIndex(r=>r.id===id);if(idx<0)return;
     if(f==="floor"){const prev=flr(el.defaultValue);list[idx].floor=v;if(v!==prev){for(let k=idx+1;k<list.length;k++){const fl=flr(list[k].floor);if(fl===""||fl===prev)list[k].floor=v;else break}}}
     else list[idx][f]=v;
     await write(c._id,{alu:list});return}
-  if(el.dataset.exselall){const c=cur();const rows=(c&&c.measExtract&&c.measExtract.rows||[]).filter(r=>r.group===el.dataset.exselall);rows.forEach(r=>el.checked?S.exsel.add(r.id):S.exsel.delete(r.id));S.confirm=null;render();return}
+  if(el.dataset.pselall||el.dataset.gselall){const c=cur();const isP=!!el.dataset.pselall;const set=isP?S.psel:S.gsel;if(el.checked)((c&&c[isP?"prelim":"glass"])||[]).forEach(r=>set.add(r.id));else set.clear();S.confirm=null;render();return}
+  if(el.dataset.psel||el.dataset.gsel){const set=el.dataset.psel?S.psel:S.gsel;const id=el.dataset.psel||el.dataset.gsel;if(el.checked)set.add(id);else set.delete(id);S.confirm=null;render();return}
+  if(el.dataset.exselall){const c=cur();const XK=exKeys();const rows=(c&&c[XK.e]&&c[XK.e].rows||[]).filter(r=>r.group===el.dataset.exselall);rows.forEach(r=>el.checked?S.exsel.add(r.id):S.exsel.delete(r.id));S.confirm=null;render();return}
   if(el.dataset.exsel){if(el.checked)S.exsel.add(el.dataset.exsel);else S.exsel.delete(el.dataset.exsel);S.confirm=null;render();return}
   if(el.dataset.mselall){const c=cur();if(el.checked)(c&&c.alu||[]).forEach(r=>S.msel.add(r.id));else S.msel.clear();S.confirm=null;render();return}
   if(el.dataset.msel){if(el.checked)S.msel.add(el.dataset.msel);else S.msel.delete(el.dataset.msel);S.confirm=null;render();return}
@@ -2503,15 +2549,15 @@ function inboxCard(c){
 function aluOrderRows(c,T){const ov=c.aluOrder||{};return T.profiles.map(p=>{const o=ov[p.name];const bars=o!=null&&o!==""?Math.max(0,Math.round(N(o))):p.nb;return{name:p.name,calc:p.nb,bars,spare:bars-p.nb,kg:p.kgm&&p.nb?p.kg/p.nb*bars:0}}).filter(r=>r.bars>0)}
 function aluOrderMeta(c){const alu=c.colors?.alu||{};const y=new Date().getFullYear();
   return{no:`ALO-${y}-${String(c.fileNo||"").replace(/^\d{4}-/,"")||"0"}`,date:today(),color:[alu.color,alu.code?("RAL "+String(alu.code).replace(/^RAL\s*/i,"")):""].filter(Boolean).join(" - ")||"—",finish:alu.finish||"",system:alu.system||"",supplier:c.aluSupplier||"",barM:(N(S.cfg.barLen)||6000)/1000}}
-function aluOrderSVG(c,rows,logo){
+function aluOrderSVG(c,rows,logo,o={}){
   const co=CO();const m=aluOrderMeta(c);const X1=30,X2=565,W=X2-X1;
   let s=`<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 595 842" width="595" height="842"><rect width="595" height="842" fill="#fff"/><rect x="0" y="0" width="595" height="6" fill="${QC.teal}"/><rect x="0" y="6" width="595" height="2" fill="${QC.bronze}"/>`;
   if(logo)s+=`<image href="${esc(logo)}" xlink:href="${esc(logo)}" x="${X2-52}" y="20" width="52" height="52" preserveAspectRatio="xMidYMid meet"/>`;
   s+=T(X2-60,44,co.nameAr,{size:15,anchor:"end",weight:700})+T(X2-60,60,"لجميع أعمال الألمنيوم والزجاج والسيكوريت",{size:8.5,anchor:"end",fill:QC.muted})+T(X1,44,co.nameEn,{size:11,weight:700})+T(X1,58,"ALUMINIUM & GLASS WORKS",{size:7.5,fill:QC.muted});
   s+=L(X1,82,X2,82,{stroke:QC.line,sw:.8});
-  s+=T(X2,112,"طلب توريد قطاعات ألمنيوم",{size:19,anchor:"end",weight:700,fill:QC.teal})+T(X1,112,"ALUMINIUM PROFILE ORDER",{size:12,weight:700,fill:QC.teal});
+  s+=T(X2,112,o.title||"طلب توريد قطاعات ألمنيوم",{size:19,anchor:"end",weight:700,fill:QC.teal})+T(X1,112,(o.en||"ALUMINIUM PROFILE ORDER"),{size:12,weight:700,fill:QC.teal});
   // info box
-  let y=126;const info=[["رقم الطلب",m.no],["التاريخ",m.date],["المورّد",m.supplier||"—"],["العميل",c.name||"—"],["رقم الملف",c.fileNo||"—"],["الموقع",c.location||"—"]];
+  let y=126;const info=[["رقم الطلب",o.no||m.no],["التاريخ",m.date],[o.supLabel||"المورّد",(o.supplier!=null?o.supplier:m.supplier)||"—"],["العميل",c.name||"—"],["رقم الملف",c.fileNo||"—"],["الموقع",c.location||"—"]];
   s+=`<rect x="${X1}" y="${y}" width="${W}" height="84" rx="6" fill="${QC.soft}"/>`;
   info.forEach((r,i)=>{const col=i%3,row=Math.floor(i/3);const cx=X2-12-col*(W/3);const yy=y+20+row*22;s+=T(cx,yy,r[0]+":",{size:8.5,anchor:"end",fill:QC.muted})+T(cx-56,yy,String(r[1]).slice(0,26),{size:9.5,anchor:"end",weight:700})});
   s+=T(X2-12,y+64,"اللون:",{size:8.5,anchor:"end",fill:QC.muted})+T(X2-56,y+64,[m.color,m.finish,"طول العود "+m.barM+" م"].filter(x=>x&&x!=="—").join("   ·   "),{size:9.5,anchor:"end",weight:700});
@@ -2526,7 +2572,7 @@ function aluOrderSVG(c,rows,logo){
     s+=L(X1,y+rh,X2,y+rh,{stroke:QC.line,sw:.4});y+=rh;tb+=r.bars;tk+=r.kg});
   s+=`<rect x="${X1}" y="${y}" width="${W}" height="24" fill="#fff" stroke="${QC.teal}" stroke-width=".8"/>`+T(cx[1].x0+cx[1].w-8,y+16,"الإجمالي",{size:10,anchor:"end",weight:700})+T(cx[3].x0+cx[3].w/2,y+16,String(tb),{size:11.5,anchor:"middle",weight:700,fill:QC.teal})+T(cx[4].x0+cx[4].w/2,y+16,tk?tk.toFixed(1):"—",{size:9.5,anchor:"middle",weight:700});
   y+=40;
-  const notes=["الرجاء توريد القطاعات بنفس اللون والدفعة (Batch) لجميع العيدان.","الأطوال قياسية "+m.barM+" م، والقطاعات مغلّفة بنايلون حماية.","يُرجى إرفاق شهادة اللون ورقم الدفعة مع التوريد."];
+  const notes=o.notes?[...o.notes]:["الرجاء توريد القطاعات بنفس اللون والدفعة (Batch) لجميع العيدان.","الأطوال قياسية "+m.barM+" م، والقطاعات مغلّفة بنايلون حماية.","يُرجى إرفاق شهادة اللون ورقم الدفعة مع التوريد."];
   if(c.aluOrderNote)notes.unshift(String(c.aluOrderNote));
   s+=T(X2,y,"ملاحظات:",{size:10,anchor:"end",weight:700,fill:QC.bronze});notes.forEach((n,i)=>s+=T(X2-8,y+17+i*15,"• "+n,{size:8.8,anchor:"end"}));
   y=Math.max(y+17+notes.length*15+20,700);
@@ -2601,18 +2647,19 @@ function exChatBox(c,X){
   </div>`;
 }
 async function exChat(c,text){
+  const XK=exKeys();
   text=String(text||"").trim();if(!text)return;const cid=c._id;
   if(!S.sample){toast("المحادثة تعمل عند فتح البرنامج داخل Claude");return}
   const st=S.ex["chat:"+cid]={busy:true,msg:"جارٍ تجهيز صفحات الكشف…",ctl:new AbortController()};S.excDraft="";
-  const X0=clone(c.measExtract||{rows:[]});const chat=[...(X0.chat||[]),{role:"user",text,at:new Date().toISOString()}];
-  X0.chat=chat;await write(cid,{measExtract:X0});render();
+  const X0=clone(c[XK.e]||{rows:[]});const chat=[...(X0.chat||[]),{role:"user",text,at:new Date().toISOString()}];
+  X0.chat=chat;await write(cid,{[XK.e]:X0});render();
   try{
-    let pages=S.exPages[cid];
-    if(!pages){pages=[];for(const f of ((c.files||{}).measSheets||[])){for(const b of await sheetImages(f))pages.push(await toJpeg(b,2400))}S.exPages[cid]=pages}
+    let pages=S.exPages[cid+XK.e];
+    if(!pages){pages=[];for(const f of ((c.files||{})[XK.f]||[])){for(const b of await sheetImages(f))pages.push(await toJpeg(b,2400))}S.exPages[cid+XK.e]=pages}
     let maxN=1;try{const lim=await S.sample.limits();maxN=(lim&&lim.images&&lim.images.maxCount)||1}catch(_){}
     const imgs=pages.slice(0,Math.max(1,maxN));if(!imgs.length)throw{code:"image_rejected"};
     st.msg="Claude يراجع الكشف بناءً على ملاحظتك…";render();
-    const cur_=(S.clients.find(x=>x._id===cid)||c).measExtract||X0;
+    const cur_=(S.clients.find(x=>x._id===cid)||c)[XK.e]||X0;
     const rows=(cur_.rows||[]).map(r=>({ref:r.ref,w_mm:r.w,h_mm:r.h,qty:r.qty,group:r.group,note:r.note||"",unclear:!!r.unclear&&!r.ok,pending:!!r.pending}));
     const pend=((S.clients.find(x=>x._id===cid)||c).pendingSite||[]).map(p=>p.ref);
     const hist=chat.slice(-8,-1).map(m=>`${m.role==="user"?"USER":"ASSISTANT"}: ${m.text}`).join("\n");
@@ -2631,7 +2678,7 @@ Act like an expert colleague: apply the instruction to the whole table (not only
 Reply with ONLY this JSON:
 {"reply_ar":"short, clear Arabic reply: what you changed, written like «G-W1: العرض من 150 إلى 1500» (no arrows), or the answer","sheet_type":"aluminium or glass (change it only if the user says so or it is clearly wrong)","rows":[{"ref":"G-W1","w_mm":1500,"h_mm":1200,"qty":1,"group":"regular","note":"","unclear":false,"pending":false}],"not_ready":[]}`;
     const out=await S.sample.json(prompt,{images:imgs,modelTier:"complex",signal:st.ctl.signal});
-    const c2=S.clients.find(x=>x._id===cid)||c;const X=clone(c2.measExtract||X0);const patch={};
+    const c2=S.clients.find(x=>x._id===cid)||c;const X=clone(c2[XK.e]||X0);const patch={};
     if(out&&Array.isArray(out.rows)){
       const pool=[...(X.rows||[])];
       const nr=out.rows.map(r=>{const ref=toLat(String(r.ref||"")).trim();const k=pool.findIndex(o=>o.ref===ref);const old=k>=0?pool.splice(k,1)[0]:{};
@@ -2643,9 +2690,9 @@ Reply with ONLY this JSON:
       X.rows=ready;X.count=sum(ready,r=>r.qty);patch.pendingSite=ps;
     }
     if(out&&(out.sheet_type==="glass"||out.sheet_type==="aluminium")){const k=out.sheet_type==="glass"?"glass":"alu";if(k!==X.kind)X.kind=k}
-    X.chat=[...(X.chat||chat),{role:"ai",text:toLat(String(out&&out.reply_ar||"تمت المراجعة.")),at:new Date().toISOString()}];patch.measExtract=X;
+    X.chat=[...(X.chat||chat),{role:"ai",text:toLat(String(out&&out.reply_ar||"تمت المراجعة.")),at:new Date().toISOString()}];patch[XK.e]=X;
     S.ex["chat:"+cid]={busy:false};await write(cid,patch);
-  }catch(e){const back=(S.clients.find(x=>x._id===cid)||c).measExtract;S.ex["chat:"+cid]={busy:false,err:e&&e.code==="cancelled"?"":String(sampleErr(e)).replace("الكشف","الطلب")};if(e&&e.code==="cancelled")S.excDraft=text}
+  }catch(e){const back=(S.clients.find(x=>x._id===cid)||c)[XK.e];S.ex["chat:"+cid]={busy:false,err:e&&e.code==="cancelled"?"":String(sampleErr(e)).replace("الكشف","الطلب")};if(e&&e.code==="cancelled")S.excDraft=text}
   render();setTimeout(()=>{const l=document.querySelector(".exc-list");if(l)l.scrollTop=l.scrollHeight},30);
 }
 
@@ -2779,25 +2826,75 @@ function ordersCard(c){
 function ordersLinks(c){const a=(c.alu||[]).length,g=Object.keys(glassGroups(c)).length;if(!a&&!g)return"";
   return `<div class="card" style="flex-direction:row;align-items:center;gap:8px;flex-wrap:wrap"><b>طلبات المورّدين:</b>${a?`<button data-act="tab" data-tab="aorder">طلب الألمنيوم ←</button>`:""}${g?`<button data-act="tab" data-tab="gorder">طلب الزجاج ←</button>`:""}</div>`}
 function tabAOrder(c){
-  if(!(c.alu||[]).length)return `<div class="card empty"><p class="muted">أدخل مقاسات الألمنيوم أولاً من تبويب «المقاسات».</p></div>`;
+  if(!(c.alu||[]).length)return `${stageBar(c)}<div class="card empty"><p class="muted">أدخل المقاسات النهائية أولاً من تبويب «المقاسات النهائية».</p></div>`;
   const T=takeoff(c,S.cfg);const rows=aluOrderRows(c,T);const col=aluColorSuffix(c);
-  return `<div class="card"><h3>بيانات طلب الألمنيوم</h3><div class="miss-grid">${fieldInputs(orderFields(c,"alu"))}</div>
+  const al=c.colors?.alu||{};const tb=sum(rows,r=>r.bars),tk=sum(rows,r=>r.kg);
+  const paint=`<div class="card"><h3>أمر الدهان ${c.paintOrderedAt?`<span class="ok-badge">✓ صدر بتاريخ ${esc(String(c.paintOrderedAt).slice(0,10))}</span>`:""}</h3>
+    <dl class="kv"><dt>اللون</dt><dd>${esc([al.color,al.code].filter(Boolean).join(" · ")||"—")}</dd><dt>نوع الدهان</dt><dd>${esc(al.finish||"—")}</dd><dt>عدد العيدان</dt><dd class="num">${tb}</dd><dt>الوزن التقريبي</dt><dd><span class="num">${tk.toFixed(1)}</span> كجم</dd></dl>
+    <div class="miss-grid">${fieldInputs([{k:"paintSupplier",l:"مصبغة الدهان",v:c.paintSupplier||"",ph:"اسم المصبغة"},{k:"@alucode",l:"كود اللون",v:al.code||al.color||"",ph:"مثل 9005"},{k:"@alufinish",l:"نوع الدهان",v:al.finish||"",ph:"بودرة / أنودايز / خشبي",opt:1}])}</div>
+    <div class="toolbar" style="justify-content:flex-start"><button class="primary" data-act="po-pdf" ${S.pdfBusy?"disabled":""}>أمر الدهان PDF</button>${S.canWrite&&S.assets?`<button data-act="po-save" ${S.pdfBusy?"disabled":""}>حفظ أمر الدهان في ملف العميل</button>`:""}</div></div>`;
+  return `${stageBar(c)}${c.measFinal?"":`<div class="note">المقاسات النهائية غير معتمدة بعد. اعتمدها من تبويب «المقاسات النهائية» قبل طلب الألمنيوم.</div>`}<div class="card"><h3>بيانات طلب الألمنيوم ${c.aluOrderedAt?`<span class="ok-badge">✓ صدر بتاريخ ${esc(String(c.aluOrderedAt).slice(0,10))}</span>`:""}</h3><div class="miss-grid">${fieldInputs(orderFields(c,"alu"))}</div>
     <div class="toolbar" style="justify-content:flex-start"><button class="primary" data-act="ao-xlsx">طلب الألمنيوم Excel</button><button data-act="ao-pdf" ${S.pdfBusy?"disabled":""}>طلب الألمنيوم PDF</button>${S.canWrite&&S.assets?`<button data-act="ao-save" ${S.pdfBusy?"disabled":""}>حفظ الطلب في ملف العميل</button>`:""}</div></div>
   <div class="card"><h3>الأصناف المطلوبة <span class="small muted">عدّل عدد العيدان من هنا</span></h3><div class="tablebox"><table><thead><tr><th>الرقم</th><th>الصنف</th><th>المحسوب</th><th>الطلب (عود)</th></tr></thead><tbody>
     ${T.profiles.map((p,i)=>`<tr><td class="num">${i+1}</td><td><b>${esc(p.name)}</b>${col?` <span class="muted">-- ${esc(col)}</span>`:""}</td><td class="num">${p.nb}</td><td><input type="number" min="0" inputmode="numeric" lang="en" style="width:70px" data-aord="${esc(p.name)}" value="${esc((c.aluOrder||{})[p.name]??p.nb)}" ${S.canWrite?"":"disabled"}></td></tr>`).join("")}
-    </tbody><tfoot><tr><td colspan="2">الإجمالي</td><td class="num">${T.bars}</td><td class="num"><b>${sum(rows,r=>r.bars)}</b></td></tr></tfoot></table></div></div>`;
+    </tbody><tfoot><tr><td colspan="2">الإجمالي</td><td class="num">${T.bars}</td><td class="num"><b>${sum(rows,r=>r.bars)}</b></td></tr></tfoot></table></div></div>${paint}<div class="card" style="flex-direction:row;gap:8px;align-items:center"><b>الخطوة التالية:</b><button data-act="tab" data-tab="glassm">مقاسات الزجاج ←</button></div>`;
 }
 function tabGOrder(c){
   const G=glassGroups(c);const keys=Object.keys(G);const src=glassSrc(c);const co=CO();
   const srcBar=`<div class="toolbar" style="justify-content:flex-start;gap:6px"><span class="small muted">المقاسات من:</span>${[["saved",`مقاسات الزجاج المحفوظة (${(c.glass||[]).length})`],["calc","المحسوبة من الألمنيوم"]].map(([k,l])=>`<button class="${src===k?"primary":"ghost"}" data-act="g-src" data-k="${k}" ${S.canWrite?"":"disabled"}>${l}</button>`).join("")}</div>`;
-  if(!keys.length)return `<div class="card">${srcBar}<p class="muted">لا توجد مقاسات زجاج في هذا المصدر. أدخلها من تبويب «المقاسات».</p></div>`;
-  return `<div class="card"><h3>بيانات طلب الزجاج</h3>${srcBar}<div class="miss-grid">${fieldInputs(orderFields(c,"glass"))}</div>
+  if(!keys.length)return `${stageBar(c)}<div class="card">${srcBar}<p class="muted">لا توجد مقاسات زجاج في هذا المصدر. أدخلها من تبويب «المقاسات».</p></div>`;
+  return `${stageBar(c)}<div class="card"><h3>بيانات طلب الزجاج ${c.glassOrderedAt?`<span class="ok-badge">✓ صدر بتاريخ ${esc(String(c.glassOrderedAt).slice(0,10))}</span>`:""}</h3>${srcBar}<div class="miss-grid">${fieldInputs(orderFields(c,"glass"))}</div>
     ${!co.cr||!co.vat?`<div class="small neg">السجل التجاري أو الرقم الضريبي غير مدخل في «الإعدادات».</div>`:""}
     <div class="toolbar" style="justify-content:flex-start"><button class="primary" data-act="go-xlsx">طلب الزجاج Excel</button><button data-act="go-pdf" ${S.pdfBusy?"disabled":""}>طلب الزجاج PDF</button>${S.canWrite&&S.assets?`<button data-act="go-save" ${S.pdfBusy?"disabled":""}>حفظ طلب الزجاج في ملف العميل</button>`:""}</div></div>
   ${keys.map(k=>{const L=glassSpecLines(c,k);const rs=G[k];return `<div class="card"><h3>${esc(k)} <span class="small muted" dir="ltr">${L?esc(L.filter(Boolean).join(" + ")):"بدون وصف إنجليزي"}</span></h3><div class="tablebox"><table><thead><tr><th>REF</th><th>WIDTH</th><th>HEIGHT</th><th>Q</th><th>T.SQM</th></tr></thead><tbody>
     ${rs.map(r=>`<tr><td><b>${esc(r.ref)}</b></td><td class="num">${r.w}</td><td class="num">${r.h}</td><td class="num">${r.qty}</td><td class="num">${(r.w*r.h*r.qty/1e6).toFixed(3)}</td></tr>`).join("")}
     </tbody><tfoot><tr><td colspan="3">TOTAL</td><td class="num">${sum(rs,r=>r.qty)}</td><td class="num">${sum(rs,r=>r.w*r.h*r.qty/1e6).toFixed(3)}</td></tr></tfoot></table></div></div>`}).join("")}`;
 }
+
+/* ---------- measurement workflow stages: preliminary → quotation → final → aluminium & paint order → glass sizes → glass order ---------- */
+function exKeys(tab){tab=tab||S.tab;return tab==="pre"?{st:"pre",f:"measSheetsPre",e:"measExtractPre",n:"measNotePre"}:tab==="glassm"?{st:"glass",f:"measSheetsGlass",e:"measExtractGlass",n:"measNoteGlass"}:{st:"final",f:"measSheets",e:"measExtract",n:"measNote"}}
+const STAGES=[["pre","المقاسات الأولية"],["docs","عرض السعر"],["meas","المقاسات النهائية"],["aorder","طلب الألمنيوم والدهان"],["glassm","مقاسات الزجاج"],["gorder","طلب الزجاج"]];
+function stageDone(c,k){return k==="pre"?(c.prelim||[]).length>0:k==="docs"?!!(c.quoteId||c.quoteNo||N(c.quoteValue)||(c.files?.quote||[]).length):k==="meas"?!!c.measFinal:k==="aorder"?!!c.aluOrderedAt:k==="glassm"?(c.glass||[]).length>0:k==="gorder"?!!c.glassOrderedAt:false}
+function stageBar(c){return `<nav class="stages" aria-label="مراحل المقاسات">${STAGES.map(([k,l],i)=>{const d=stageDone(c,k);return `<button class="stage ${S.tab===k?"on":""} ${d?"done":""}" data-act="tab" data-tab="${k}"><span class="sn">${d?"✓":i+1}</span>${l}</button>`}).join('<span class="sarrow" aria-hidden="true">←</span>')}</nav>`}
+const KIND_OPTS=sel=>KIND_LIST.map(([k,v])=>`<option value="${k}" ${k===sel?"selected":""}>${esc(v[0])}</option>`).join("")+`<option value="other" ${sel==="other"?"selected":""}>بند عام / أعمال أخرى</option>`;
+const splitRef=ref=>{const m=/^([BGFSTR])\s*[-–]\s*(.+)$/i.exec(String(ref||"").trim());return m?{floor:m[1].toUpperCase(),ref:m[2]}:{floor:"",ref:String(ref||"").trim()}};
+const recipeForType=t=>{const rid=KINDS[t]&&KINDS[t][2];const rc=recipeById(rid)||S.cfg.recipes[0]||{};return rc};
+S.psel=new Set();S.gsel=new Set();
+function pCell(r,i,f,w,extra="",num=false,key="pre"){let v=r[f];if(num&&!N(v))v="";return `<input id="${key[0]}f-${i}-${f}" data-${key}="${esc(r.id)}|${f}" type="${num?"number":"text"}" value="${esc(v??"")}" style="min-width:${w};width:${w}" ${num?'inputmode="numeric" min="0"':""} ${extra} ${S.canWrite?"":"disabled"} aria-label="${f}">`}
+function selToolbar(set,pfx,n){return S.canWrite?`<div class="toolbar" style="justify-content:flex-start">${set.size?(S.confirm===pfx+"-delsel"?`<button class="danger armed" data-act="${pfx}-delsel">تأكيد حذف ${set.size} بند</button>`:`<button class="danger" data-act="${pfx}-delsel">حذف المحدد (${set.size})</button>`):""}<span class="addn"><input id="${pfx}-addn" type="number" min="1" max="200" inputmode="numeric" placeholder="العدد" aria-label="عدد البنود المراد إضافتها"><button data-act="${pfx}-addn">إضافة بنود</button></span><button data-act="${pfx}-add">+ بند</button></div>`:""}
+function tabPre(c){
+  const P=c.prelim||[];const q=sum(P,r=>N(r.qty)||1),a=sum(P,r=>area(r.w,r.h,r.qty));
+  return `${stageBar(c)}${sheetsCard(c)}
+  <div class="card"><h3><span>المقاسات الأولية <span class="small muted">أول مقاسات من الموقع لتجهيز عرض السعر · بالمليمتر</span></span></h3>
+    ${selToolbar(S.psel,"p")}
+    <div class="tablebox"><table class="qitems mitems"><thead><tr>${S.canWrite?`<th><input type="checkbox" data-pselall="1" aria-label="تحديد الكل" ${P.length&&P.every(r=>S.psel.has(r.id))?"checked":""}></th>`:""}<th>الكود</th><th>الدور</th><th>النوع</th><th>العرض مم</th><th>الارتفاع مم</th><th>العدد</th><th>المساحة م²</th><th>ملاحظة</th><th></th></tr></thead><tbody>
+    ${P.map((r,i)=>`<tr class="${S.psel.has(r.id)?"selrow":""}">${S.canWrite?`<td><input type="checkbox" data-psel="${esc(r.id)}" ${S.psel.has(r.id)?"checked":""} aria-label="تحديد"></td>`:""}
+      <td>${pCell(r,i,"ref","64px")}</td><td>${pCell(r,i,"floor","40px",'list="floors-dl3" maxlength="4" class="floorin" dir="ltr"')}</td>
+      <td><select data-pre="${esc(r.id)}|type" ${S.canWrite?"":"disabled"} style="min-width:200px" aria-label="النوع">${KIND_OPTS(r.type||"sliding2")}</select></td>
+      <td>${pCell(r,i,"w","74px","",true)}</td><td>${pCell(r,i,"h","74px","",true)}</td><td>${pCell(r,i,"qty","52px","",true)}</td>
+      <td class="num">${area(r.w,r.h,r.qty).toFixed(2)}</td><td>${pCell(r,i,"note","150px")}</td><td>${del("pre:"+r.id)}</td></tr>`).join("")||`<tr><td colspan="10" class="muted">ارفع كشف المندوب وخلّ Claude يقرأه، أو اكتب العدد واضغط «إضافة بنود».</td></tr>`}
+    </tbody><tfoot><tr><td colspan="${S.canWrite?6:5}">الإجمالي</td><td class="num">${q}</td><td class="num">${a.toFixed(2)}</td><td colspan="2"></td></tr></tfoot></table></div>
+    <datalist id="floors-dl3"><option value="B">قبو</option><option value="G">أرضي</option><option value="F">أول</option><option value="S">ثاني</option><option value="T">ثالث</option><option value="R">روف / سطح</option></datalist>
+    ${S.canWrite&&P.length?`<div class="next-step"><b>الخطوة التالية</b><div class="toolbar" style="justify-content:flex-start">${c.quoteId&&S.quotes.some(x=>x._id===c.quoteId)?`<button data-act="p-openq">فتح عرض السعر المرتبط</button><button class="ghost" data-act="p-quote">تحديث بنود عرض السعر من المقاسات الأولية</button>`:`<button class="primary" data-act="p-quote">إنشاء عرض سعر من المقاسات الأولية</button>`}<button data-act="p-final">نسخها إلى المقاسات النهائية</button></div></div>`:""}
+  </div>`;
+}
+function tabGlassM(c){
+  const G=c.glass||[];const gq=sum(G,r=>N(r.qty)||1),ga=sum(G,r=>area(r.w,r.h,r.qty));const fx=c.measExtract;
+  const mv=fx&&fx.kind==="glass"?exMovable(c,fx):[];
+  return `${stageBar(c)}${sheetsCard(c)}
+  <div class="card"><h3><span>مقاسات الزجاج <span class="small muted">مقاسات قص الزجاج بالمليمتر · منها يطلع طلب الزجاج</span></span></h3>
+    ${S.canWrite&&mv.length?`<div class="note">يوجد <b class="num">${mv.length}</b> سطر زجاج أُضيف للمقاسات النهائية بالخطأ. <button class="danger" data-act="ex-move">نقلها إلى مقاسات الزجاج</button></div>`:""}
+    ${selToolbar(S.gsel,"g")}
+    <div class="tablebox"><table class="qitems mitems"><thead><tr>${S.canWrite?`<th><input type="checkbox" data-gselall="1" aria-label="تحديد الكل" ${G.length&&G.every(r=>S.gsel.has(r.id))?"checked":""}></th>`:""}<th>المرجع</th><th>نوع الزجاج</th><th>السماكة</th><th>اللون</th><th>العرض مم</th><th>الارتفاع مم</th><th>العدد</th><th>المساحة م²</th><th></th></tr></thead><tbody>
+    ${G.map((r,i)=>`<tr class="${S.gsel.has(r.id)?"selrow":""}">${S.canWrite?`<td><input type="checkbox" data-gsel="${esc(r.id)}" ${S.gsel.has(r.id)?"checked":""} aria-label="تحديد"></td>`:""}
+      <td>${pCell(r,i,"ref","70px","",false,"gl")}</td><td>${pCell(r,i,"type","150px","",false,"gl")}</td><td>${pCell(r,i,"thick","70px","",false,"gl")}</td><td>${pCell(r,i,"color","100px","",false,"gl")}</td>
+      <td>${pCell(r,i,"w","74px","",true,"gl")}</td><td>${pCell(r,i,"h","74px","",true,"gl")}</td><td>${pCell(r,i,"qty","52px","",true,"gl")}</td>
+      <td class="num">${area(r.w,r.h,r.qty).toFixed(2)}</td><td>${del("glass:"+r.id)}</td></tr>`).join("")||`<tr><td colspan="10" class="muted">ارفع كشف الزجاج، أو احسبها من المقاسات النهائية، أو اكتب العدد واضغط «إضافة بنود».</td></tr>`}
+    </tbody><tfoot><tr><td colspan="${S.canWrite?7:6}">الإجمالي</td><td class="num">${gq}</td><td class="num">${ga.toFixed(2)}</td><td></td></tr></tfoot></table></div>
+    ${S.canWrite&&(c.alu||[]).length?`<div class="toolbar" style="justify-content:flex-start"><button class="ghost" data-act="g-fromcalc">احسب مقاسات الزجاج من المقاسات النهائية للألمنيوم</button>${G.length?`<button data-act="tab" data-tab="gorder">الخطوة التالية: طلب الزجاج ←</button>`:""}</div>`:""}
+  </div>`;
+}
+function stageNextBtn(c,from){const i=STAGES.findIndex(s=>s[0]===from);const n=STAGES[i+1];return n?`<button data-act="tab" data-tab="${n[0]}">الخطوة التالية: ${n[1]} ←</button>`:""}
 
 /* ---------- boot ---------- */
 fromHash();
