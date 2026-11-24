@@ -127,6 +127,11 @@ body.dragging::after{content:"أفلت الملفات هنا للتحليل وا
 .rv{border:1px solid var(--warn-soft);border-inline-start:3px solid var(--warn);border-radius:8px;padding:8px 10px;display:flex;flex-direction:column;gap:6px;background:var(--surface)}
 .rv-h{font-weight:700;font-size:.86rem;color:var(--warn)}.rv-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:4px 0;border-top:1px solid var(--line)}.rv-row:first-of-type{border-top:0}
 .rv-lbl{font-size:.76rem;color:var(--muted)}.rv-why{font-size:.8rem;color:var(--warn)}.rv-row button{padding:4px 12px}
+.projbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 14px;background:var(--surface);border:1px solid var(--line);border-radius:12px}
+.pb-l{font-weight:700;font-size:.86rem}.pb-tabs{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.pb-tab{display:flex;flex-direction:column;align-items:flex-start;gap:0;padding:5px 12px;border-radius:8px;line-height:1.3}.pb-tab span{font-size:.72rem;color:var(--muted)}
+.pb-tab.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}.pb-tab.on span{color:var(--accent-soft)}
+.pb-tot{font-size:.82rem;color:var(--muted);margin-inline-start:auto}.proj-name{font-size:.8em;color:var(--accent);font-weight:600}
 .order-box{display:flex;flex-direction:column;gap:8px;border:1px solid var(--line);border-radius:10px;padding:12px;background:var(--surface-2)}
 .ib-act{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap}
 .vatbox{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding:12px 14px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2)}
@@ -279,6 +284,24 @@ function handleWriteErr(e){
   if(c==="invalid_argument"&&!S.everWrote){S.canWrite=false;render();toast("صلاحيتك للعرض فقط");return}
   toast(c==="quota_exceeded"?"امتلأت مساحة التخزين. احذف ملفات غير مستخدمة ثم أعد المحاولة":"تعذّر الحفظ، حاول مرة أخرى");
 }
+const phoneKey=v=>toLat(v).replace(/\D/g,"").replace(/^(966|0)/,"");
+function projectsOf(c){if(!c||!c.clientKey)return c?[c]:[];return S.clients.filter(x=>x.clientKey===c.clientKey).sort((a,b)=>String(a.fileNo||"").localeCompare(String(b.fileNo||"")))}
+const projLabel=c=>c.project||"المشروع الأساسي";
+function findSameClient(name,phone,exceptId){const pk=phoneKey(phone);const nm=String(name||"").trim();return S.clients.find(x=>x._id!==exceptId&&((pk.length>=8&&phoneKey(x.phone)===pk)||(nm&&nm!=="عميل جديد"&&String(x.name||"").trim()===nm)))}
+function projectsBar(c){
+  const ps=projectsOf(c);const multi=ps.length>1;
+  if(!multi&&!S.canWrite)return"";
+  let tot="";if(multi){const t=ps.reduce((a,x)=>{const k=calc(x);a.c+=k.contract;a.p+=k.paid;a.r+=k.remaining;return a},{c:0,p:0,r:0});
+    tot=`<span class="pb-tot">إجمالي العميل: العقود ${M(t.c)} · المدفوع <span class="pos">${M(t.p)}</span> · المتبقي <span class="${t.r>0?"neg":"pos"}">${M(t.r)}</span></span>`}
+  const others=S.clients.filter(x=>!ps.includes(x));const sug=others.filter(x=>findSameClient(c.name,c.phone,c._id)===x||(phoneKey(c.phone).length>=8&&phoneKey(x.phone)===phoneKey(c.phone)));
+  return `<section class="projbar"><span class="pb-l">${multi?`مشاريع العميل <span class="cnt num">${ps.length}</span>`:"المشروع"}</span>
+    <div class="pb-tabs">${ps.map(x=>`<button class="pb-tab ${x._id===c._id?"on":""}" data-act="open" data-id="${esc(x._id)}" data-tab="${esc(S.tab)}"><b>${esc(projLabel(x))}</b><span class="num">${esc(x.fileNo||"")}</span></button>`).join("")}
+    ${S.canWrite?`<button class="ghost" data-act="new-proj">+ مشروع جديد لنفس العميل</button>`:""}</div>
+    ${tot}
+    ${S.canWrite&&!multi&&sug.length?`<span class="small muted">يوجد ملف بنفس الاسم أو الجوال: ${sug.slice(0,3).map(x=>`<button class="linkbtn" data-act="link-proj" data-id="${esc(x._id)}">ربطه بـ ${esc(x.fileNo||"")} (${esc(projLabel(x))})</button>`).join(" ")}</span>`:""}
+    ${S.canWrite&&multi?`<button class="ghost danger" data-act="unlink-proj" style="font-size:.8rem">فصل هذا المشروع</button>`:""}
+  </section>`;
+}
 function mutateList(field,fn){const c=cur();if(!c)return;const list=[...(c[field]||[])];const next=fn(list)||list;return write(c._id,{[field]:next})}
 function mutateFiles(cat,fn){const c=cur();if(!c)return;const files={...(c.files||{})};files[cat]=fn([...(files[cat]||[])])||[];return write(c._id,{files})}
 
@@ -300,7 +323,7 @@ function listView(){
   const active=all.filter(c=>c.status!=="ملغي");
   const tot=active.reduce((t,c)=>{const k=calc(c);t.contract+=k.contract;t.paid+=k.paid;t.rem+=k.remaining;t.profit+=k.profit;t.cost+=k.cost;return t},{contract:0,paid:0,rem:0,profit:0,cost:0});
   const q=S.q.trim();
-  const rows=all.filter(c=>(!S.status||c.status===S.status)&&(!q||[c.name,c.fileNo,c.phone,c.location].some(v=>String(v||"").includes(q))))
+  const rows=all.filter(c=>(!S.status||c.status===S.status)&&(!q||[c.name,c.fileNo,c.phone,c.location,c.project].some(v=>String(v||"").includes(q))))
     .sort((a,b)=>String(b.approvalDate||b.createdAt||"").localeCompare(String(a.approvalDate||a.createdAt||"")));
   const installs=[];all.forEach(c=>(c.installs||[]).forEach(i=>{if(i.status!=="تم"&&i.date&&i.date>=today())installs.push({...i,c})}));
   installs.sort((a,b)=>(a.date+(a.time||"")).localeCompare(b.date+(b.time||"")));
@@ -323,7 +346,7 @@ function listView(){
   }else{
     table=`<div class="tablebox"><table><thead><tr><th>رقم الملف</th><th>العميل</th><th>تاريخ التعميد</th><th>الحالة</th><th>قيمة العقد</th><th>المدفوع</th><th>المتبقي</th><th>الربح</th><th>التركيب القادم</th></tr></thead><tbody>
     ${rows.map(c=>{const k=calc(c);return `<tr class="click" data-act="open" data-id="${esc(c._id)}" tabindex="0">
-      <td class="fileno num">${esc(c.fileNo||"—")}</td><td><b>${esc(c.name||"بدون اسم")}</b></td>
+      <td class="fileno num">${esc(c.fileNo||"—")}</td><td><b>${esc(c.name||"بدون اسم")}</b>${c.project||c.clientKey?`<div class="small muted">${esc(projLabel(c))}${c.clientKey&&projectsOf(c).length>1?` · <span class="num">${projectsOf(c).length}</span> مشاريع`:""}</div>`:""}</td>
       <td class="num">${esc(c.approvalDate||"—")}</td><td><span class="pill ${STATUS_CLS[c.status]||""}">${esc(c.status||"—")}</span></td>
       <td>${M(k.contract)}</td><td>${M(k.paid)}</td><td class="${k.remaining>0?"neg":"pos"}">${M(k.remaining)}</td>
       <td class="${k.profit>=0?"pos":"neg"}">${M(k.profit)}</td><td class="num">${k.upcoming?esc(k.upcoming.date):"—"}</td></tr>`}).join("")||`<tr><td colspan="9" class="muted">لا توجد نتائج مطابقة</td></tr>`}
@@ -350,7 +373,7 @@ function clientView(c){
   const counts={docs:(c.files?.contract?.length||0)+(c.files?.quote?.length||0)+(c.files?.drawings?.length||0)+(c.files?.other?.length||0),pay:(c.payments||[]).length,inst:(c.installs||[]).length,meas:(c.glass||[]).length+(c.alu||[]).length+((c.files||{}).measSheets||[]).length,invoices:(c.salesInvoices||[]).length,photos:(c.files?.photos||[]).length+(c.files?.photosAfter||[]).length+(c.files?.videos||[]).length,shop:((c.shop&&c.shop.items)||[]).length,buy:(c.purchases||[]).length};
   const body={info:tabInfo,docs:tabDocs,colors:tabColors,pay:tabPay,inst:tabInst,meas:tabMeas,calc:tabCalc,cut:tabCut,handover:tabHandover,invoices:tabInvoices,shop:tabShop,photos:tabPhotos,buy:tabBuy}[S.tab]||tabInfo;
   return `<section class="head">
-      <div><div class="fileno">ملف رقم <span class="num">${esc(c.fileNo||"—")}</span></div><h2>${esc(c.name||"بدون اسم")}</h2>
+      <div><div class="fileno">ملف رقم <span class="num">${esc(c.fileNo||"—")}</span></div><h2>${esc(c.name||"بدون اسم")}${c.project?` <span class="proj-name">· ${esc(c.project)}</span>`:""}</h2>
       <div class="small muted">تاريخ التعميد: <span class="num">${esc(c.approvalDate||"—")}</span> ${c.location?"· "+esc(c.location):""} ${locLink(c)} ${c.phone?`· <span class="num">${esc(c.phone)}</span>`:""}</div></div>
       <span class="pill ${STATUS_CLS[c.status]||""}">${esc(c.status||"—")}</span>
     </section>
@@ -361,6 +384,7 @@ function clientView(c){
       <div class="stat"><span>المشتريات</span><b>${M(k.cost)}</b></div>
       <div class="stat"><span>الربح · <span class="num">${k.margin.toFixed(1)}%</span></span><b class="${k.profit>=0?"pos":"neg"}">${M(k.profit)}</b></div>
     </section>
+    ${projectsBar(c)}
     ${inboxCard(c)}
     <nav class="tabs" role="tablist">${TABS.map(([id,l])=>`<button role="tab" aria-selected="${S.tab===id}" data-act="tab" data-tab="${id}">${l}${counts[id]?` <span class="cnt num">${counts[id]}</span>`:""}</button>`).join("")}</nav>
     ${body(c,k)}`;
@@ -372,6 +396,7 @@ function tabInfo(c){
     <div class="grid">
       ${inp(fk,"name","اسم العميل",c.name)}
       ${inp(fk,"fileNo","رقم الملف",c.fileNo)}
+      ${inp(fk,"project","اسم المشروع (مثل: فيلا 1 - حي الملقا)",c.project)}
       ${inp(fk,"approvalDate","تاريخ التعميد",c.approvalDate,"date")}
       ${sel(fk,"status","حالة الملف",STATUSES,c.status||"تم التعميد")}
       ${inp(fk,"phone","رقم الجوال",c.phone,"tel")}
@@ -1886,8 +1911,10 @@ async function approveQuote(){
     quoteNo:q.no+(q.rev?`-R${q.rev}`:""),quoteValue:t.net,quoteVatMode:"قبل الضريبة",quoteNet:t.net,quoteVat:t.vat,quoteTotal:t.total,contractValue:t.total,quoteId:S.qid,
     colors:{alu:{color:sp.paintColor||"",code:sp.paintCode||"",finish:sp.paintFinish||"",system:[sp.system,sp.profileThk].filter(Boolean).join(" - ")},glass:{type:sp.glassType||"",thickness:sp.glassThk||"",color:sp.glassColor||""},acc:{brand:sp.accType||"",color:sp.accColor||""}},
     files,payments:[],installs:[],glass:[],alu,purchases:[],notes:q.notes||"",createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
+  const same=findSameClient(doc.name,doc.phone,null);let linked="";
+  if(same){const key=same.clientKey||same._id;if(!same.clientKey)await write(same._id,{clientKey:key,...(same.project?{}:{project:"مشروع 1"})});doc.clientKey=key;if(!doc.project)doc.project="مشروع "+(projectsOf(same).length+1);linked=` وربطه بملفات العميل السابقة`}
   try{const ref=db.collection("clients").doc();await ref.set(doc);S.qd={...S.qd,status:"معتمد",clientId:ref.id,approvedAt:new Date().toISOString()};await qSaveNow();
-    S.qid=null;S.qd=null;S.section="clients";go(ref.id,"info");toast(`تم التعميد وأُنشئ ملف رقم ${fileNo} بكل بيانات العرض`)}catch(e){handleWriteErr(e)}
+    S.qid=null;S.qd=null;S.section="clients";go(ref.id,"info");toast(`تم التعميد وأُنشئ ملف رقم ${fileNo} بكل بيانات العرض${linked}`)}catch(e){handleWriteErr(e)}
 }
 
 /* ---------- site measurement sheet → quotation items ---------- */
@@ -2073,7 +2100,10 @@ async function act(el){
     const patch={...d};["contractValue","quoteValue"].forEach(f=>{if(f in patch)patch[f]=N(patch[f])});
     if("quoteValue"in patch||"quoteVatMode"in patch){const q=quoteOf(fk,c);patch.quoteNet=q.net;patch.quoteVat=q.vat;patch.quoteTotal=q.total;patch.quoteVatMode=q.mode}
     if(!Object.keys(patch).length){toast("لا توجد تغييرات للحفظ",{kind:"info"});return}
-    if(await write(c._id,patch)){delete S.draft[fk];S.everWrote=true;render();toast("تم حفظ بيانات العميل")}
+    if(await write(c._id,patch)){delete S.draft[fk];S.everWrote=true;
+      const shared={};["name","nameEn","phone","clientVat"].forEach(k=>{if(k in patch)shared[k]=patch[k]});
+      const sibs=projectsOf(c).filter(x=>x._id!==c._id);if(Object.keys(shared).length&&sibs.length)for(const x of sibs)await write(x._id,shared);
+      render();toast(sibs.length&&Object.keys(shared).length?`تم حفظ البيانات وتحديث بيانات العميل في ${sibs.length+1} مشاريع`:"تم حفظ بيانات العميل")}
     return;
   }
   if(a==="quote-to-contract"){
@@ -2125,6 +2155,18 @@ async function act(el){
   }
   if(a==="ex-ok"&&c){const X=clone(c.measExtract||{rows:[]});const r=X.rows.find(x=>x.id===el.dataset.id);if(r){r.ok=true;r.unclear=false;await write(c._id,{measExtract:X})}return}
   if(a==="ex-flagok"&&c){const X=clone(c.measExtract||{rows:[]});X.flagsOk=[...(X.flagsOk||[]),+el.dataset.id];await write(c._id,{measExtract:X});return}
+  if(a==="new-proj"&&c){if(!db)return;
+    const y=new Date().getFullYear();const nums=S.clients.map(x=>{const m=/(\d+)$/.exec(x.fileNo||"");return m?+m[1]:0});const next=`${y}-${String((Math.max(0,...nums)||0)+1).padStart(3,"0")}`;
+    const key=c.clientKey||c._id;const n=projectsOf(c).length+1;if(!c.clientKey)await write(c._id,{clientKey:key,...(c.project?{}:{project:"مشروع 1"})});
+    const ref=db.collection("clients").doc();
+    try{await ref.set({name:c.name||"",nameEn:c.nameEn||"",phone:c.phone||"",clientVat:c.clientVat||"",clientKey:key,project:"مشروع "+n,location:"الرياض - حي ",fileNo:next,approvalDate:today(),status:"تم التعميد",contractValue:0,files:{},payments:[],installs:[],glass:[],alu:[],purchases:[],colors:{},createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()})}catch(e){handleWriteErr(e);return}
+    go(ref.id,"info");toast(`تم إنشاء مشروع جديد للعميل برقم ملف ${next}. أدخل اسم المشروع وعقده`);
+    setTimeout(()=>{const f=document.getElementById(("f-info:"+ref.id+"-project").replace(/[^a-zA-Z0-9_-]/g,"_"));f&&(f.focus(),f.select&&f.select())},80);return}
+  if(a==="link-proj"&&c){const o=S.clients.find(x=>x._id===el.dataset.id);if(!o)return;const key=o.clientKey||o._id;
+    if(!o.clientKey)await write(o._id,{clientKey:key,...(o.project?{}:{project:"مشروع 1"})});
+    if(await write(c._id,{clientKey:key,...(c.project?{}:{project:"مشروع "+(projectsOf(o).length+1)})}))toast("تم ربط الملفين كمشاريع لنفس العميل");return}
+  if(a==="unlink-proj"&&c){if(S.confirm!=="unlink"){S.confirm="unlink";render();clearTimeout(act._t);act._t=setTimeout(()=>{S.confirm=null;render()},5000);toast("اضغط «فصل هذا المشروع» مرة أخرى للتأكيد",{kind:"warn"});return}
+    S.confirm=null;if(await write(c._id,{clientKey:""}))toast("تم فصل المشروع وأصبح ملفاً مستقلاً");return}
   if(a==="ao-pdf"&&c){await aluOrderPdf(c,"dl");return}
   if(a==="ao-save"&&c){await aluOrderPdf(c,"save");return}
   if(a==="ao-xlsx"&&c){await aluOrderXlsx(c);return}
