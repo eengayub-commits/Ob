@@ -132,6 +132,7 @@ body.dragging::after{content:"أفلت الملفات هنا للتحليل وا
 .pb-tab{display:flex;flex-direction:column;align-items:flex-start;gap:0;padding:5px 12px;border-radius:8px;line-height:1.3}.pb-tab span{font-size:.72rem;color:var(--muted)}
 .pb-tab.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}.pb-tab.on span{color:var(--accent-soft)}
 .pb-tot{font-size:.82rem;color:var(--muted);margin-inline-start:auto}.proj-name{font-size:.8em;color:var(--accent);font-weight:600}
+.exnote{margin-top:4px}.exnote textarea{width:100%;min-height:44px;resize:vertical}
 .exchat{display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--line);padding-top:12px;margin-top:4px}.exc-h{display:flex;flex-direction:column;gap:2px}
 .exc-list{display:flex;flex-direction:column;gap:8px;max-height:340px;overflow:auto;padding:2px}
 .exc-msg{max-width:85%;padding:8px 12px;border-radius:12px;font-size:.9rem;line-height:1.6;background:var(--surface);border:1px solid var(--line)}
@@ -865,12 +866,15 @@ async function runExtract(c){
     if(!pages.length)throw{code:"image_rejected"};
     const rows=[],flags=[],totals=[],kinds=[];
     const prevPend=((S.clients.find(x=>x._id===cid)||c).pendingSite||[]).map(p=>p.ref).filter(Boolean);
-    const pf=prevPend.length?(a,b)=>exPrompt(a,b)+`\nNOTE: a previous survey of this project listed these openings WITHOUT sizes because they were not ready on site yet: ${prevPend.join(", ")}. Look for them carefully on this sheet and read their sizes if now written. An opening written without a size means it is still not ready on site: return it with w_cm and h_cm null and do NOT mention it in flags.`:(a,b)=>exPrompt(a,b)+`\nAn opening written without a size means it is not ready on site yet: return it with w_cm and h_cm null and do NOT mention it in flags.`;
+    const cc=S.clients.find(x=>x._id===cid)||c;const userNotes=[cc.measNote,...((cc.measExtract&&cc.measExtract.chat)||[]).filter(m=>m.role==="user").map(m=>m.text)].filter(Boolean);
+    const glassHint=sheets.some(f=>/glass|زجاج|سيكوريت/i.test(f.name||""))||userNotes.some(t=>/زجاج|glass/i.test(t));
+    const notesTxt=(userNotes.length?`\nINSTRUCTIONS FROM THE FACTORY ENGINEER (follow them, they override defaults):\n- ${userNotes.join("\n- ")}`:"")+(glassHint?`\nThis is very likely a GLASS sheet (the word glass / زجاج appears): set sheet_type "glass".`:"")+`\nIf the word "GLASS" or "زجاج" is written anywhere on the sheet (title, header, column), sheet_type MUST be "glass".`;
+    const pf=prevPend.length?(a,b)=>exPrompt(a,b)+notesTxt+`\nNOTE: a previous survey of this project listed these openings WITHOUT sizes because they were not ready on site yet: ${prevPend.join(", ")}. Look for them carefully on this sheet and read their sizes if now written. An opening written without a size means it is still not ready on site: return it with w_cm and h_cm null and do NOT mention it in flags.`:(a,b)=>exPrompt(a,b)+notesTxt+`\nAn opening written without a size means it is not ready on site yet: return it with w_cm and h_cm null and do NOT mention it in flags.`;
     for(let i=0;i<pages.length;i++){
       ex.msg=`جارٍ قراءة الصفحة ${i+1} من ${pages.length}… (قد تأخذ دقيقة)`;render();
       const out=await readPage(pf,i+1,pages.length,pages[i].b,ex.ctl.signal,"rows",st=>{ex.msg=st==="verify"?`مراجعة أرقام الصفحة ${i+1} من ${pages.length} والتأكد منها…`:`قراءة الصفحة ${i+1} من ${pages.length} بدقة عالية…`;render()});
       (out&&out.rows||[]).forEach(r=>{const w=Math.round(N(r.w_cm)*10),h=Math.round(N(r.h_cm)*10);
-        rows.push({id:uid(),ref:String(r.ref||"").trim(),w,h,qty:Math.max(1,Math.round(N(r.qty)||1)),group:GROUPS[r.group]?r.group:"regular",note:String(r.note||""),unclear:!!r.unclear,alt:String(r.alt||""),pending:!!r.pending,page:i+1,gtype:String(r.glass_type||""),thick:String(r.thickness||"")})});
+        rows.push({id:uid(),ref:toLat(String(r.ref||"")).trim(),w,h,qty:Math.max(1,Math.round(N(r.qty)||1)),group:GROUPS[r.group]?r.group:"regular",note:toLat(String(r.note||"")),unclear:!!r.unclear,alt:toLat(String(r.alt||"")),pending:!!r.pending,page:i+1,gtype:toLat(String(r.glass_type||"")),thick:toLat(String(r.thickness||""))})});
       if(out&&out.sheet_type)kinds.push(out.sheet_type==="glass"?"glass":"alu");
       (out&&out.flags||[]).forEach(t=>t&&flags.push(`ص${i+1}: ${t}`));
       if(out&&out.stated_total!=null&&N(out.stated_total)>0)totals.push({page:i+1,n:N(out.stated_total),txt:String(out.stated_total_text||"")});
@@ -881,8 +885,8 @@ async function runExtract(c){
     const allRows=[...rows];rows.length=0;readyRows.forEach(r=>rows.push(r));
     const count=sum(rows,r=>r.qty);
     totals.forEach(t=>{const pc=sum(allRows.filter(r=>r.page===t.page),r=>r.qty);if(pc!==t.n)flags.unshift(`ص${t.page}: المكتوب في الكشف ${t.n} قطعة${t.txt?` («${t.txt}»)`:""} لكن المستخرج ${pc}. راجع الأسطر الناقصة أو الزائدة.`)});
-    const kind=kinds.filter(k=>k==="glass").length>kinds.length/2?"glass":"alu";
-    const res={rows,flags,count,kind,at:new Date().toISOString(),pages:pages.length};
+    const kind=glassHint||kinds.filter(k=>k==="glass").length>kinds.length/2?"glass":"alu";
+    const res={rows,flags,count,kind,chat:(cc.measExtract&&cc.measExtract.chat)||[],at:new Date().toISOString(),pages:pages.length};
     S.ex[cid]={busy:false};await write(cid,{measExtract:res,pendingSite:pend});
     toast(`استُخرج ${rows.length} سطر (${count} قطعة)${done.length?`. اكتملت مقاسات ${done.join("، ")} من الحصر السابق`:""}`);
   }catch(e){S.ex[cid]={busy:false,err:sampleErr(e)}}
@@ -926,6 +930,7 @@ function sheetsCard(c){
   return `<div class="card"><h3>كشف المقاسات اليدوي ${uploader("measSheets","رفع صور الكشف أو PDF","image/*,application/pdf")}</h3>
     <p class="small muted" style="margin:0">ارفع صور كشف الموقع المكتوب بخط اليد (بالسنتيمتر). يقرأه Claude ويحوّله للمليمتر ويطلع لك ملف PDF مرتّب، مع ملاحظات على الأرقام غير الواضحة والمجاميع.</p>
     ${fileList(c,"measSheets")}
+    ${sheets.length&&S.canWrite&&canAI&&!ex.busy?`<label class="fld exnote"><span>ملاحظاتك لـ Claude قبل القراءة (اختياري)</span><textarea data-cf="measNote" rows="2" placeholder="مثال: هذا كشف زجاج · المقاسات بالملي · تجاهل الأسطر المشطوبة · الدور الأول F">${esc(c.measNote||"")}</textarea></label>`:""}
     <div class="toolbar">${sheets.length&&S.canWrite?(ex.busy?`<span class="spin" aria-hidden="true"></span><span class="small">${esc(ex.msg||"")}</span><button data-act="ex-stop">إيقاف</button>`:canAI?`<button class="primary" data-act="ex-run">${X?"إعادة قراءة الكشف":"قراءة الكشف وتحويله"}</button>`:`<span class="small muted">قراءة الكشف تعمل عند فتح البرنامج داخل Claude.</span>`):""}
       ${ex.err?`<span class="small neg">${esc(ex.err)}</span>`:""}</div>
     ${review}
@@ -962,7 +967,7 @@ async function buildMeasPdf(c,sections,sheetBlobs){
   const pdf=new jsPDF({unit:"mm",format:"a4",orientation:"portrait",compress:true});let first=true;
   const pages=[];let cv,ctx,y,pageNo=0;
   const cols=[["#",60],["الكود",220],["العرض (مم)",170],["الارتفاع (مم)",170],["العدد",110],["ملاحظات",PW-2*MX-730]];
-  function txt(t,x,yy,{size=22,weight=400,color="#16202a",align="right",maxW}={}){ctx.font=`${weight} ${size}px ${FONT}`;ctx.fillStyle=color;ctx.textAlign=align;ctx.direction="rtl";let s=String(t??"");if(maxW){while(s.length>1&&ctx.measureText(s).width>maxW)s=s.slice(0,-2);if(s!==String(t??""))s+="…"}ctx.fillText(s,x,yy)}
+  function txt(t,x,yy,{size=22,weight=400,color="#16202a",align="right",maxW}={}){ctx.font=`${weight} ${size}px ${FONT}`;ctx.fillStyle=color;ctx.textAlign=align;ctx.direction="rtl";let s=toLat(String(t??""));if(maxW){while(s.length>1&&ctx.measureText(s).width>maxW)s=s.slice(0,-2);if(s!==String(t??""))s+="…"}ctx.fillText(s,x,yy)}
   function newPage(){cv=document.createElement("canvas");cv.width=PW;cv.height=PH;ctx=cv.getContext("2d");ctx.fillStyle="#fff";ctx.fillRect(0,0,PW,PH);pages.push(cv);pageNo++;
     ctx.fillStyle="#1d5d78";ctx.fillRect(0,0,PW,10);
     txt(CO().nameAr,PW-MX,70,{size:30,weight:600});
@@ -2618,16 +2623,16 @@ Reply with ONLY this JSON:
     const c2=S.clients.find(x=>x._id===cid)||c;const X=clone(c2.measExtract||X0);const patch={};
     if(out&&Array.isArray(out.rows)){
       const pool=[...(X.rows||[])];
-      const nr=out.rows.map(r=>{const ref=String(r.ref||"").trim();const k=pool.findIndex(o=>o.ref===ref);const old=k>=0?pool.splice(k,1)[0]:{};
+      const nr=out.rows.map(r=>{const ref=toLat(String(r.ref||"")).trim();const k=pool.findIndex(o=>o.ref===ref);const old=k>=0?pool.splice(k,1)[0]:{};
         const w=Math.round(N(r.w_mm)),h=Math.round(N(r.h_mm));
-        return{...old,id:old.id||uid(),ref,w,h,qty:Math.max(1,Math.round(N(r.qty)||1)),group:GROUPS[r.group]?r.group:(old.group||"regular"),note:String(r.note??old.note??""),unclear:!!r.unclear,ok:old.ok&&!r.unclear&&old.w===w&&old.h===h,pending:!!r.pending}});
+        return{...old,id:old.id||uid(),ref,w,h,qty:Math.max(1,Math.round(N(r.qty)||1)),group:GROUPS[r.group]?r.group:(old.group||"regular"),note:toLat(String(r.note??old.note??"")),unclear:!!r.unclear,ok:old.ok&&!r.unclear&&old.w===w&&old.h===h,pending:!!r.pending}});
       const ready=nr.filter(exReady);let ps=[...(c2.pendingSite||[])];
       [...nr.filter(r=>!exReady(r)).map(r=>r.ref),...(out.not_ready||[]).map(String)].forEach(ref=>{if(ref&&!ps.some(p=>p.ref===ref))ps.push({ref,qty:1,at:new Date().toISOString()})});
       ready.forEach(r=>{ps=ps.filter(p=>p.ref!==r.ref)});
       X.rows=ready;X.count=sum(ready,r=>r.qty);patch.pendingSite=ps;
     }
     if(out&&(out.sheet_type==="glass"||out.sheet_type==="aluminium")){const k=out.sheet_type==="glass"?"glass":"alu";if(k!==X.kind)X.kind=k}
-    X.chat=[...(X.chat||chat),{role:"ai",text:String(out&&out.reply_ar||"تمت المراجعة."),at:new Date().toISOString()}];patch.measExtract=X;
+    X.chat=[...(X.chat||chat),{role:"ai",text:toLat(String(out&&out.reply_ar||"تمت المراجعة.")),at:new Date().toISOString()}];patch.measExtract=X;
     S.ex["chat:"+cid]={busy:false};await write(cid,patch);
   }catch(e){const back=(S.clients.find(x=>x._id===cid)||c).measExtract;S.ex["chat:"+cid]={busy:false,err:e&&e.code==="cancelled"?"":String(sampleErr(e)).replace("الكشف","الطلب")};if(e&&e.code==="cancelled")S.excDraft=text}
   render();setTimeout(()=>{const l=document.querySelector(".exc-list");if(l)l.scrollTop=l.scrollHeight},30);
