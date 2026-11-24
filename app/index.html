@@ -171,7 +171,7 @@ button.armed-ok{background:var(--ok);border-color:var(--ok);color:#fff}
 <script>
 (function(){
 "use strict";
-try{document.documentElement.setAttribute("dir","rtl");document.documentElement.setAttribute("lang","ar")}catch(_){}
+try{document.documentElement.setAttribute("dir","rtl");document.documentElement.setAttribute("lang","ar-u-nu-latn")}catch(_){}
 const STATUSES=["عرض سعر","تم التعميد","تحت التصنيع","جاهز للتركيب","قيد التركيب","مكتمل","ملغي"];
 const STATUS_CLS={"تم التعميد":"s1","تحت التصنيع":"s2","جاهز للتركيب":"s2","قيد التركيب":"s2","مكتمل":"s3","ملغي":"bad"};
 const BUY_CATS=["ألمنيوم","زجاج","إكسسوارات","مواد تركيب","عمالة","نقل","أخرى"];
@@ -188,7 +188,7 @@ let db=null;
 const app=document.getElementById("app");
 
 /* ---------- helpers ---------- */
-const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const esc=s=>String(s??"").replace(/[\u0660-\u0669]/g,d=>d.charCodeAt(0)-0x660).replace(/[\u06F0-\u06F9]/g,d=>d.charCodeAt(0)-0x6F0).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const toLat=v=>String(v??"").replace(/[\u0660-\u0669]/g,d=>d.charCodeAt(0)-0x660).replace(/[\u06F0-\u06F9]/g,d=>d.charCodeAt(0)-0x6F0).replace(/\u066B/g,".").replace(/\u066C/g,",");
 const N=v=>{const n=parseFloat(toLat(v).replace(/,/g,""));return isFinite(n)?n:0};
 const money=n=>N(n).toLocaleString("en-US",{maximumFractionDigits:2});
@@ -481,6 +481,7 @@ function render(){
   if(S.id&&!c)main=`<div class="card empty"><p class="muted">جارٍ فتح الملف…</p></div>`;
   else main=S.settings&&S.cfgDraft?settingsView():c?clientView(c):S.qid?quoteEditor():S.section==="quotes"?quotesListView():listView();
   app.innerHTML=topbar()+`<main class="wrap">${!S.canWrite&&db?`<div class="note">صلاحيتك للعرض فقط. اطلب من مالك البرنامج صلاحية «مساهم» أو «محرر» للتعديل.</div>`:""}${main}</main>`+(S.lightbox?`<div class="lb" data-act="unzoom"><img src="${blob(S.lightbox)}" alt="صورة مكبرة"></div>`:"");
+  app.querySelectorAll('input[type=number],input[type=date],input[type=time],input[type=month]').forEach(x=>x.lang="en");
   if(aid){const n=document.getElementById(aid);if(n){n.focus({preventScroll:true});try{if(ss!=null)n.setSelectionRange(ss,se)}catch(e){}}}
 }
 
