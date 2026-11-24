@@ -857,7 +857,7 @@ async function sheetImages(f){
   return [];
 }
 function exPrompt(i,n){return `You are reading page ${i} of ${n}: a photographed HANDWRITTEN site measurement sheet (Arabic/English) for aluminium windows and doors at Al Qimma Tower Factory (مصنع برج القمة), Saudi Arabia.
-Measurements on the sheet are in CENTIMETERS. If the sheet is the factory's CUTTING LIST form (columns HALK / DORFA / SCREEN / TABSHA / GLASS), each row is one window: its size is the HALK (frame) WIDTH and HEIGHT; ignore the DORFA, SCREEN, TABSHA and GLASS columns; ref = the window number (or the CODE if written); "2 pcs" in remarks refers to glass panes, not the window quantity (qty = 1 unless a window count is written). Precision is the top priority: read every number twice, and never guess a digit silently.
+Measurements on the sheet are in CENTIMETERS. Window TYPE: if a type is written next to a window (Arabic or English words such as سحاب / sliding / مفصلي / ثابت / قلاب / باب / كارتن وول, or an item code), fill "type" for that row; if the sheet title states one type for all rows (e.g. "# Saraya Sliding"), use it for every row (sliding2 for a 2-sash sliding window). Leave "type" empty when nothing is written. If the sheet is the factory's CUTTING LIST form (columns HALK / DORFA / SCREEN / TABSHA / GLASS), each row is one window: its size is the HALK (frame) WIDTH and HEIGHT; ignore the DORFA, SCREEN, TABSHA and GLASS columns; ref = the window number (or the CODE if written); "2 pcs" in remarks refers to glass panes, not the window quantity (qty = 1 unless a window count is written). Precision is the top priority: read every number twice, and never guess a digit silently.
 For every window/door line return:
 - ref: the code and the window/door number in ONE string formatted "floor-code", e.g. "14-D3". If no floor is written, just the code, e.g. "W1".
 - w_cm, h_cm: width and height exactly as written, in cm (decimals allowed, e.g. 145.5).
@@ -909,6 +909,7 @@ async function runExtract(c){
     if(XK.st!=="glass"&&(glassHint||kinds.filter(k=>k==="glass").length>kinds.length/2))flags.unshift("يبدو أن هذا كشف زجاج. ارفعه في تبويب «مقاسات الزجاج» ليُضاف للزجاج.");
     const res={rows,flags,count,kind,chat:(cc[XK.e]&&cc[XK.e].chat)||[],at:new Date().toISOString(),pages:pages.length};
     S.ex[cid+XK.e]={busy:false};await write(cid,{[XK.e]:res,pendingSite:pend});
+    {const cn=S.clients.find(x=>x._id===cid)||c;if(XK.st==="final"&&!(cn.alu||[]).length&&rows.length){await exApplyFinal({...cn,pendingSite:pend},res,XK,true);render();return}}
     toast(`استُخرج ${rows.length} سطر (${count} قطعة)${done.length?`. اكتملت مقاسات ${done.join("، ")} من الحصر السابق`:""}`);
   }catch(e){S.ex[cid+XK.e]={busy:false,err:sampleErr(e)}}
   render();
@@ -2152,10 +2153,7 @@ async function act(el){
       if(await write(c._id,{prelim:[...(c.prelim||[]),...add],[XK.e]:{...X,appliedAt:new Date().toISOString()}}))toast(`أُضيف ${add.length} بند إلى المقاسات الأولية`);return}
     if(XK.st==="glass"||X.kind==="glass"){const add=X.rows.filter(exReady).map(r=>exGlassRow(c,r));
       if(await write(c._id,{glass:[...(c.glass||[]),...add],[XK.e]:{...X,appliedAt:new Date().toISOString()}}))toast(`أُضيف ${add.length} سطر إلى مقاسات الزجاج`);return}
-    const notReady=X.rows.filter(r=>!exReady(r));const pend=[...(c.pendingSite||[])];notReady.forEach(r=>{if(!pend.some(p=>p.ref&&p.ref===r.ref))pend.push({ref:r.ref,qty:r.qty,group:r.group,note:r.note,at:new Date().toISOString()})});
-    const add=X.rows.filter(exReady).map(r=>{const rc=recipeById(r.recipe||(r.type&&KINDS[r.type]?KINDS[r.type][2]:"")||exRecipeDefault(r));return{id:uid(),ref:r.ref,w:N(r.w),h:N(r.h),qty:N(r.qty)||1,recipe:rc?rc.id:"",system:rc?rc.system:"",type:rc?rc.name:"",group:r.group,note:[r.pending?"بانتظار الاعتماد":"",r.unclear?"رقم غير واضح":"",r.note].filter(Boolean).join(" · ")}});
-    if(await write(c._id,{alu:[...(c.alu||[]),...add],pendingSite:pend,[XK.e]:{...X,appliedAt:new Date().toISOString()}}))toast(`أُضيف ${add.length} سطر إلى مقاسات الألمنيوم`);
-    return;
+    await exApplyFinal(c,X,XK);return;
   }
   if(a==="save-info"){
     const fk="info:"+c._id;const d=S.draft[fk]||{};
@@ -3065,6 +3063,28 @@ async function shareOrder(c,kind,via){
   if(!w){try{await navigator.clipboard.writeText(msg)}catch(e){}toast("تعذّر فتح الرابط تلقائياً. نسخت نص الطلب، الصقه في المحادثة وأرفق ملف PDF",{kind:"warn"})}
   else toast(file?"حُفظ ملف PDF. أرفقه في المحادثة اللي انفتحت مع نص الطلب":"انفتحت المحادثة مع نص الطلب",{kind:"info"});
   write(c._id,{[kind+"OrderedAt"]:new Date().toISOString()});
+}
+
+
+/* final measurements → aluminium rows; window type from: chosen template › sheet › linked quotation (same window number) › default sliding */
+function clientQuotes(c){return S.quotes.filter(q=>q._id===c.quoteId||q.clientId===c._id||q.linkedClient===c._id).sort((a,b)=>(a.status==="معتمد"?0:1)-(b.status==="معتمد"?0:1))}
+const refNum=r=>{const m=/(\d+)\s*$/.exec(toLat(String(r||"")));return m?String(+m[1]):""};
+function quoteTypeFor(c,ref,floor){const qs=clientQuotes(c);const k=qRefKey(ref),n=refNum(ref);
+  for(const q of qs){const its=(q.items||[]).filter(it=>it.type!=="other"&&KINDS[it.type]);
+    const hit=its.find(it=>qRefKey(it.ref)===k&&(!floor||!it.floor||flr(it.floor)===flr(floor)))||its.find(it=>qRefKey(it.ref)===k)||(n?its.find(it=>refNum(it.ref)===n&&!/[A-Z]$/.test(qRefKey(it.ref))):null);
+    if(hit)return hit.type}return""}
+async function exApplyFinal(c,X,XK,auto){
+  const notReady=X.rows.filter(r=>!exReady(r));const pend=[...(c.pendingSite||[])];notReady.forEach(r=>{if(!pend.some(p=>p.ref&&p.ref===r.ref))pend.push({ref:r.ref,qty:r.qty,group:r.group,note:r.note,at:new Date().toISOString()})});
+  let fromQ=0,fromSheet=0,def=0;
+  const add=X.rows.filter(exReady).map(r=>{const s=splitRef(r.ref);let rid=r.recipe||"";
+    if(!rid&&r.type&&KINDS[r.type]){rid=KINDS[r.type][2];fromSheet++}
+    if(!rid){const qt=quoteTypeFor(c,s.ref||r.ref,s.floor);if(qt){rid=KINDS[qt][2];fromQ++}}
+    if(!rid){rid=exRecipeDefault(r);def++}
+    const rc=recipeById(rid)||recipeById(exRecipeDefault(r));
+    return{id:uid(),ref:s.ref||r.ref,floor:s.floor,w:N(r.w),h:N(r.h),qty:N(r.qty)||1,recipe:rc?rc.id:"",system:rc?rc.system:"",type:rc?rc.name:"",group:r.group,note:[r.pending?"بانتظار الاعتماد":"",r.unclear?"رقم غير واضح":"",r.note].filter(Boolean).join(" · ")}});
+  if(await write(c._id,{alu:[...(c.alu||[]),...add],pendingSite:pend,[XK.e]:{...X,appliedAt:new Date().toISOString()}})){
+    const src=[fromSheet?`${fromSheet} من الكشف`:"",fromQ?`${fromQ} من عرض السعر`:"",def?`${def} افتراضي (شباك سحاب) راجعها`:""].filter(Boolean).join("، ");
+    toast(`${auto?"أُضيفت تلقائياً ":"أُضيف "}${add.length} شباك إلى المقاسات النهائية. أنواع الشبابيك: ${src||"—"}`,{kind:def?"warn":"ok",action:{label:"Cutting List",fn:()=>{S.tab="cut";render();window.scrollTo(0,0)}}})}
 }
 
 /* ---------- boot ---------- */
