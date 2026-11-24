@@ -2950,7 +2950,7 @@ function cutRows(c){const T=takeoff(c,S.cfg);return T.perUnit.map((d,i)=>{const 
 function cutSheetSVGs(c){
   const T=takeoff(c,S.cfg);const rows=cutRows(c);const co=CO();const VW=842,VH=595,X1=22,X2=820;
   const nb=re=>sum(T.profiles.filter(p=>cutRole(p.name)===re),p=>p.nb);
-  const cols=[["no","WINDOW\nNUMBER",44],["room","ROOM",92],["ref","CODE\nWINDOW",58],["halkW","WIDTH",60],["halkH","HEIGHT",60],["dorfaW","WIDTH",60],["dorfaH","HEIGHT",60],["screenW","WIDTH",60],["screenH","HEIGHT",60],["tabshaH","HEIGHT",62],["glassW","WIDTH",56],["glassH","HEIGHT",56],["rem","REMARKS",70]];
+  const cols=[["no","WINDOW\nNUMBER",62],["halkW","WIDTH",76],["halkH","HEIGHT",76],["dorfaW","WIDTH",76],["dorfaH","HEIGHT",76],["screenW","WIDTH",76],["screenH","HEIGHT",76],["tabshaH","HEIGHT",78],["glassW","WIDTH",74],["glassH","HEIGHT",74],["rem","QTY GLASS",54]];
   let x=X1;const cx={};cols.forEach(([k,,w])=>{cx[k]={x,w};x+=w});
   const groups=[["HALK","halk",["halkW","halkH"]],["DORFA","dorfa",["dorfaW","dorfaH"]],["SCREEN","screen",["screenW","screenH"]],["TABSHA","tabsha",["tabshaH"]],["GLASS","",["glassW","glassH"]]];
   const per=15,pages=[];const RH=26;
@@ -2964,20 +2964,20 @@ function cutSheetSVGs(c){
     s+=T_(X1+608,y0+14,"FILE NO :",8.5,700,QC.muted)+T_(X1+662,y0+14,c.fileNo||"",9.5,700)+T_(X1+608,y0+34,"DATE :",8.5,700,QC.muted)+T_(X1+662,y0+34,dmy(today()),9.5,700);
     const y1=y0+BH,hh1=20,hh2=18;
     // group header
-    cols.slice(0,3).forEach(([k,l])=>{const {x,w}=cx[k];s+=`<rect x="${x}" y="${y1}" width="${w}" height="${hh1+hh2}" fill="#fff" stroke="#222" stroke-width=".8"/>`;l.split("\n").forEach((t,i,a)=>s+=T_(x+w/2,y1+(hh1+hh2)/2+4+(i-(a.length-1)/2)*10,t,7.5,700,"#111","middle"))});
+    cols.slice(0,1).forEach(([k,l])=>{const {x,w}=cx[k];s+=`<rect x="${x}" y="${y1}" width="${w}" height="${hh1+hh2}" fill="#fff" stroke="#222" stroke-width=".8"/>`;l.split("\n").forEach((t,i,a)=>s+=T_(x+w/2,y1+(hh1+hh2)/2+4+(i-(a.length-1)/2)*10,t,7.5,700,"#111","middle"))});
     groups.forEach(([lab,role,ks])=>{const a=cx[ks[0]],b=cx[ks[ks.length-1]];const w=b.x+b.w-a.x;const n=role?nb(role):0;
       s+=`<rect x="${a.x}" y="${y1}" width="${w}" height="${hh1}" fill="#f4b183" stroke="#222" stroke-width=".8"/>`+T_(a.x+w/2,y1+14,lab+(n?` (${n} PCS)`:""),ks.length>1?9:7,700,"#111","middle");
       ks.forEach(k=>{const {x,w}=cx[k];const per=k==="glassW"||k==="glassH"?"":"";s+=`<rect x="${x}" y="${y1+hh1}" width="${w}" height="${hh2}" fill="${QC.soft}" stroke="#222" stroke-width=".6"/>`+T_(x+w/2,y1+hh1+12.5,cols.find(c=>c[0]===k)[1],7.5,700,"#111","middle")})});
-    {const {x,w}=cx.rem;s+=`<rect x="${x}" y="${y1}" width="${w}" height="${hh1+hh2}" fill="#fff" stroke="#222" stroke-width=".8"/>`+T_(x+w/2,y1+23,"REMARKS",7.5,700,"#111","middle")}
+    {const {x,w}=cx.rem;s+=`<rect x="${x}" y="${y1}" width="${w}" height="${hh1+hh2}" fill="#fff" stroke="#222" stroke-width=".8"/>`+T_(x+w/2,y1+17,"QTY",7.5,700,"#111","middle")+T_(x+w/2,y1+27,"GLASS",7.5,700,"#111","middle")}
     let y=y1+hh1+hh2;
     rows.slice(pg*per,pg*per+per).forEach((r,i)=>{s+=`<rect x="${X1}" y="${y}" width="${X2-X1}" height="${RH}" fill="${i%2?"#fff":"#fafbfc"}"/>`;
       cols.forEach(([k,,w])=>{s+=`<rect x="${cx[k].x}" y="${y}" width="${w}" height="${RH}" fill="none" stroke="#222" stroke-width=".5"/>`});
       const put=(k,v,sub,o={})=>{const {x,w}=cx[k];s+=T_(x+w/2-(sub?7:0),y+(sub?17:17.5),v,o.size||10.5,o.w||700,o.fill||"#111","middle",o.ar);if(sub)s+=T_(x+w-3,y+RH-4,sub,7,700,"#c00000","end")};
-      put("no",r.no+".",0,{size:9,w:600});put("room",r.room.slice(0,16),0,{size:7.5,w:500,ar:1});put("ref",r.ref,0,{size:9});
+      put("no",(r.ref||r.no)+(r.q>1?` (×${r.q})`:""),0,{size:9.5,w:700});
       Object.entries(r.cells).forEach(([k,arr])=>{if(!cx[k])return;const x0=arr[0];put(k,cm(x0.len),"×"+sum(arr,e=>e.n))});
       if(r.glass){put("glassW",cm(r.glass.w),"");put("glassH",cm(r.glass.h),"")}
-      put("rem",[r.glass?`= ${r.glass.n} PCS`:"",r.q>1?`(${r.q} WIN)`:""].filter(Boolean).join("  "),0,{size:8,w:700,fill:"#c00000"});y+=RH});
-    if(pg===Math.ceil(rows.length/per)-1||rows.length===0){y+=10;s+=T_(X1,y+12,`TOTAL WINDOWS : ${sum(rows,r=>r.q)}   ·   CM · red ×n = number of aluminium cuts of that size · GLASS: width × height = one pane, pane count in REMARKS`,8,600,"#444");
+      put("rem",r.glass?String(r.glass.n):"",0,{size:11,w:700,fill:"#c00000"});y+=RH});
+    if(pg===Math.ceil(rows.length/per)-1||rows.length===0){y+=10;s+=T_(X1,y+12,`TOTAL WINDOWS : ${sum(rows,r=>r.q)}   ·   CM · red ×n = number of aluminium cuts of that size · GLASS: width × height = one pane, number of panes in QTY GLASS`,8,600,"#444");
       const tot=T.profiles.map(p=>`${p.name} : ${p.nb} عود`).join("   ·   ");s+=`<text x="${X2}" y="${y+28}" font-size="8" text-anchor="start" direction="rtl" font-family="${SF}">${esc(tot)}</text>`}
     s+=T_(VW/2,VH-12,`${pg+1} / ${Math.max(1,Math.ceil(rows.length/per))}`,8,500,"#888","middle");
     pages.push(s+"</svg>")}
@@ -2995,10 +2995,10 @@ function cutSheetTable(c){const rows=cutRows(c);if(!rows.length)return"";const H
   const cell=(r,k)=>{const a=r.cells[k];return a?`<span dir="ltr"><b class="num">${cm(a[0].len)}</b><span class="cutn">×${sum(a,e=>e.n)}</span></span>`:""};
   const infoBar=`<div class="cut-info"><div><span>العميل</span><b>${esc(c.name||"—")}</b>${c.nameEn?`<b dir="ltr">${esc(c.nameEn)}</b>`:""}</div><div><span>رقم الملف</span><b class="num">${esc(c.fileNo||"—")}</b></div><div><span>المدينة والحي</span><b>${esc(c.location||"—")}</b>${c.locationEn?`<b dir="ltr">${esc(c.locationEn)}</b>`:""}</div><div><span>التاريخ</span><b class="num">${esc(dmy(today()))}</b></div></div>
     ${S.canWrite&&(!c.nameEn||!c.locationEn)?`<div class="miss-grid">${fieldInputs([...(!c.nameEn?[{k:"nameEn",l:"اسم العميل بالإنجليزي",v:"",ph:"Client name",ltr:1}]:[]),...(!c.locationEn?[{k:"locationEn",l:"المدينة والحي بالإنجليزي",v:"",ph:"Riyadh - Al Worood",ltr:1}]:[])])}</div>`:""}`;
-  return `<div class="card"><h3><span>جدول القص لكل شباك <span class="small muted">بالسنتيمتر · الرقم الأحمر = عدد قطع الألمنيوم من المقاس · الزجاج: العرض × الارتفاع لوح واحد، وعدد الألواح في الملاحظات</span></span><span class="toolbar"><button class="primary" data-act="cut-pdf" ${S.pdfBusy?"disabled":""}>Cutting List PDF</button>${S.canWrite&&S.assets?`<button data-act="cut-save" ${S.pdfBusy?"disabled":""}>حفظ في ملف العميل</button>`:""}</span></h3>
-  ${infoBar}<div class="tablebox"><table class="cuttbl"><thead><tr><th rowspan="2">#</th><th rowspan="2">الدور / الموقع</th><th rowspan="2">الكود</th><th colspan="2">HALK الحلق</th><th colspan="2">DORFA الدرفة</th><th colspan="2">SCREEN السلك</th><th>TABSHA الطبشة</th><th colspan="2">GLASS الزجاج</th><th rowspan="2">عدد الشبابيك</th><th rowspan="2">ملاحظات</th></tr>
+  return `<div class="card"><h3><span>جدول القص لكل شباك <span class="small muted">بالسنتيمتر · الرقم الأحمر = عدد قطع الألمنيوم من المقاس · الزجاج: العرض × الارتفاع لوح واحد، وعدد الألواح في QTY GLASS</span></span><span class="toolbar"><button class="primary" data-act="cut-pdf" ${S.pdfBusy?"disabled":""}>Cutting List PDF</button>${S.canWrite&&S.assets?`<button data-act="cut-save" ${S.pdfBusy?"disabled":""}>حفظ في ملف العميل</button>`:""}</span></h3>
+  ${infoBar}<div class="tablebox"><table class="cuttbl"><thead><tr><th rowspan="2">رقم الشباك</th><th colspan="2">HALK الحلق</th><th colspan="2">DORFA الدرفة</th><th colspan="2">SCREEN السلك</th><th>TABSHA الطبشة</th><th colspan="2">GLASS الزجاج</th><th rowspan="2">QTY GLASS<br>عدد الزجاج</th></tr>
   <tr><th>W</th><th>H</th><th>W</th><th>H</th><th>W</th><th>H</th><th>H</th><th>W</th><th>H</th></tr></thead><tbody>
-  ${rows.map(r=>`<tr><td class="num">${r.no}</td><td>${esc(r.room)}</td><td><b>${esc(r.ref)}</b></td>${["halkW","halkH","dorfaW","dorfaH","screenW","screenH","tabshaH"].map(k=>`<td>${cell(r,k)}</td>`).join("")}<td>${r.glass?`<b class="num">${cm(r.glass.w)}</b>`:""}</td><td>${r.glass?`<b class="num">${cm(r.glass.h)}</b>`:""}</td><td class="num">${r.q}</td><td>${r.glass?`<span class="cutn" style="font-size:.8rem">= <span class="num">${r.glass.n}</span> حبة زجاج</span>`:""}</td></tr>`).join("")}
+  ${rows.map(r=>`<tr><td><b>${esc(r.ref||r.no)}</b>${r.q>1?` <span class="small muted">(×${r.q})</span>`:""}</td>${["halkW","halkH","dorfaW","dorfaH","screenW","screenH","tabshaH"].map(k=>`<td>${cell(r,k)}</td>`).join("")}<td>${r.glass?`<b class="num">${cm(r.glass.w)}</b>`:""}</td><td>${r.glass?`<b class="num">${cm(r.glass.h)}</b>`:""}</td><td>${r.glass?`<b class="num" style="color:#c00000">${r.glass.n}</b>`:""}</td></tr>`).join("")}
   </tbody></table></div></div>`}
 
 /* ---------- tabs: contract & approvals, accessories order, glass sizes + order ---------- */
