@@ -158,6 +158,7 @@ body.dragging::after{content:"أفلت الملفات هنا للتحليل وا
 .ord-table th{text-align:center;line-height:1.25}.ord-table th .en{display:block;font-size:.68rem;font-weight:600;color:var(--muted);letter-spacing:.04em}.ord-table td{text-align:center}.ord-table td:nth-child(5){text-align:right}
 .minflag{display:inline-block;margin-inline-start:6px;font-size:.68rem;padding:1px 6px;border-radius:999px;background:var(--warn-soft);color:var(--warn);font-weight:600}
 .cut-info{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px 16px;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:10px 14px}.cut-info div{display:flex;flex-direction:column;gap:1px}.cut-info span{font-size:.74rem;color:var(--muted);font-weight:600}.cut-info b{font-size:.9rem;text-align:right}
+input[data-num]{font-variant-numeric:tabular-nums}
 .cuttbl th,.cuttbl td{text-align:center;white-space:nowrap}.cuttbl thead tr:first-child th{background:#f4d0b5}.cutn{font-size:.7rem;color:#c00000;font-weight:700;margin-inline-start:3px}
 .share{display:inline-flex;gap:6px}.share button{display:inline-flex;align-items:center;gap:6px}.share .wa{color:#128c4a;border-color:#9fd8b6;background:#eefaf2}.share .gm{color:#c5221f;border-color:#f1b5b2;background:#fdf0ef}
 .sec-sep{display:flex;align-items:center;gap:10px;color:var(--muted);font-weight:700;font-size:.9rem;margin:6px 4px}.sec-sep::before,.sec-sep::after{content:"";flex:1;height:1px;background:var(--line)}
@@ -565,7 +566,9 @@ function render(){
   if(S.id&&!c)main=`<div class="card empty"><p class="muted">جارٍ فتح الملف…</p></div>`;
   else main=S.settings&&S.cfgDraft?settingsView():c?clientView(c):S.qid?quoteEditor():S.section==="quotes"?quotesListView():listView();
   app.innerHTML=topbar()+`<main class="wrap">${!S.canWrite&&db?`<div class="note">صلاحيتك للعرض فقط. اطلب من مالك البرنامج صلاحية «مساهم» أو «محرر» للتعديل.</div>`:""}${main}</main>`+(S.lightbox?`<div class="lb" data-act="unzoom"><img src="${blob(S.lightbox)}" alt="صورة مكبرة"></div>`:"");
-  app.querySelectorAll('input[type=number],input[type=date],input[type=time],input[type=month]').forEach(x=>x.lang="en");
+  app.querySelectorAll('input[type=date],input[type=time],input[type=month]').forEach(x=>x.lang="en");
+  /* number fields as plain text: browsers with Arabic regional settings show type=number digits as ١٢٣ */
+  app.querySelectorAll('input[type=number]').forEach(x=>{x.type="text";x.dataset.num="1";x.lang="en";if(!x.getAttribute("inputmode"))x.setAttribute("inputmode","decimal");x.setAttribute("autocomplete","off");x.spellcheck=false});
   if(aid){const n=document.getElementById(aid);if(n){n.focus({preventScroll:true});try{if(ss!=null)n.setSelectionRange(ss,se)}catch(e){}}}
 }
 
@@ -2320,7 +2323,7 @@ window.addEventListener("keydown",e=>{
   else if(e.key==="ArrowLeft"||e.key==="ArrowRight"){
     if(el.tagName==="SELECT"||["date","time","datetime-local","month"].includes(el.type))return;
     const ltr=getComputedStyle(el).direction==="ltr";
-    try{const n=el.value.length,a=el.selectionStart,b=el.selectionEnd;if(a!=null){const atEnd=a===n&&b===n,atStart=a===0&&b===0;
+    try{if(el.dataset&&el.dataset.num)throw 0;const n=el.value.length,a=el.selectionStart,b=el.selectionEnd;if(a!=null){const atEnd=a===n&&b===n,atStart=a===0&&b===0;
       if(e.key==="ArrowLeft"&&!(ltr?atStart:atEnd))return;if(e.key==="ArrowRight"&&!(ltr?atEnd:atStart))return}}catch(_){}
     const rtl=getComputedStyle(el.closest("table,.grid,.addrow,.card")||document.body).direction!=="ltr";
     dir=(e.key==="ArrowLeft")===rtl?1:-1;
@@ -2367,6 +2370,7 @@ const onField=e=>{const el=e.target;
   if(el.id==="q"){S.q=el.value;render();return}
   if(el.id==="statusFilter"&&e.type==="change"){S.status=el.value;render();return}
 };
+document.addEventListener("input",e=>{const el=e.target;if(el&&el.dataset&&el.dataset.num){const v=toLat(el.value).replace(/[^\d.\-]/g,"");if(v!==el.value){let a=null;try{a=el.selectionStart}catch(_){}el.value=v;try{if(a!=null)el.setSelectionRange(Math.min(a,v.length),Math.min(a,v.length))}catch(_){}}}},true);
 document.addEventListener("input",onField);
 document.addEventListener("input",e=>{if(e.target&&e.target.id==="exc-in")S.excDraft=e.target.value});
 document.addEventListener("input",e=>{const el=e.target;if(el&&el.dataset&&el.dataset.ib&&el.tagName!=="SELECT"){const i=el.dataset.ib.lastIndexOf("|");(S.draft["ib:"+el.dataset.ib.slice(0,i)]=S.draft["ib:"+el.dataset.ib.slice(0,i)]||{})[el.dataset.ib.slice(i+1)]=toLat(el.value)}});
