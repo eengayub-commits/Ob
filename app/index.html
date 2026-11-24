@@ -830,15 +830,18 @@ function sheetsCard(c){
     review=`<div class="exbox">
       <h3>نتيجة القراءة <span class="small muted"><span class="num">${X.rows.length}</span> سطر · <span class="num">${X.count}</span> قطعة · بالمليمتر</span></h3>
       ${X.flags&&X.flags.length?`<div class="note"><b>ملاحظات للمراجعة:</b><br>${X.flags.map(esc).join("<br>")}</div>`:`<div class="small ok-badge">لا توجد ملاحظات، ومع ذلك راجع الأرقام مع الكشف الأصلي.</div>`}
+      ${S.canWrite?`<div class="toolbar" style="justify-content:flex-start">${S.exsel.size?(S.confirm==="ex-delsel"?`<button class="danger armed" data-act="ex-delsel">تأكيد حذف ${S.exsel.size} بند</button>`:`<button class="danger" data-act="ex-delsel">حذف المحدد (${S.exsel.size})</button>`):""}<span class="addn"><input id="ex-addn" type="number" min="1" max="200" inputmode="numeric" placeholder="العدد" aria-label="عدد البنود المراد إضافتها"><button data-act="ex-addn">إضافة بنود</button></span><button data-act="ex-add">+ بند</button></div>`:""}
       ${Object.keys(GROUPS).filter(k=>byG(k).length).map(k=>`<h3 style="margin-top:4px">${GROUPS[k]}</h3>
-      <div class="tablebox"><table><thead><tr><th>الكود</th><th>العرض مم</th><th>الارتفاع مم</th><th>العدد</th><th>المجموعة</th><th>قالب الحساب</th><th>ملاحظات</th><th></th></tr></thead><tbody>
-      ${byG(k).map(r=>`<tr class="${r.unclear?"unclear":""}">
-        <td>${exIn(r,"ref","110px")}</td><td>${exIn(r,"w","80px","number")}</td><td>${exIn(r,"h","80px","number")}</td><td>${exIn(r,"qty","55px","number")}</td>
-        <td><select data-ex="${esc(r.id)}|group" ${S.canWrite?"":"disabled"} aria-label="المجموعة">${Object.entries(GROUPS).map(([g,l])=>`<option value="${g}" ${g===r.group?"selected":""}>${l}</option>`).join("")}</select></td>
+      <div class="tablebox"><table class="qitems mitems"><thead><tr>${S.canWrite?`<th><input type="checkbox" data-exselall="${k}" aria-label="تحديد الكل" ${byG(k).every(r=>S.exsel.has(r.id))?"checked":""}></th>`:""}<th>الكود</th><th>النوع (قالب الحساب)</th><th>العرض مم</th><th>الارتفاع مم</th><th>العدد</th><th>المساحة م²</th><th>المجموعة</th><th>ملاحظة</th><th></th></tr></thead><tbody>
+      ${byG(k).map(r=>`<tr class="${r.unclear?"unclear":""} ${S.exsel.has(r.id)?"selrow":""}">${S.canWrite?`<td><input type="checkbox" data-exsel="${esc(r.id)}" ${S.exsel.has(r.id)?"checked":""} aria-label="تحديد"></td>`:""}
+        <td>${exIn(r,"ref","72px")}</td>
         <td><select data-ex="${esc(r.id)}|recipe" ${S.canWrite?"":"disabled"} aria-label="قالب الحساب" style="min-width:190px">${recOpts(r.recipe||exRecipeDefault(r))}</select></td>
-        <td style="white-space:normal;min-width:160px">${exIn(r,"note","160px")}${r.unclear?`<div class="small neg">رقم غير واضح${r.alt?`، قراءة بديلة: <span class="num">${esc(r.alt)}</span>`:""}</div>`:""}${r.pending?`<div class="small" style="color:var(--warn)">بانتظار الاعتماد</div>`:""}</td>
+        <td>${exIn(r,"w","74px","number")}</td><td>${exIn(r,"h","74px","number")}</td><td>${exIn(r,"qty","52px","number")}</td>
+        <td class="num">${area(r.w,r.h,r.qty).toFixed(2)}</td>
+        <td><select data-ex="${esc(r.id)}|group" ${S.canWrite?"":"disabled"} aria-label="المجموعة" style="min-width:110px">${Object.entries(GROUPS).map(([g,l])=>`<option value="${g}" ${g===r.group?"selected":""}>${l}</option>`).join("")}</select></td>
+        <td style="white-space:normal">${exIn(r,"note","150px")}${r.unclear?`<div class="small neg">رقم غير واضح${r.alt?`، قراءة بديلة: <span class="num">${esc(r.alt)}</span>`:""}</div>`:""}${r.pending?`<div class="small" style="color:var(--warn)">بانتظار الاعتماد</div>`:""}</td>
         <td>${S.canWrite?`<button class="danger ghost" data-act="ex-del" data-id="${esc(r.id)}">حذف</button>`:""}</td></tr>`).join("")}
-      </tbody><tfoot><tr><td>الإجمالي</td><td colspan="2"></td><td class="num">${sum(byG(k),r=>r.qty)}</td><td colspan="4"></td></tr></tfoot></table></div>`).join("")}
+      </tbody><tfoot><tr><td colspan="${S.canWrite?5:4}">الإجمالي</td><td class="num">${sum(byG(k),r=>r.qty)}</td><td class="num">${sum(byG(k),r=>area(r.w,r.h,r.qty)).toFixed(2)}</td><td colspan="3"></td></tr></tfoot></table></div>`).join("")}
       <div class="toolbar">
         ${S.canWrite?`<button class="primary" data-act="ex-apply">إضافة إلى مقاسات الألمنيوم</button>`:""}
         <button data-act="pdf-dl" data-src="ex" ${S.pdfBusy?"disabled":""}>${S.pdfBusy?"جارٍ إنشاء PDF…":"تنزيل PDF"}</button>
@@ -855,7 +858,7 @@ function sheetsCard(c){
     ${fileList(c,"measPdf")!==`<p class="muted small">لا توجد ملفات مرفوعة.</p>`?`<h3 style="margin-top:6px">ملفات PDF المحفوظة</h3>${fileList(c,"measPdf")}`:""}
   </div>`;
 }
-function exIn(r,f,w,type="text"){return `<input id="ex-${esc(r.id)}-${f}" data-ex="${esc(r.id)}|${f}" type="${type}" value="${esc(r[f]??"")}" style="min-width:${w}" ${type==="number"?'inputmode="numeric" min="0"':""} ${S.canWrite?"":"disabled"} aria-label="${f}">`}
+function exIn(r,f,w,type="text"){let v=r[f];if(type==="number"&&!N(v))v="";return `<input id="ex-${esc(r.id)}-${f}" data-ex="${esc(r.id)}|${f}" type="${type}" value="${esc(v??"")}" style="min-width:${w};width:${w}" ${type==="number"?'inputmode="numeric" min="0"':""} ${S.canWrite?"":"disabled"} aria-label="${f}">`}
 
 async function exEdit(c,id,f,v){
   const X=clone(c.measExtract||{rows:[]});const r=X.rows.find(x=>x.id===id);if(!r)return;
@@ -1420,7 +1423,7 @@ function tabInvoices(c){
 }
 
 /* ---------- preliminary quotations (عروض الأسعار المبدئية) ---------- */
-S.qsel=new Set();S.msel=new Set();S.quotes=[];S.section="clients";S.qid=null;S.qd=null;S.qDirty=false;S.qq="";S.qstatus="";S.logoData=null;
+S.qsel=new Set();S.msel=new Set();S.exsel=new Set();S.quotes=[];S.section="clients";S.qid=null;S.qd=null;S.qDirty=false;S.qq="";S.qstatus="";S.logoData=null;
 const Q_STATUS=["مسودة","مرسل للعميل","معتمد","مرفوض"];
 const Q_STATUS_CLS={"مسودة":"","مرسل للعميل":"s2","معتمد":"s3","مرفوض":"bad","منتهي":"bad"};
 const Q_TYPES={...Object.fromEntries(KIND_LIST.map(([k,v])=>[k,v[0]])),other:"بند عام / أعمال أخرى"};
@@ -1974,6 +1977,12 @@ async function act(el){
   if(a==="m-add"||a==="m-addn"){let n=1;if(a==="m-addn"){const inp_=document.getElementById("m-addn");n=Math.min(200,Math.max(0,Math.round(N(inp_&&inp_.value))));if(!n){toast("اكتب عدد البنود أولاً");inp_&&inp_.focus();return}}
     const list=[...(c.alu||[])];const start=list.length;for(let k=0;k<n;k++){const last=list[list.length-1]||{};const rc=recipeById(last.recipe)||S.cfg.recipes[0]||{};list.push({id:uid(),ref:"W"+(list.length+1),floor:last.floor||"",recipe:rc.id||"",system:rc.system||"",type:rc.name||"",w:0,h:0,qty:1,note:""})}
     if(await write(c._id,{alu:list})){toast(n>1?`أُضيف ${n} بند`:"أُضيف بند");setTimeout(()=>{const f=document.getElementById(`mf-${start}-w`);if(f){f.focus();f.scrollIntoView({block:"center"})}},50)}return}
+  if(a==="ex-add"||a==="ex-addn"){let n=1;if(a==="ex-addn"){const inp_=document.getElementById("ex-addn");n=Math.min(200,Math.max(0,Math.round(N(inp_&&inp_.value))));if(!n){toast("اكتب عدد البنود أولاً");inp_&&inp_.focus();return}}
+    const X=clone(c.measExtract||{rows:[]});X.rows=X.rows||[];const last=X.rows[X.rows.length-1]||{};let firstId=null;
+    for(let k=0;k<n;k++){const r={id:uid(),ref:"W"+(X.rows.length+1),w:0,h:0,qty:1,group:last.group||"regular",recipe:last.recipe||"",note:"",unclear:false,alt:"",pending:false};if(!firstId)firstId=r.id;X.rows.push(r)}
+    X.count=sum(X.rows,x=>x.qty);if(await write(c._id,{measExtract:X})){toast(n>1?`أُضيف ${n} بند`:"أُضيف بند");setTimeout(()=>{const f=document.getElementById(`ex-${firstId}-w`);if(f){f.focus();f.scrollIntoView({block:"center"})}},50)}return}
+  if(a==="ex-delsel"){if(!S.exsel.size)return;if(S.confirm!=="ex-delsel"){S.confirm="ex-delsel";render();clearTimeout(act._t);act._t=setTimeout(()=>{S.confirm=null;render()},5000);return}
+    S.confirm=null;const n=S.exsel.size;const X=clone(c.measExtract||{rows:[]});X.rows=X.rows.filter(r=>!S.exsel.has(r.id));X.count=sum(X.rows,r=>r.qty);S.exsel.clear();if(await write(c._id,{measExtract:X}))toast(`حُذف ${n} بند`);return}
   if(a==="m-delsel"){if(!S.msel.size)return;if(S.confirm!=="m-delsel"){S.confirm="m-delsel";render();clearTimeout(act._t);act._t=setTimeout(()=>{S.confirm=null;render()},5000);return}
     S.confirm=null;const n=S.msel.size;const list=(c.alu||[]).filter(r=>!S.msel.has(r.id));S.msel.clear();if(await write(c._id,{alu:list}))toast(`حُذف ${n} بند`);return}
   if(a==="ex-run"){runExtract(c);return}
@@ -2084,7 +2093,7 @@ async function upload(files){
   return out;
 }
 
-function go(id,tab){S.msel=new Set();S.id=id;S.tab=tab||"info";S.confirm=null;try{history.replaceState(null,"","#c-"+id)}catch(e){location.hash="c-"+id}render();window.scrollTo(0,0)}
+function go(id,tab){S.msel=new Set();S.exsel=new Set();S.id=id;S.tab=tab||"info";S.confirm=null;try{history.replaceState(null,"","#c-"+id)}catch(e){location.hash="c-"+id}render();window.scrollTo(0,0)}
 function fromHash(){const h=location.hash;const m=/^#c-([A-Za-z0-9_.~:@+-]+)$/.exec(h);const mq=/^#q-([A-Za-z0-9_.~:@+-]+)$/.exec(h);S.id=m?m[1]:null;if(!m)S.tab="info";
   if(mq){S.section="quotes";if(S.qid!==mq[1]){S.qid=mq[1];const q=S.quotes.find(x=>x._id===mq[1]);S.qd=q?clone(q):null}}else{S.qid=null;S.qd=null;if(h==="#quotes")S.section="quotes"}render()}
 
@@ -2094,6 +2103,7 @@ document.addEventListener("click",e=>{const el=e.target.closest("[data-act]");if
 const NAV_SEL='input:not([type=file]):not([type=checkbox]):not([type=hidden]):not([disabled]),select:not([disabled])';
 window.addEventListener("keydown",e=>{
   const el=e.target;if(el&&el.id==="q-addn"){if(e.key==="Enter"){e.preventDefault();e.stopPropagation();act({dataset:{act:"q-addn"}})}return}
+  if(el&&el.id==="ex-addn"){if(e.key==="Enter"){e.preventDefault();e.stopPropagation();act({dataset:{act:"ex-addn"}})}return}
   if(el&&el.id==="m-addn"){if(e.key==="Enter"){e.preventDefault();e.stopPropagation();act({dataset:{act:"m-addn"}})}return}
   if(!el||!el.matches||!el.matches(NAV_SEL)||el.id==="q"||el.id==="qq"||e.isComposing||e.altKey||e.ctrlKey||e.metaKey)return;
   let dir=0;
@@ -2129,7 +2139,8 @@ document.addEventListener("keydown",e=>{
     const row=e.target.closest(".addrow");if(row&&e.target.tagName==="INPUT"){const b=row.querySelector("button[data-act]");if(b){e.preventDefault();act(b)}}}
 });
 document.addEventListener("beforeinput",e=>{const el=e.target;if(!el||el.tagName!=="INPUT"||el.type!=="number"||!e.data||!/[\u0660-\u0669\u06F0-\u06F9\u066B]/.test(e.data))return;
-  e.preventDefault();const v=toLat(e.data);let sel=null;try{sel=el.selectionStart}catch(_){}el.value=String(el.value||"")+v;el.dispatchEvent(new Event("input",{bubbles:true}))},true);
+  e.preventDefault();const v=toLat(e.data);let sel=null;try{sel=el.selectionStart}catch(_){}el.value=String(el.value||"")+v;el._latDirty=true;el.dispatchEvent(new Event("input",{bubbles:true}))},true);
+document.addEventListener("focusout",e=>{const el=e.target;if(el&&el._latDirty){el._latDirty=false;el.dispatchEvent(new Event("change",{bubbles:true}))}},true);
 const onField=e=>{const el=e.target;
   if(e.type==="input"&&el&&(el.tagName==="INPUT"||el.tagName==="TEXTAREA")&&el.type!=="file"&&/[\u0660-\u0669\u06F0-\u06F9\u066B]/.test(el.value)){let a=null,b=null;try{a=el.selectionStart;b=el.selectionEnd}catch(_){}el.value=toLat(el.value);try{if(a!=null)el.setSelectionRange(a,b)}catch(_){}}
   if(el.dataset&&el.dataset.f){const i=el.dataset.f.indexOf("|");const fk=el.dataset.f.slice(0,i),f=el.dataset.f.slice(i+1);(S.draft[fk]=S.draft[fk]||{})[f]=el.type==="checkbox"?el.checked:el.value;
@@ -2167,6 +2178,8 @@ document.addEventListener("change",async e=>{
     if(f==="floor"){const prev=flr(el.defaultValue);list[idx].floor=v;if(v!==prev){for(let k=idx+1;k<list.length;k++){const fl=flr(list[k].floor);if(fl===""||fl===prev)list[k].floor=v;else break}}}
     else list[idx][f]=v;
     await write(c._id,{alu:list});return}
+  if(el.dataset.exselall){const c=cur();const rows=(c&&c.measExtract&&c.measExtract.rows||[]).filter(r=>r.group===el.dataset.exselall);rows.forEach(r=>el.checked?S.exsel.add(r.id):S.exsel.delete(r.id));S.confirm=null;render();return}
+  if(el.dataset.exsel){if(el.checked)S.exsel.add(el.dataset.exsel);else S.exsel.delete(el.dataset.exsel);S.confirm=null;render();return}
   if(el.dataset.mselall){const c=cur();if(el.checked)(c&&c.alu||[]).forEach(r=>S.msel.add(r.id));else S.msel.clear();S.confirm=null;render();return}
   if(el.dataset.msel){if(el.checked)S.msel.add(el.dataset.msel);else S.msel.delete(el.dataset.msel);S.confirm=null;render();return}
   if(el.dataset.qselall&&S.qd){if(el.checked)(S.qd.items||[]).forEach(it=>S.qsel.add(it.id));else S.qsel.clear();S.confirm=null;render();return}
