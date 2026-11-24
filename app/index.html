@@ -132,6 +132,12 @@ body.dragging::after{content:"أفلت الملفات هنا للتحليل وا
 .pb-tab{display:flex;flex-direction:column;align-items:flex-start;gap:0;padding:5px 12px;border-radius:8px;line-height:1.3}.pb-tab span{font-size:.72rem;color:var(--muted)}
 .pb-tab.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}.pb-tab.on span{color:var(--accent-soft)}
 .pb-tot{font-size:.82rem;color:var(--muted);margin-inline-start:auto}.proj-name{font-size:.8em;color:var(--accent);font-weight:600}
+.exchat{display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--line);padding-top:12px;margin-top:4px}.exc-h{display:flex;flex-direction:column;gap:2px}
+.exc-list{display:flex;flex-direction:column;gap:8px;max-height:340px;overflow:auto;padding:2px}
+.exc-msg{max-width:85%;padding:8px 12px;border-radius:12px;font-size:.9rem;line-height:1.6;background:var(--surface);border:1px solid var(--line)}
+.exc-msg.user{align-self:flex-start;background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}.exc-msg.ai{align-self:flex-end}
+.exc-who{display:block;font-size:.72rem;font-weight:700;opacity:.75;margin-bottom:2px}
+.exc-in{display:flex;gap:8px;align-items:flex-end}.exc-in textarea{flex:1;min-height:44px;resize:vertical}.exc-busy{display:flex;align-items:center;gap:8px}
 .order-box{display:flex;flex-direction:column;gap:8px;border:1px solid var(--line);border-radius:10px;padding:12px;background:var(--surface-2)}
 .ib-act{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap}
 .vatbox{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding:12px 14px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2)}
@@ -846,24 +852,26 @@ Also return:
 - stated_total: a total count of pieces written on the page (number) or null; stated_total_text: that text as written.
 - flags: short notes IN ARABIC about widths/heights that break the pattern of similar units, missing floors or skipped numbers, unreadable digits (give best reading + alternative), and pending items. Empty list if none.
 Reply with ONLY this JSON:
-{"rows":[{"ref":"14-D3","w_cm":145.5,"h_cm":120,"qty":1,"group":"regular","note":"","unclear":false,"alt":"","pending":false}],"stated_total":null,"stated_total_text":"","flags":[]}`}
+{"sheet_type":"aluminium","rows":[{"ref":"14-D3","w_cm":145.5,"h_cm":120,"qty":1,"group":"regular","note":"","unclear":false,"alt":"","pending":false,"glass_type":"","thickness":""}],"stated_total":null,"stated_total_text":"","flags":[]}
+sheet_type: "glass" when the sheet is a GLASS cutting / order list (titles such as زجاج، Glass، سيكوريت، دبل، مقاسات الزجاج، or a glass supplier form listing pane sizes with glass type/thickness); otherwise "aluminium" (window/door opening sizes). For glass sheets fill glass_type (e.g. "دبل 24 مم سيكوريت", "SN-70T") and thickness when written on the line or in the header.`}
 function sampleErr(e){const c=e&&e.code;return({not_granted:"لم يُسمح لـ Claude بقراءة الكشف. اسمح له من نافذة الإذن ثم أعد المحاولة.",images_unavailable:"قراءة الصور غير متاحة في هذا العرض. افتح البرنامج داخل Claude.",image_rejected:"تعذّر قراءة الصورة. ارفعها بصيغة JPG أو PNG.",rate_limited:"طلبات كثيرة، انتظر دقيقة ثم أعد المحاولة.",cancelled:"أُوقفت القراءة.",invalid_json:"لم تُفهم نتيجة القراءة، أعد المحاولة.",session_expired:"انتهت الجلسة، أعد تحميل الصفحة."})[c]||"تعذّرت قراءة الكشف، أعد المحاولة.";}
 
 async function runExtract(c){
   const sheets=(c.files||{}).measSheets||[];if(!sheets.length){toast("ارفع صورة الكشف أولاً");return}
   if(!S.sample){toast("قراءة الكشوف متاحة فقط داخل Claude");return}
-  const cid=c._id;const ex=S.ex[cid]={busy:true,msg:"جارٍ تجهيز الصفحات…",ctl:new AbortController()};render();
+  const cid=c._id;S.exPages[cid]=null;const ex=S.ex[cid]={busy:true,msg:"جارٍ تجهيز الصفحات…",ctl:new AbortController()};render();
   try{
     const pages=[];for(const f of sheets){const imgs=await sheetImages(f);imgs.forEach(b=>pages.push({b,src:f.name}))}
     if(!pages.length)throw{code:"image_rejected"};
-    const rows=[],flags=[],totals=[];
+    const rows=[],flags=[],totals=[],kinds=[];
     const prevPend=((S.clients.find(x=>x._id===cid)||c).pendingSite||[]).map(p=>p.ref).filter(Boolean);
     const pf=prevPend.length?(a,b)=>exPrompt(a,b)+`\nNOTE: a previous survey of this project listed these openings WITHOUT sizes because they were not ready on site yet: ${prevPend.join(", ")}. Look for them carefully on this sheet and read their sizes if now written. An opening written without a size means it is still not ready on site: return it with w_cm and h_cm null and do NOT mention it in flags.`:(a,b)=>exPrompt(a,b)+`\nAn opening written without a size means it is not ready on site yet: return it with w_cm and h_cm null and do NOT mention it in flags.`;
     for(let i=0;i<pages.length;i++){
       ex.msg=`جارٍ قراءة الصفحة ${i+1} من ${pages.length}… (قد تأخذ دقيقة)`;render();
       const out=await readPage(pf,i+1,pages.length,pages[i].b,ex.ctl.signal,"rows",st=>{ex.msg=st==="verify"?`مراجعة أرقام الصفحة ${i+1} من ${pages.length} والتأكد منها…`:`قراءة الصفحة ${i+1} من ${pages.length} بدقة عالية…`;render()});
       (out&&out.rows||[]).forEach(r=>{const w=Math.round(N(r.w_cm)*10),h=Math.round(N(r.h_cm)*10);
-        rows.push({id:uid(),ref:String(r.ref||"").trim(),w,h,qty:Math.max(1,Math.round(N(r.qty)||1)),group:GROUPS[r.group]?r.group:"regular",note:String(r.note||""),unclear:!!r.unclear,alt:String(r.alt||""),pending:!!r.pending,page:i+1})});
+        rows.push({id:uid(),ref:String(r.ref||"").trim(),w,h,qty:Math.max(1,Math.round(N(r.qty)||1)),group:GROUPS[r.group]?r.group:"regular",note:String(r.note||""),unclear:!!r.unclear,alt:String(r.alt||""),pending:!!r.pending,page:i+1,gtype:String(r.glass_type||""),thick:String(r.thickness||"")})});
+      if(out&&out.sheet_type)kinds.push(out.sheet_type==="glass"?"glass":"alu");
       (out&&out.flags||[]).forEach(t=>t&&flags.push(`ص${i+1}: ${t}`));
       if(out&&out.stated_total!=null&&N(out.stated_total)>0)totals.push({page:i+1,n:N(out.stated_total),txt:String(out.stated_total_text||"")});
     }
@@ -873,7 +881,8 @@ async function runExtract(c){
     const allRows=[...rows];rows.length=0;readyRows.forEach(r=>rows.push(r));
     const count=sum(rows,r=>r.qty);
     totals.forEach(t=>{const pc=sum(allRows.filter(r=>r.page===t.page),r=>r.qty);if(pc!==t.n)flags.unshift(`ص${t.page}: المكتوب في الكشف ${t.n} قطعة${t.txt?` («${t.txt}»)`:""} لكن المستخرج ${pc}. راجع الأسطر الناقصة أو الزائدة.`)});
-    const res={rows,flags,count,at:new Date().toISOString(),pages:pages.length};
+    const kind=kinds.filter(k=>k==="glass").length>kinds.length/2?"glass":"alu";
+    const res={rows,flags,count,kind,at:new Date().toISOString(),pages:pages.length};
     S.ex[cid]={busy:false};await write(cid,{measExtract:res,pendingSite:pend});
     toast(`استُخرج ${rows.length} سطر (${count} قطعة)${done.length?`. اكتملت مقاسات ${done.join("، ")} من الحصر السابق`:""}`);
   }catch(e){S.ex[cid]={busy:false,err:sampleErr(e)}}
@@ -892,25 +901,27 @@ function sheetsCard(c){
     const byG=k=>X.rows.filter(r=>r.group===k);
     review=`<div class="exbox">
       <h3>نتيجة القراءة <span class="small muted"><span class="num">${X.rows.length}</span> سطر · <span class="num">${X.count}</span> قطعة · بالمليمتر</span></h3>
+      <div class="toolbar" style="justify-content:flex-start;gap:6px"><span class="small muted">نوع الكشف:</span>${[["alu","مقاسات ألمنيوم"],["glass","مقاسات زجاج"]].map(([k,l])=>`<button class="${(X.kind||"alu")===k?"primary":"ghost"}" data-act="ex-kind" data-k="${k}" ${S.canWrite?"":"disabled"}>${l}</button>`).join("")}
+      ${X.kind==="glass"&&X.appliedAt&&exMovable(c,X).length&&S.canWrite?`<button class="danger" data-act="ex-move">نقل ${exMovable(c,X).length} سطر أُضيفت للألمنيوم بالخطأ إلى الزجاج</button>`:""}</div>
       ${exIssues(X)}
       ${S.canWrite?`<div class="toolbar" style="justify-content:flex-start">${S.exsel.size?(S.confirm==="ex-delsel"?`<button class="danger armed" data-act="ex-delsel">تأكيد حذف ${S.exsel.size} بند</button>`:`<button class="danger" data-act="ex-delsel">حذف المحدد (${S.exsel.size})</button>`):""}<span class="addn"><input id="ex-addn" type="number" min="1" max="200" inputmode="numeric" placeholder="العدد" aria-label="عدد البنود المراد إضافتها"><button data-act="ex-addn">إضافة بنود</button></span><button data-act="ex-add">+ بند</button></div>`:""}
-      ${Object.keys(GROUPS).filter(k=>byG(k).length).map(k=>`<h3 style="margin-top:4px">${GROUPS[k]}</h3>
-      <div class="tablebox"><table class="qitems mitems"><thead><tr>${S.canWrite?`<th><input type="checkbox" data-exselall="${k}" aria-label="تحديد الكل" ${byG(k).every(r=>S.exsel.has(r.id))?"checked":""}></th>`:""}<th>الكود</th><th>النوع (قالب الحساب)</th><th>العرض مم</th><th>الارتفاع مم</th><th>العدد</th><th>المساحة م²</th><th>المجموعة</th><th>ملاحظة</th><th></th></tr></thead><tbody>
+      ${Object.keys(GROUPS).filter(k=>byG(k).length).map(k=>`<h3 style="margin-top:4px">${X.kind==="glass"&&k==="regular"?"ألواح الزجاج":GROUPS[k]}</h3>
+      <div class="tablebox"><table class="qitems mitems"><thead><tr>${S.canWrite?`<th><input type="checkbox" data-exselall="${k}" aria-label="تحديد الكل" ${byG(k).every(r=>S.exsel.has(r.id))?"checked":""}></th>`:""}<th>الكود</th><th>${X.kind==="glass"?"نوع الزجاج":"النوع (قالب الحساب)"}</th><th>العرض مم</th><th>الارتفاع مم</th><th>العدد</th><th>المساحة م²</th><th>${X.kind==="glass"?"السماكة":"المجموعة"}</th><th>ملاحظة</th><th></th></tr></thead><tbody>
       ${byG(k).map(r=>`<tr class="${r.unclear&&!r.ok?"unclear":""} ${S.exsel.has(r.id)?"selrow":""}">${S.canWrite?`<td><input type="checkbox" data-exsel="${esc(r.id)}" ${S.exsel.has(r.id)?"checked":""} aria-label="تحديد"></td>`:""}
         <td>${exIn(r,"ref","72px")}</td>
-        <td><select data-ex="${esc(r.id)}|recipe" ${S.canWrite?"":"disabled"} aria-label="قالب الحساب" style="min-width:190px">${recOpts(r.recipe||exRecipeDefault(r))}</select></td>
+        <td>${X.kind==="glass"?exIn(r,"gtype","190px"):`<select data-ex="${esc(r.id)}|recipe" ${S.canWrite?"":"disabled"} aria-label="قالب الحساب" style="min-width:190px">${recOpts(r.recipe||exRecipeDefault(r))}</select>`}</td>
         <td>${exIn(r,"w","74px","number")}</td><td>${exIn(r,"h","74px","number")}</td><td>${exIn(r,"qty","52px","number")}</td>
         <td class="num">${area(r.w,r.h,r.qty).toFixed(2)}</td>
-        <td><select data-ex="${esc(r.id)}|group" ${S.canWrite?"":"disabled"} aria-label="المجموعة" style="min-width:110px">${Object.entries(GROUPS).map(([g,l])=>`<option value="${g}" ${g===r.group?"selected":""}>${l}</option>`).join("")}</select></td>
+        <td>${X.kind==="glass"?exIn(r,"thick","90px"):`<select data-ex="${esc(r.id)}|group" ${S.canWrite?"":"disabled"} aria-label="المجموعة" style="min-width:110px">${Object.entries(GROUPS).map(([g,l])=>`<option value="${g}" ${g===r.group?"selected":""}>${l}</option>`).join("")}</select>`}</td>
         <td style="white-space:normal">${exIn(r,"note","150px")}${r.pending?`<div class="small" style="color:var(--warn)">بانتظار الاعتماد</div>`:""}</td>
         <td>${S.canWrite?`<button class="danger ghost" data-act="ex-del" data-id="${esc(r.id)}">حذف</button>`:""}</td></tr>`).join("")}
       </tbody><tfoot><tr><td colspan="${S.canWrite?5:4}">الإجمالي</td><td class="num">${sum(byG(k),r=>r.qty)}</td><td class="num">${sum(byG(k),r=>area(r.w,r.h,r.qty)).toFixed(2)}</td><td colspan="3"></td></tr></tfoot></table></div>`).join("")}
       <div class="toolbar">
-        ${S.canWrite?`<button class="primary" data-act="ex-apply">إضافة إلى مقاسات الألمنيوم</button>`:""}
+        ${S.canWrite?`<button class="primary" data-act="ex-apply">${X.kind==="glass"?"إضافة إلى مقاسات الزجاج":"إضافة إلى مقاسات الألمنيوم"}</button>`:""}
         <button data-act="pdf-dl" data-src="ex" ${S.pdfBusy?"disabled":""}>${S.pdfBusy?"جارٍ إنشاء PDF…":"تنزيل PDF"}</button>
         ${S.canWrite&&S.assets?`<button data-act="pdf-save" data-src="ex" ${S.pdfBusy?"disabled":""}>حفظ PDF في ملف العميل</button>`:""}
         <span style="flex:1"></span>${S.canWrite?del("exclear:"+c._id,"مسح النتيجة"):""}
-      </div></div>`;
+      </div>${exChatBox(c,X)}</div>`;
   }
   return `<div class="card"><h3>كشف المقاسات اليدوي ${uploader("measSheets","رفع صور الكشف أو PDF","image/*,application/pdf")}</h3>
     <p class="small muted" style="margin:0">ارفع صور كشف الموقع المكتوب بخط اليد (بالسنتيمتر). يقرأه Claude ويحوّله للمليمتر ويطلع لك ملف PDF مرتّب، مع ملاحظات على الأرقام غير الواضحة والمجاميع.</p>
@@ -922,6 +933,8 @@ function sheetsCard(c){
   </div>`;
 }
 const exReady=r=>N(r.w)>0&&N(r.h)>0;
+function exMovable(c,X){return (X.rows||[]).map(r=>(c.alu||[]).find(a=>a.ref===r.ref&&N(a.w)===N(r.w)&&N(a.h)===N(r.h))).filter(Boolean).filter((a,i,arr)=>arr.indexOf(a)===i)}
+function exGlassRow(c,r){const g=c.colors?.glass||{};return{id:uid(),ref:r.ref,type:r.gtype||g.type||"",thick:r.thick||g.thickness||"",color:g.color||"",w:N(r.w),h:N(r.h),qty:N(r.qty)||1}}
 function exIssueRows(X){return (X.rows||[]).filter(r=>!r.ok&&exReady(r)&&(r.unclear||!r.ref))}
 function exIssues(X){
   const rows=exIssueRows(X);const tot=(X.flags||[]).map((t,i)=>({t,i})).filter(o=>/المكتوب في الكشف/.test(o.t)&&!(X.flagsOk||[]).includes(o.i));
@@ -2089,6 +2102,8 @@ async function act(el){
   if(a==="ex-apply"){
     const X=c.measExtract;if(!X||!X.rows.length){toast("لا توجد أسطر للإضافة");return}
     const bad=X.rows.find(r=>!r.ref&&exReady(r));if(bad){toast("أكمل الكود لكل الأسطر أولاً");return}
+    if(X.kind==="glass"){const add=X.rows.filter(exReady).map(r=>exGlassRow(c,r));
+      if(await write(c._id,{glass:[...(c.glass||[]),...add],measExtract:{...X,appliedAt:new Date().toISOString()}}))toast(`أُضيف ${add.length} سطر إلى مقاسات الزجاج`);return}
     const notReady=X.rows.filter(r=>!exReady(r));const pend=[...(c.pendingSite||[])];notReady.forEach(r=>{if(!pend.some(p=>p.ref&&p.ref===r.ref))pend.push({ref:r.ref,qty:r.qty,group:r.group,note:r.note,at:new Date().toISOString()})});
     const add=X.rows.filter(exReady).map(r=>{const rc=recipeById(r.recipe||exRecipeDefault(r));return{id:uid(),ref:r.ref,w:N(r.w),h:N(r.h),qty:N(r.qty)||1,recipe:rc?rc.id:"",system:rc?rc.system:"",type:rc?rc.name:"",group:r.group,note:[r.pending?"بانتظار الاعتماد":"",r.unclear?"رقم غير واضح":"",r.note].filter(Boolean).join(" · ")}});
     if(await write(c._id,{alu:[...(c.alu||[]),...add],pendingSite:pend,measExtract:{...X,appliedAt:new Date().toISOString()}}))toast(`أُضيف ${add.length} سطر إلى مقاسات الألمنيوم`);
@@ -2167,6 +2182,12 @@ async function act(el){
     if(await write(c._id,{clientKey:key,...(c.project?{}:{project:"مشروع "+(projectsOf(o).length+1)})}))toast("تم ربط الملفين كمشاريع لنفس العميل");return}
   if(a==="unlink-proj"&&c){if(S.confirm!=="unlink"){S.confirm="unlink";render();clearTimeout(act._t);act._t=setTimeout(()=>{S.confirm=null;render()},5000);toast("اضغط «فصل هذا المشروع» مرة أخرى للتأكيد",{kind:"warn"});return}
     S.confirm=null;if(await write(c._id,{clientKey:""}))toast("تم فصل المشروع وأصبح ملفاً مستقلاً");return}
+  if(a==="ex-kind"&&c){const X=clone(c.measExtract||{rows:[]});X.kind=el.dataset.k;await write(c._id,{measExtract:X});return}
+  if(a==="ex-move"&&c){const X=c.measExtract||{rows:[]};const mv=exMovable(c,X);if(!mv.length)return;
+    const add=mv.map(a=>exGlassRow(c,X.rows.find(r=>r.ref===a.ref&&N(r.w)===N(a.w)&&N(r.h)===N(a.h))||a));
+    if(await write(c._id,{alu:(c.alu||[]).filter(a=>!mv.includes(a)),glass:[...(c.glass||[]),...add]}))toast(`تم نقل ${mv.length} سطر من مقاسات الألمنيوم إلى مقاسات الزجاج`);return}
+  if(a==="exc-send"&&c){const t=document.getElementById("exc-in");await exChat(c,t&&t.value);return}
+  if(a==="exc-stop"&&c){const s=S.ex["chat:"+c._id];s&&s.ctl&&s.ctl.abort();return}
   if(a==="ao-pdf"&&c){await aluOrderPdf(c,"dl");return}
   if(a==="ao-save"&&c){await aluOrderPdf(c,"save");return}
   if(a==="ao-xlsx"&&c){await aluOrderXlsx(c);return}
@@ -2209,6 +2230,7 @@ document.addEventListener("click",e=>{const el=e.target.closest("[data-act]");if
 const NAV_SEL='input:not([type=file]):not([type=checkbox]):not([type=hidden]):not([disabled]),select:not([disabled])';
 window.addEventListener("keydown",e=>{
   const el=e.target;if(el&&el.id==="q-addn"){if(e.key==="Enter"){e.preventDefault();e.stopPropagation();act({dataset:{act:"q-addn"}})}return}
+  if(el&&el.id==="exc-in"){if(e.key==="Enter"&&(e.ctrlKey||e.metaKey)){e.preventDefault();e.stopPropagation();act({dataset:{act:"exc-send"}})}else e.stopPropagation();return}
   if(el&&el.id==="ex-addn"){if(e.key==="Enter"){e.preventDefault();e.stopPropagation();act({dataset:{act:"ex-addn"}})}return}
   if(el&&el.id==="m-addn"){if(e.key==="Enter"){e.preventDefault();e.stopPropagation();act({dataset:{act:"m-addn"}})}return}
   if(!el||!el.matches||!el.matches(NAV_SEL)||el.id==="q"||el.id==="qq"||e.isComposing||e.altKey||e.ctrlKey||e.metaKey)return;
@@ -2265,6 +2287,7 @@ const onField=e=>{const el=e.target;
   if(el.id==="statusFilter"&&e.type==="change"){S.status=el.value;render();return}
 };
 document.addEventListener("input",onField);
+document.addEventListener("input",e=>{if(e.target&&e.target.id==="exc-in")S.excDraft=e.target.value});
 document.addEventListener("input",e=>{const el=e.target;if(el&&el.dataset&&el.dataset.ib&&el.tagName!=="SELECT"){const i=el.dataset.ib.lastIndexOf("|");(S.draft["ib:"+el.dataset.ib.slice(0,i)]=S.draft["ib:"+el.dataset.ib.slice(0,i)]||{})[el.dataset.ib.slice(i+1)]=toLat(el.value)}});
 /* drag & drop / paste anywhere in a client file → smart intake */
 (()=>{let depth=0;const hasFiles=e=>e.dataTransfer&&[...(e.dataTransfer.types||[])].includes("Files");const can=()=>S.id&&S.canWrite&&S.assets&&!S.settings;
@@ -2547,6 +2570,67 @@ async function aluOrderXlsx(c){
     const b=await z.generateAsync({type:"blob",mimeType:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
     await S.downloads.save({filename:`طلب-ألمنيوم-${c.fileNo||""}-${c.name||""}.xlsx`.replace(/[\\/:*?"<>|]/g,"-"),data:b});
   }catch(e){if(!(e&&e.code==="declined"))toast("تعذّر إنشاء ملف Excel")}
+}
+
+
+/* ---------- chat with Claude about the sheet reading ---------- */
+S.exPages={};
+function exChatBox(c,X){
+  const msgs=X.chat||[];const st=S.ex["chat:"+c._id]||{};const can=S.canWrite&&S.sample;
+  return `<div class="exchat"><div class="exc-h"><b>ملاحظاتك على القراءة</b><span class="small muted">اكتب لـ Claude أي تصحيح أو توجيه، ويعيد قراءة الكشف بناءً عليه ويحدّث الجدول.</span></div>
+    ${msgs.length?`<div class="exc-list">${msgs.map(m=>`<div class="exc-msg ${m.role}"><span class="exc-who">${m.role==="user"?"أنت":"Claude"}</span><div>${esc(m.text).replace(/\n/g,"<br>")}</div></div>`).join("")}</div>`:""}
+    ${st.busy?`<div class="exc-busy"><span class="spin" aria-hidden="true"></span><span class="small">${esc(st.msg||"Claude يراجع الكشف…")}</span><button class="ghost" data-act="exc-stop">إيقاف</button></div>`:""}
+    ${st.err?`<div class="small neg">${esc(st.err)}</div>`:""}
+    ${can?`<div class="exc-in"><textarea id="exc-in" rows="2" placeholder="مثال: الأرقام في الصفحة الثانية بالملي مو بالسنتي · W5 عرضه 1450 · الأسطر المشطوبة احذفها · الشبابيك اللي عليها نجمة حمامات" ${st.busy?"disabled":""}>${esc(S.excDraft||"")}</textarea><button class="primary" data-act="exc-send" ${st.busy?"disabled":""}>إرسال</button></div><div class="small muted">Ctrl + Enter للإرسال</div>`:(!S.sample?`<div class="small muted">المحادثة تعمل عند فتح البرنامج داخل Claude.</div>`:"")}
+  </div>`;
+}
+async function exChat(c,text){
+  text=String(text||"").trim();if(!text)return;const cid=c._id;
+  if(!S.sample){toast("المحادثة تعمل عند فتح البرنامج داخل Claude");return}
+  const st=S.ex["chat:"+cid]={busy:true,msg:"جارٍ تجهيز صفحات الكشف…",ctl:new AbortController()};S.excDraft="";
+  const X0=clone(c.measExtract||{rows:[]});const chat=[...(X0.chat||[]),{role:"user",text,at:new Date().toISOString()}];
+  X0.chat=chat;await write(cid,{measExtract:X0});render();
+  try{
+    let pages=S.exPages[cid];
+    if(!pages){pages=[];for(const f of ((c.files||{}).measSheets||[])){for(const b of await sheetImages(f))pages.push(await toJpeg(b,2400))}S.exPages[cid]=pages}
+    let maxN=1;try{const lim=await S.sample.limits();maxN=(lim&&lim.images&&lim.images.maxCount)||1}catch(_){}
+    const imgs=pages.slice(0,Math.max(1,maxN));if(!imgs.length)throw{code:"image_rejected"};
+    st.msg="Claude يراجع الكشف بناءً على ملاحظتك…";render();
+    const cur_=(S.clients.find(x=>x._id===cid)||c).measExtract||X0;
+    const rows=(cur_.rows||[]).map(r=>({ref:r.ref,w_mm:r.w,h_mm:r.h,qty:r.qty,group:r.group,note:r.note||"",unclear:!!r.unclear&&!r.ok,pending:!!r.pending}));
+    const pend=((S.clients.find(x=>x._id===cid)||c).pendingSite||[]).map(p=>p.ref);
+    const hist=chat.slice(-8,-1).map(m=>`${m.role==="user"?"USER":"ASSISTANT"}: ${m.text}`).join("\n");
+    const prompt=`You are Claude, helping Al Qimma Tower Factory (aluminium & glass, Saudi Arabia) review a HANDWRITTEN site measurement sheet. The images are the sheet page(s)${pages.length>imgs.length?` (first ${imgs.length} of ${pages.length} pages)`:""}.
+Sizes on the sheet are normally in centimetres; the table below is already converted to MILLIMETRES.
+Groups: regular (normal windows), bath_door (bathroom sandblasted windows and doors), small_green (sizes highlighted in green).
+An opening written without a size is NOT ready on site yet: keep it out of "rows" and list its ref in "not_ready".
+Openings remembered from earlier surveys as not ready: ${pend.join(", ")||"none"}.
+${CODE_PROMPT}
+CURRENT EXTRACTION (JSON, mm):
+${JSON.stringify(rows)}
+${hist?`EARLIER CONVERSATION:\n${hist}\n`:""}
+THE USER NOW SAYS (Arabic, from the factory's engineer — follow it, it overrides your earlier reading):
+"""${text}"""
+Act like an expert colleague: apply the instruction to the whole table (not only one line when it is a general rule), re-check the affected numbers against the images digit by digit, and fix anything else you notice is clearly wrong. If the user only asks a question, answer it and return "rows": null.
+Reply with ONLY this JSON:
+{"reply_ar":"short, clear Arabic reply: what you changed, written like «G-W1: العرض من 150 إلى 1500» (no arrows), or the answer","sheet_type":"aluminium or glass (change it only if the user says so or it is clearly wrong)","rows":[{"ref":"G-W1","w_mm":1500,"h_mm":1200,"qty":1,"group":"regular","note":"","unclear":false,"pending":false}],"not_ready":[]}`;
+    const out=await S.sample.json(prompt,{images:imgs,modelTier:"complex",signal:st.ctl.signal});
+    const c2=S.clients.find(x=>x._id===cid)||c;const X=clone(c2.measExtract||X0);const patch={};
+    if(out&&Array.isArray(out.rows)){
+      const pool=[...(X.rows||[])];
+      const nr=out.rows.map(r=>{const ref=String(r.ref||"").trim();const k=pool.findIndex(o=>o.ref===ref);const old=k>=0?pool.splice(k,1)[0]:{};
+        const w=Math.round(N(r.w_mm)),h=Math.round(N(r.h_mm));
+        return{...old,id:old.id||uid(),ref,w,h,qty:Math.max(1,Math.round(N(r.qty)||1)),group:GROUPS[r.group]?r.group:(old.group||"regular"),note:String(r.note??old.note??""),unclear:!!r.unclear,ok:old.ok&&!r.unclear&&old.w===w&&old.h===h,pending:!!r.pending}});
+      const ready=nr.filter(exReady);let ps=[...(c2.pendingSite||[])];
+      [...nr.filter(r=>!exReady(r)).map(r=>r.ref),...(out.not_ready||[]).map(String)].forEach(ref=>{if(ref&&!ps.some(p=>p.ref===ref))ps.push({ref,qty:1,at:new Date().toISOString()})});
+      ready.forEach(r=>{ps=ps.filter(p=>p.ref!==r.ref)});
+      X.rows=ready;X.count=sum(ready,r=>r.qty);patch.pendingSite=ps;
+    }
+    if(out&&(out.sheet_type==="glass"||out.sheet_type==="aluminium")){const k=out.sheet_type==="glass"?"glass":"alu";if(k!==X.kind)X.kind=k}
+    X.chat=[...(X.chat||chat),{role:"ai",text:String(out&&out.reply_ar||"تمت المراجعة."),at:new Date().toISOString()}];patch.measExtract=X;
+    S.ex["chat:"+cid]={busy:false};await write(cid,patch);
+  }catch(e){const back=(S.clients.find(x=>x._id===cid)||c).measExtract;S.ex["chat:"+cid]={busy:false,err:e&&e.code==="cancelled"?"":String(sampleErr(e)).replace("الكشف","الطلب")};if(e&&e.code==="cancelled")S.excDraft=text}
+  render();setTimeout(()=>{const l=document.querySelector(".exc-list");if(l)l.scrollTop=l.scrollHeight},30);
 }
 
 /* ---------- boot ---------- */
