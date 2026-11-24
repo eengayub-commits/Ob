@@ -2708,7 +2708,7 @@ async function fillTemplate(path,sheetName,build,filename){
     const JSZip=await loadJsZip();const b64=TPL_XLSX[path];if(!b64)throw new Error("tpl");
     const z=await JSZip.loadAsync(Uint8Array.from(atob(b64),ch=>ch.charCodeAt(0)));
     let s=await z.file("xl/worksheets/sheet1.xml").async("string");const head=(/<sheetData>([\s\S]*?)<\/sheetData>/.exec(s)||[,""])[1];
-    const {rows,merges}=build(head);
+    const {rows,merges,cols}=build(head);if(cols)s=s.replace(/<cols>[\s\S]*?<\/cols>/,cols);
     s=s.replace(/<sheetData>[\s\S]*?<\/sheetData>|<sheetData\/>/,`<sheetData>${rows.join("")}</sheetData>`).replace(/<mergeCells[\s\S]*?<\/mergeCells>/,`<mergeCells count="${merges.length}">${merges.map(m=>`<mergeCell ref="${m}"/>`).join("")}</mergeCells>`).replace(/<dimension ref="[^"]*"\/>/,"");
     z.file("xl/worksheets/sheet1.xml",s);
     const wb=(await z.file("xl/workbook.xml").async("string")).replace('name="ORDER"',`name="${xe(sheetName.slice(0,31))}"`);z.file("xl/workbook.xml",wb);
@@ -2751,12 +2751,12 @@ async function glassOrderXlsx(c){
     keys.forEach(k=>{const lines=glassSpecLines(c,k)||[k,"",""];
       R.push(xrow(r,"36.75",L7.map(L=>xc(L+r,31,L==="A"?"DESCRIPTION":""))));merges.push(`A${r}:G${r}`);r++;
       lines.forEach(t=>{R.push(xrow(r,"33.75",L7.map(L=>xc(L+r,28,L==="A"?t:""))));merges.push(`A${r}:G${r}`);r++});
-      R.push(xrow(r,"32.25",[xc("A"+r,12,"REF"),xc("B"+r,32,"WIDTH "),xc("C"+r,32,""),xc("D"+r,32,"HEIGHT "),xc("E"+r,32,""),xc("F"+r,12,"Q"),xc("G"+r,13,"T . SQM")]));merges.push(`B${r}:C${r}`,`D${r}:E${r}`);r++;
-      const f=r;G[k].forEach(x=>{R.push(xrow(r,"33.75",[xc("A"+r,4,x.ref),xc("B"+r,24,x.w,"n"),xc("C"+r,24,""),xc("D"+r,25,x.h,"n"),xc("E"+r,25,""),xc("F"+r,2,x.qty,"n"),xc("G"+r,2,`(B${r}*D${r}*F${r})/1000000`,"f")]));merges.push(`B${r}:C${r}`,`D${r}:E${r}`);r++});
-      const l=r-1;R.push(xrow(r,"30",[...["A","B","C","D","E"].map(L=>xc(L+r,26,L==="A"?"TOTAL ":"")),xc("F"+r,1,`SUM(F${f}:F${l})`,"f"),xc("G"+r,1,`SUM(G${f}:G${l})`,"f")]));merges.push(`A${r}:E${r}`);totals.push(r);r+=2});
-    if(totals.length>1){R.push(xrow(r,"30",[...["A","B","C","D","E"].map(L=>xc(L+r,27,L==="A"?"GRAND TOTAL":"")),xc("F"+r,21,totals.map(t=>"F"+t).join("+"),"f"),xc("G"+r,21,totals.map(t=>"G"+t).join("+"),"f")],' thickBot="1"'));merges.push(`A${r}:E${r}`);r++}
+      R.push(xrow(r,"32.25",[xc("A"+r,12,"#"),xc("B"+r,32,"WIDTH "),xc("C"+r,32,"HEIGHT "),xc("D"+r,12,"Q"),xc("E"+r,12,"REF"),xc("F"+r,13,"T . SQM"),xc("G"+r,13,"")]));merges.push(`F${r}:G${r}`);r++;
+      const f=r;G[k].forEach((x,n)=>{R.push(xrow(r,"33.75",[xc("A"+r,4,n+1,"n"),xc("B"+r,24,x.w,"n"),xc("C"+r,25,x.h,"n"),xc("D"+r,2,x.qty,"n"),xc("E"+r,4,x.ref),xc("F"+r,2,`MAX(B${r}*C${r}/1000000,${GMIN})*D${r}`,"f"),xc("G"+r,2,"")]));merges.push(`F${r}:G${r}`);r++});
+      const l=r-1;R.push(xrow(r,"30",[...["A","B","C"].map(L=>xc(L+r,26,L==="A"?"TOTAL ":"")),xc("D"+r,1,`SUM(D${f}:D${l})`,"f"),xc("E"+r,26,""),xc("F"+r,1,`SUM(F${f}:F${l})`,"f"),xc("G"+r,1,"")]));merges.push(`A${r}:C${r}`,`F${r}:G${r}`);totals.push(r);r+=2});
+    if(totals.length>1){R.push(xrow(r,"30",[...["A","B","C"].map(L=>xc(L+r,27,L==="A"?"GRAND TOTAL":"")),xc("D"+r,21,totals.map(t=>"D"+t).join("+"),"f"),xc("E"+r,27,""),xc("F"+r,21,totals.map(t=>"F"+t).join("+"),"f"),xc("G"+r,21,"")],' thickBot="1"'));merges.push(`A${r}:C${r}`,`F${r}:G${r}`);r++}
     R.push(xrow(r,"",L7.map(L=>xc(L+r,22,L==="A"?(c.glassOrderNote||"ترسل لمصنع برج القمة "):"")))),R.push(xrow(r+1,"32.25",L7.map(L=>xc(L+(r+1),23,""))));merges.push(`A${r}:G${r+1}`);
-    return{rows:R,merges};
+    return{rows:R,merges,cols:'<cols><col min="1" max="1" width="10" customWidth="1"/><col min="2" max="2" width="24" customWidth="1"/><col min="3" max="3" width="24" customWidth="1"/><col min="4" max="4" width="14" customWidth="1"/><col min="5" max="5" width="34" customWidth="1"/><col min="6" max="6" width="24" customWidth="1"/><col min="7" max="7" width="14" customWidth="1"/><col min="8" max="8" width="0.140625" customWidth="1"/></cols>'};
   },`طلب-زجاج-${c.fileNo||""}-${clientTitle(c)}.xlsx`);
 }
 /* missing info for orders, shown beside Claude notes and in the calc tab */
@@ -2767,6 +2767,7 @@ function orderMissing(c,kind){const m=[];const a=c.colors?.alu||{};
 function missingInputs(c,list){return list.map(x=>x.k==="@co"?`<span class="small neg">${esc(x.l)}: أدخلها من «الإعدادات»</span>`:`<label class="fld miss"><span>${esc(x.l)}</span><input ${x.k.startsWith("@")?`data-miss="${esc(x.k)}"`:`data-cf="${esc(x.k)}"`} placeholder="${esc(x.ph||"")}" ${x.k.startsWith("@gspec")?'dir="ltr"':""}></label>`).join("")}
 
 /* glass order source: saved glass measurements first, computed panes only when chosen */
+const GMIN=0.35;const gArea=r=>Math.max(N(r.w)*N(r.h)/1e6,GMIN)*(N(r.qty)||1);
 const glassSrc=c=>c.glassSrc||((c.glass||[]).length?"saved":"calc");
 function glassGroups(c){const g={};const src=glassSrc(c);
   const list=src==="saved"?(c.glass||[]).map(r=>({ref:r.ref,spec:[r.type,r.thick,r.color].filter(Boolean).join(" ")||"زجاج",w:N(r.w),h:N(r.h),qty:N(r.qty)||1}))
@@ -2783,21 +2784,22 @@ function glassOrderSVGs(c,logo){
     s+=L(X1,84,X2,84,{stroke:QC.line,sw:.8})+T(X1,100,`PROJECT NAME : ${clientTitle(c)}`,{size:9.5,weight:700})+T(X2,100,`DATE: ${dmy(today())}`,{size:9.5,anchor:"end",weight:700});y=114};
   const close=()=>{s+=L(X1,808,X2,808,{stroke:QC.line,sw:.6})+T(297,822,c.glassOrderNote||"ترسل لمصنع برج القمة",{size:9,anchor:"middle",weight:700,fill:QC.ink});pages.push(s+"</svg>")};
   const need=h=>{if(y+h>790){close();open()}};
-  const cw=[110,130,130,70,95];const cx=[];let x=X1;cw.forEach(w=>{cx.push(x);x+=w});
+  const cw=[45,110,110,70,105,95];const cx=[];let x=X1;cw.forEach(w=>{cx.push(x);x+=w});
   const cell=(i,t,yy,o={})=>T(cx[i]+cw[i]/2,yy,String(t),{size:9.5,anchor:"middle",...o});
   open();let gq=0,ga=0;
   keys.forEach(k=>{const lines=glassSpecLines(c,k)||[k,"",""];const rows=G[k];
     need(18*4+22+20*Math.min(rows.length,3));
     s+=`<rect x="${X1}" y="${y}" width="${W}" height="18" fill="${QC.soft}" stroke="${QC.ink}" stroke-width=".6"/>`+T(297,y+12.5,"DESCRIPTION",{size:8.5,anchor:"middle",weight:700});y+=18;
     lines.filter(Boolean).forEach(t=>{s+=`<rect x="${X1}" y="${y}" width="${W}" height="17" fill="#fff" stroke="${QC.ink}" stroke-width=".6"/>`+T(297,y+12,t,{size:8.5,anchor:"middle",weight:700});y+=17});
-    const head=()=>{s+=`<rect x="${X1}" y="${y}" width="${W}" height="20" fill="#f4b183" stroke="${QC.ink}" stroke-width=".6"/>`;["REF","WIDTH","HEIGHT","Q","T . SQM"].forEach((h,i)=>s+=cell(i,h,y+14,{weight:700,size:10}));y+=20};head();
+    const head=()=>{s+=`<rect x="${X1}" y="${y}" width="${W}" height="20" fill="#f4b183" stroke="${QC.ink}" stroke-width=".6"/>`;["#","WIDTH","HEIGHT","Q","REF","T . SQM"].forEach((h,i)=>s+=cell(i,h,y+14,{weight:700,size:10}));y+=20};head();
     let tq=0,ta=0;
-    rows.forEach((r,i)=>{if(y+19>780){close();open();head()}const a=r.w*r.h*r.qty/1e6;tq+=r.qty;ta+=a;
+    rows.forEach((r,i)=>{if(y+19>780){close();open();head()}const a=gArea(r);tq+=r.qty;ta+=a;
       s+=`<rect x="${X1}" y="${y}" width="${W}" height="19" fill="#fff" stroke="${QC.ink}" stroke-width=".4"/>`;cx.slice(1).forEach(xx=>s+=L(xx,y,xx,y+19,{stroke:QC.ink,sw:.4}));
-      s+=cell(0,r.ref,y+13,{size:8.5})+cell(1,r.w,y+13.5,{weight:700,size:10.5})+cell(2,r.h,y+13.5,{weight:700,size:10.5})+cell(3,r.qty,y+13.5,{weight:700,size:10.5})+cell(4,+a.toFixed(3),y+13.5,{weight:700,size:10.5});y+=19});
-    s+=`<rect x="${X1}" y="${y}" width="${W}" height="20" fill="#fff" stroke="${QC.ink}" stroke-width=".8"/>`+T(cx[0]+(cw[0]+cw[1]+cw[2])/2,y+14,"TOTAL",{size:11,anchor:"middle",weight:700})+cell(3,tq,y+14,{weight:700,size:11})+cell(4,+ta.toFixed(3),y+14,{weight:700,size:11});y+=32;gq+=tq;ga+=ta});
-  if(keys.length>1){need(24);s+=`<rect x="${X1}" y="${y}" width="${W}" height="22" fill="#bfbfbf" stroke="${QC.ink}" stroke-width=".8"/>`+T(cx[0]+(cw[0]+cw[1]+cw[2])/2,y+15,"GRAND TOTAL",{size:11.5,anchor:"middle",weight:700,fill:"#c00000"})+cell(3,gq,y+15,{weight:700,size:11.5,fill:"#c00000"})+cell(4,+ga.toFixed(3),y+15,{weight:700,size:11.5,fill:"#c00000"})}
+      s+=cell(0,i+1,y+13,{size:8.5})+cell(1,r.w,y+13.5,{weight:700,size:10.5})+cell(2,r.h,y+13.5,{weight:700,size:10.5})+cell(3,r.qty,y+13.5,{weight:700,size:10.5})+cell(4,r.ref,y+13,{size:8.5})+cell(5,+a.toFixed(3),y+13.5,{weight:700,size:10.5});y+=19});
+    s+=`<rect x="${X1}" y="${y}" width="${W}" height="20" fill="#fff" stroke="${QC.ink}" stroke-width=".8"/>`+T(cx[0]+(cw[0]+cw[1]+cw[2])/2,y+14,"TOTAL",{size:11,anchor:"middle",weight:700})+cell(3,tq,y+14,{weight:700,size:11})+cell(5,+ta.toFixed(3),y+14,{weight:700,size:11});y+=32;gq+=tq;ga+=ta});
+  if(keys.length>1){need(24);s+=`<rect x="${X1}" y="${y}" width="${W}" height="22" fill="#bfbfbf" stroke="${QC.ink}" stroke-width=".8"/>`+T(cx[0]+(cw[0]+cw[1]+cw[2])/2,y+15,"GRAND TOTAL",{size:11.5,anchor:"middle",weight:700,fill:"#c00000"})+cell(3,gq,y+15,{weight:700,size:11.5,fill:"#c00000"})+cell(5,+ga.toFixed(3),y+15,{weight:700,size:11.5,fill:"#c00000"})}
   close();return pages;
+  /* min glass area */
 }
 async function glassOrderPdf(c,mode){const G=glassGroups(c);if(!Object.keys(G).length){toast("لا يوجد زجاج للطلب. أدخل مقاسات الزجاج أولاً");return}
   const miss=orderMissing(c,"glass").filter(m=>m.k!=="@co");if(miss.length){toast("أكمل بيانات الطلب أولاً: "+miss.map(m=>m.l).join("، "),{kind:"warn"});return}
@@ -2846,9 +2848,9 @@ function tabGOrder(c){
   return `${stageBar(c)}<div class="card"><h3>بيانات طلب الزجاج ${c.glassOrderedAt?`<span class="ok-badge">✓ صدر بتاريخ ${esc(String(c.glassOrderedAt).slice(0,10))}</span>`:""}</h3>${srcBar}<div class="miss-grid">${fieldInputs(orderFields(c,"glass"))}</div>
     ${!co.cr||!co.vat?`<div class="small neg">السجل التجاري أو الرقم الضريبي غير مدخل في «الإعدادات».</div>`:""}
     <div class="toolbar" style="justify-content:flex-start"><button class="primary" data-act="go-xlsx">طلب الزجاج Excel</button><button data-act="go-pdf" ${S.pdfBusy?"disabled":""}>طلب الزجاج PDF</button>${S.canWrite&&S.assets?`<button data-act="go-save" ${S.pdfBusy?"disabled":""}>حفظ طلب الزجاج في ملف العميل</button>`:""}</div></div>
-  ${keys.map(k=>{const L=glassSpecLines(c,k);const rs=G[k];return `<div class="card"><h3>${esc(k)} <span class="small muted" dir="ltr">${L?esc(L.filter(Boolean).join(" + ")):"بدون وصف إنجليزي"}</span></h3><div class="tablebox"><table><thead><tr><th>REF</th><th>WIDTH</th><th>HEIGHT</th><th>Q</th><th>T.SQM</th></tr></thead><tbody>
-    ${rs.map(r=>`<tr><td><b>${esc(r.ref)}</b></td><td class="num">${r.w}</td><td class="num">${r.h}</td><td class="num">${r.qty}</td><td class="num">${(r.w*r.h*r.qty/1e6).toFixed(3)}</td></tr>`).join("")}
-    </tbody><tfoot><tr><td colspan="3">TOTAL</td><td class="num">${sum(rs,r=>r.qty)}</td><td class="num">${sum(rs,r=>r.w*r.h*r.qty/1e6).toFixed(3)}</td></tr></tfoot></table></div></div>`}).join("")}`;
+  ${keys.map(k=>{const L=glassSpecLines(c,k);const rs=G[k];return `<div class="card"><h3>${esc(k)} <span class="small muted" dir="ltr">${L?esc(L.filter(Boolean).join(" + ")):"بدون وصف إنجليزي"}</span></h3><div class="tablebox"><table><thead><tr><th>#</th><th>العرض WIDTH</th><th>الارتفاع HEIGHT</th><th>العدد Q</th><th>المرجع REF</th><th>إجمالي الأمتار T.SQM</th></tr></thead><tbody>
+    ${rs.map((r,i)=>`<tr><td class="num">${i+1}</td><td class="num"><b>${r.w}</b></td><td class="num"><b>${r.h}</b></td><td class="num">${r.qty}</td><td>${esc(r.ref)}</td><td class="num">${gArea(r).toFixed(3)}${r.w*r.h/1e6<GMIN?` <span class="small muted">(حد أدنى ${GMIN})</span>`:""}</td></tr>`).join("")}
+    </tbody><tfoot><tr><td colspan="3">TOTAL</td><td class="num">${sum(rs,r=>r.qty)}</td><td></td><td class="num">${sum(rs,gArea).toFixed(3)}</td></tr></tfoot></table></div><p class="small muted" style="margin:0">إجمالي الأمتار = العرض × الارتفاع لكل لوح (وإذا كان أقل من ${GMIN} م² يُحسب ${GMIN}) × العدد.</p><div></div></div>`}).join("")}`;
 }
 
 /* ---------- measurement workflow stages: preliminary → quotation → final → aluminium & paint order → glass sizes → glass order ---------- */
