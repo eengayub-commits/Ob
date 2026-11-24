@@ -139,6 +139,8 @@ body.dragging::after{content:"أفلت الملفات هنا للتحليل وا
 .exc-msg.user{align-self:flex-start;background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}.exc-msg.ai{align-self:flex-end}
 .exc-who{display:block;font-size:.72rem;font-weight:700;opacity:.75;margin-bottom:2px}
 .exc-in{display:flex;gap:8px;align-items:flex-end}.exc-in textarea{flex:1;min-height:44px;resize:vertical}.exc-busy{display:flex;align-items:center;gap:8px}
+.missbox{display:flex;flex-direction:column;gap:6px;border:1px solid var(--warn-soft);border-inline-start:3px solid var(--warn);border-radius:8px;padding:10px 12px}.missbox>b{color:var(--warn);font-size:.86rem}
+.miss-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px}.fld.miss input{width:100%}
 .order-box{display:flex;flex-direction:column;gap:8px;border:1px solid var(--line);border-radius:10px;padding:12px;background:var(--surface-2)}
 .ib-act{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap}
 .vatbox{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding:12px 14px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2)}
@@ -495,7 +497,7 @@ function tabMeas(c){
   const G=c.glass||[],A=c.alu||[];
   const gQty=sum(G,r=>N(r.qty)||1),gArea=sum(G,r=>area(r.w,r.h,r.qty));
   const aQty=sum(A,r=>N(r.qty)||1),aArea=sum(A,r=>area(r.w,r.h,r.qty));
-  return `${sheetsCard(c)}<div class="card"><div class="toolbar">${chk(mk,"final","المقاسات نهائية ومعتمدة للتصنيع",c.measFinal)}${inp(mk,"date","تاريخ الاعتماد",c.measFinalDate,"date")}${S.canWrite?`<button data-act="save-mfin">حفظ</button>`:""}${c.measFinal?`<span class="ok-badge">✓ معتمدة للتصنيع</span>`:`<span class="note">مقاسات أولية، لا تُرسل للتصنيع قبل الاعتماد</span>`}</div></div>
+  return `${sheetsCard(c)}${ordersCard(c)}<div class="card"><div class="toolbar">${chk(mk,"final","المقاسات نهائية ومعتمدة للتصنيع",c.measFinal)}${inp(mk,"date","تاريخ الاعتماد",c.measFinalDate,"date")}${S.canWrite?`<button data-act="save-mfin">حفظ</button>`:""}${c.measFinal?`<span class="ok-badge">✓ معتمدة للتصنيع</span>`:`<span class="note">مقاسات أولية، لا تُرسل للتصنيع قبل الاعتماد</span>`}</div></div>
   <div class="card"><h3><span>مقاسات الألمنيوم النهائية <span class="small muted">بالمليمتر</span></span><span class="toolbar">${A.length||G.length?`<button data-act="pdf-dl" data-src="meas" ${S.pdfBusy?"disabled":""}>${S.pdfBusy?"جارٍ إنشاء PDF…":"تنزيل المقاسات PDF"}</button>${S.canWrite&&S.assets?`<button data-act="pdf-save" data-src="meas" ${S.pdfBusy?"disabled":""}>حفظ PDF في ملف العميل</button>`:""}`:""}</span></h3>
     ${S.canWrite?`<div class="toolbar" style="justify-content:flex-start">${S.msel.size?(S.confirm==="m-delsel"?`<button class="danger armed" data-act="m-delsel">تأكيد حذف ${S.msel.size} بند</button>`:`<button class="danger" data-act="m-delsel">حذف المحدد (${S.msel.size})</button>`):""}<span class="addn"><input id="m-addn" type="number" min="1" max="200" inputmode="numeric" placeholder="العدد" aria-label="عدد البنود المراد إضافتها"><button data-act="m-addn">إضافة بنود</button></span><button data-act="m-add">+ بند</button></div>`:""}
     <div class="tablebox"><table class="qitems mitems"><thead><tr>${S.canWrite?`<th><input type="checkbox" data-mselall="1" aria-label="تحديد الكل" ${A.length&&A.every(r=>S.msel.has(r.id))?"checked":""}></th>`:""}<th>الكود</th><th>الدور</th><th>النوع (قالب الحساب)</th><th>العرض مم</th><th>الارتفاع مم</th><th>العدد</th><th>المساحة م²</th><th>ملاحظة</th><th></th></tr></thead><tbody>
@@ -1308,6 +1310,7 @@ function tabCalc(c){
     ${T.profiles.map(p=>`<tr><td><b>${esc(p.name)}</b></td><td>${esc(alu.code||alu.color||"—")}</td><td class="num">${p.pieces}</td><td class="num">${(p.net/1000).toFixed(2)}</td><td class="num"><b>${p.nb}</b>${p.over.length?` <span class="pill bad">${p.over.length} أطول من العود</span>`:""}</td><td><input type="number" min="0" inputmode="numeric" lang="en" style="width:64px" data-aord="${esc(p.name)}" value="${esc((c.aluOrder||{})[p.name]??p.nb)}" ${S.canWrite?"":"disabled"} aria-label="عدد العيدان المطلوبة"></td><td class="num">${(p.waste*100).toFixed(0)}%</td><td class="num">${p.kgm?p.kg.toFixed(1):"—"}</td><td>${p.kgm?priced(p.cost):"—"}</td></tr>`).join("")||`<tr><td colspan="8" class="muted">لا توجد قطع.</td></tr>`}
     </tbody><tfoot><tr><td colspan="4">الإجمالي</td><td class="num">${T.bars}</td><td class="num"><b>${sum(aluOrderRows(c,T),r=>r.bars)}</b></td><td></td><td class="num">${T.kg.toFixed(1)}</td><td>${priced(T.cost.alu)}</td></tr></tfoot></table></div>
     <div class="order-box"><b>طلب الألمنيوم من المورّد</b>
+      ${S.canWrite&&orderMissing(c,"alu").filter(x=>x.k!=="aluSupplier").length?`<div class="miss-grid">${missingInputs(c,orderMissing(c,"alu").filter(x=>x.k!=="aluSupplier"))}</div>`:""}
       <div class="toolbar" style="justify-content:flex-start">${S.canWrite?`<label class="fld" style="min-width:200px"><span>المورّد</span><input data-cf="aluSupplier" value="${esc(c.aluSupplier||"")}" placeholder="اسم المورّد"></label><label class="fld" style="flex:1;min-width:220px"><span>ملاحظة على الطلب (اختياري)</span><input data-cf="aluOrderNote" value="${esc(c.aluOrderNote||"")}"></label>`:""}</div>
       <div class="toolbar" style="justify-content:flex-start"><button class="primary" data-act="ao-pdf" ${S.pdfBusy?"disabled":""}>طلب الألمنيوم PDF</button><button data-act="ao-xlsx">طلب الألمنيوم Excel</button>${S.canWrite&&S.assets?`<button data-act="ao-save" ${S.pdfBusy?"disabled":""}>حفظ الطلب في ملف العميل</button>`:""}<span style="flex:1"></span><button class="ghost" data-act="tab" data-tab="cut">خطة القص Cutting List ←</button></div>
       <p class="small muted" style="margin:0">عمود «الطلب» يبدأ بعدد العيدان المحسوب، وتقدر تزيد عليه احتياط أو تعدّله قبل إصدار الطلب.</p></div>`);
@@ -1318,7 +1321,8 @@ function tabCalc(c){
   const s5=sec("5","حساب تيب الحماية",`<dl class="kv"><dt>طول قطاعات الألمنيوم الصافي</dt><dd><span class="num">${tp.aluM.toFixed(1)}</span> م</dd><dt>معامل التيب</dt><dd class="num">${tp.factor} م تيب / م ألمنيوم</dd><dt>طول التيب المطلوب</dt><dd><span class="num">${tp.m.toFixed(1)}</span> م</dd><dt>عدد الرولات</dt><dd><b class="num">${tp.rolls}</b> رول (<span class="num">${tp.roll}</span> م للرول)</dd><dt>التكلفة</dt><dd>${priced(tp.cost)}</dd></dl>${byCat("tape").length?accTable(byCat("tape"),"",priced):""}`);
   const s6=sec("6","حساب الزجاج",`<div class="tablebox"><table><thead><tr><th>المرجع</th><th>المواصفة</th><th>العرض مم</th><th>الارتفاع مم</th><th>العدد</th><th>المساحة م²</th><th></th></tr></thead><tbody>
     ${T.glass.map(x=>`<tr><td><b>${esc(x.ref)}</b></td><td>${esc(x.spec)}</td><td class="num">${x.w}</td><td class="num">${x.h}</td><td class="num">${x.qty}</td><td class="num">${x.m2.toFixed(2)}</td><td class="small muted">${x.src==="manual"?"يدوي":""}</td></tr>`).join("")||`<tr><td colspan="7" class="muted">لا يوجد زجاج.</td></tr>`}
-    </tbody><tfoot><tr><td colspan="4">الإجمالي</td><td class="num">${sum(T.glass,x=>x.qty)}</td><td class="num">${T.m2.toFixed(2)}</td><td>${priced(T.cost.glass)}</td></tr></tfoot></table></div>`);
+    </tbody><tfoot><tr><td colspan="4">الإجمالي</td><td class="num">${sum(T.glass,x=>x.qty)}</td><td class="num">${T.m2.toFixed(2)}</td><td>${priced(T.cost.glass)}</td></tr></tfoot></table></div>
+    ${T.glass.length?`<div class="order-box"><b>طلب الزجاج من المورّد</b>${S.canWrite&&orderMissing(c,"glass").length?`<div class="miss-grid">${missingInputs(c,orderMissing(c,"glass"))}</div>`:""}${S.canWrite?`<label class="fld"><span>ملاحظة أسفل الطلب</span><input data-cf="glassOrderNote" value="${esc(c.glassOrderNote||"")}" placeholder="ترسل لمصنع برج القمة"></label>`:""}<div class="toolbar" style="justify-content:flex-start"><button class="primary" data-act="go-xlsx">طلب الزجاج Excel</button></div></div>`:""}`);
   const s7=sec("7","حساب الربل",accTable(byCat("rubber"),"لا يوجد ربل في القوالب.",priced));
   const k=calc(c);const net=N(c.quoteNet)||k.contract;const C=T.cost;
   const s8=`<div class="card"><h3>التكلفة التقديرية للمواد</h3>
@@ -2196,6 +2200,7 @@ async function act(el){
   if(a==="ao-pdf"&&c){await aluOrderPdf(c,"dl");return}
   if(a==="ao-save"&&c){await aluOrderPdf(c,"save");return}
   if(a==="ao-xlsx"&&c){await aluOrderXlsx(c);return}
+  if(a==="go-xlsx"&&c){await glassOrderXlsx(c);return}
   if(a==="ib-apply"){await inboxApply(el.dataset.id);return}
   if(a==="ib-all"){await inboxApplyAll();return}
   if(a==="ib-retry"){if(c)inboxAnalyze(c._id,el.dataset.id);return}
@@ -2314,6 +2319,9 @@ document.addEventListener("change",async e=>{
   if(el.dataset.alurec&&e.type==="change"){const id=el.dataset.alurec,rc=recipeById(el.value);if(!rc)return;await mutateList("alu",l=>l.map(r=>r.id===id?{...r,recipe:rc.id,system:rc.system,type:rc.name}:r));toast("تم تغيير قالب الحساب");return}
   if(el.dataset.inst&&e.type==="change"){const id=el.dataset.inst,v=el.value;await mutateList("installs",l=>l.map(r=>r.id===id?{...r,status:v}:r));toast("تم تحديث حالة الموعد");return}
   if(el.dataset.aord!=null&&e.type==="change"){const c=cur();if(!c)return;const o={...(c.aluOrder||{})};o[el.dataset.aord]=el.value===""?null:Math.max(0,Math.round(N(el.value)));await write(c._id,{aluOrder:o});return}
+  if(el.dataset.miss&&e.type==="change"){const c=cur();if(!c)return;const k=el.dataset.miss,v=toLat(el.value).trim();if(!v)return;
+    if(k==="@alucode"){const co=clone(c.colors||{});co.alu=co.alu||{};co.alu.code=v;await write(c._id,{colors:co});return}
+    if(k.startsWith("@gspec:")){const g={...(c.glassSpecEn||{})};g[k.slice(7)]=v.toUpperCase();await write(c._id,{glassSpecEn:g});return}return}
   if(el.dataset.cf&&e.type==="change"){const c=cur();if(!c)return;await write(c._id,{[el.dataset.cf]:el.value.trim()});return}
   if(el.dataset.inbox&&el.files&&el.files.length){const fs=[...el.files];el.value="";await inboxAdd(fs);return}
   if(el.dataset.ib){const i=el.dataset.ib.lastIndexOf("|");const id=el.dataset.ib.slice(0,i),k=el.dataset.ib.slice(i+1);(S.draft["ib:"+id]=S.draft["ib:"+id]||{})[k]=toLat(el.value);if(k==="__type")render();return}
@@ -2529,7 +2537,7 @@ async function aluOrderPdf(c,mode){const T=takeoff(c,S.cfg);const rows=aluOrderR
 const JSZIP="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";let jszipLoad=null;
 function loadJsZip(){if(window.JSZip)return Promise.resolve(window.JSZip);if(!jszipLoad){jszipLoad=addScript(JSZIP).then(()=>window.JSZip);jszipLoad.catch(()=>{jszipLoad=null})}return jszipLoad}
 const xe=s=>String(s??"").replace(/[&<>"]/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[ch]));
-async function aluOrderXlsx(c){
+async function aluOrderXlsxBasic(c){
   const T=takeoff(c,S.cfg);const rows=aluOrderRows(c,T);if(!rows.length){toast("لا توجد قطاعات للطلب. أدخل المقاسات واختر قوالب الحساب أولاً");return}
   if(!S.downloads){toast("التنزيل غير متاح هنا");return}
   try{
@@ -2636,6 +2644,84 @@ Reply with ONLY this JSON:
     S.ex["chat:"+cid]={busy:false};await write(cid,patch);
   }catch(e){const back=(S.clients.find(x=>x._id===cid)||c).measExtract;S.ex["chat:"+cid]={busy:false,err:e&&e.code==="cancelled"?"":String(sampleErr(e)).replace("الكشف","الطلب")};if(e&&e.code==="cancelled")S.excDraft=text}
   render();setTimeout(()=>{const l=document.querySelector(".exc-list");if(l)l.scrollTop=l.scrollHeight},30);
+}
+
+/* ---------- order Excel files built on the factory's own templates (tpl/*.xlsx) ---------- */
+const dmy=d=>{const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(d||today());return m?`${+m[3]}/${+m[2]}/${m[1]}`:d};
+function xc(ref,s,v,kind){if(v==null||v==="")return `<c r="${ref}" s="${s}"/>`;if(kind==="f")return `<c r="${ref}" s="${s}"><f>${xe(v)}</f></c>`;if(kind==="n")return `<c r="${ref}" s="${s}"><v>${N(v)}</v></c>`;return `<c r="${ref}" s="${s}" t="inlineStr"><is><t xml:space="preserve">${xe(toLat(v))}</t></is></c>`}
+const xrow=(r,ht,cells,extra="")=>`<row r="${r}"${ht?` ht="${ht}" customHeight="1"`:""}${extra}>${cells.join("")}</row>`;
+const tplRow=(head,n)=>{const m=new RegExp(`<row r="${n}"[^>]*?(?:/>|>[\\s\\S]*?</row>)`).exec(head);return m?m[0]:""};
+async function fillTemplate(path,sheetName,build,filename){
+  if(!S.downloads){toast("التنزيل غير متاح هنا");return}
+  try{
+    const JSZip=await loadJsZip();const r=await fetch(path);if(!r.ok)throw new Error("tpl "+r.status);
+    const z=await JSZip.loadAsync(await r.arrayBuffer());
+    let s=await z.file("xl/worksheets/sheet1.xml").async("string");const head=(/<sheetData>([\s\S]*?)<\/sheetData>/.exec(s)||[,""])[1];
+    const {rows,merges}=build(head);
+    s=s.replace(/<sheetData>[\s\S]*?<\/sheetData>|<sheetData\/>/,`<sheetData>${rows.join("")}</sheetData>`).replace(/<mergeCells[\s\S]*?<\/mergeCells>/,`<mergeCells count="${merges.length}">${merges.map(m=>`<mergeCell ref="${m}"/>`).join("")}</mergeCells>`).replace(/<dimension ref="[^"]*"\/>/,"");
+    z.file("xl/worksheets/sheet1.xml",s);
+    const wb=(await z.file("xl/workbook.xml").async("string")).replace('name="ORDER"',`name="${xe(sheetName.slice(0,31))}"`);z.file("xl/workbook.xml",wb);
+    const b=await z.generateAsync({type:"blob",mimeType:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
+    await S.downloads.save({filename:filename.replace(/[\\/:*?"<>|]/g,"-"),data:b});
+  }catch(e){if(!(e&&e.code==="declined"))toast("تعذّر إنشاء ملف Excel")}
+}
+const clientTitle=c=>[String(c.name||"").trim(),c.project].filter(Boolean).join(" - ");
+const aluColorSuffix=c=>{const a=c.colors?.alu||{};return toLat(a.code||a.color||"")};
+async function aluOrderXlsx(c){
+  const T=takeoff(c,S.cfg);const rows=aluOrderRows(c,T);if(!rows.length){toast("لا توجد قطاعات للطلب. أدخل المقاسات واختر قوالب الحساب أولاً");return}
+  const miss=orderMissing(c,"alu");if(miss.length){toast("أكمل المعلومات الناقصة للطلب أولاً: "+miss.map(m=>m.l).join("، "),{kind:"warn"});return}
+  const col=aluColorSuffix(c);const sup=c.aluSupplier||"";
+  await fillTemplate("tpl/alu-order.xlsx",("طلبية "+clientTitle(c)),head=>{
+    const R=[tplRow(head,3),tplRow(head,4),tplRow(head,5).replace(/<c r="A5"[^>]*?(?:\/>|>[\s\S]*?<\/c>)/,xc("A5",56,`كشف طلبية المنيوم للعميل (  ${clientTitle(c)}  ) بتاريخ : ${dmy(today())}`)),tplRow(head,6)];
+    const merges=["A4:F4","A5:F5"];const first=7;
+    rows.forEach((x,i)=>{const r=first+i,last=i===rows.length-1;
+      R.push(xrow(r,"50.1",[xc("A"+r,3,i+1,"n"),xc("B"+r,6,col?`${x.name} -- ${col}`:x.name),xc("C"+r,6,x.bars,"n"),xc("D"+r,8,""),xc("E"+r,6,`C${r}*D${r}`,"f"),xc("F"+r,12,i===0?sup:"")],last?' thickBot="1"':""))});
+    const lr=first+rows.length-1,t=lr+1;if(sup&&rows.length>1)merges.push(`F${first}:F${lr}`);
+    R.push(xrow(t,"42",[xc("A"+t,50,"الإجمالي TOTAL "),xc("B"+t,51,""),xc("C"+t,14,`SUM(C${first}:C${lr})`,"f"),xc("D"+t,13,""),xc("E"+t,14,`SUM(E${first}:E${lr})`,"f"),xc("F"+t,2,"")],' thickBot="1"'));merges.push(`A${t}:B${t}`);
+    const notes=[c.aluOrderNote,c.colors?.alu?.finish?`نوع الدهان: ${c.colors.alu.finish}`:""].filter(Boolean);
+    notes.forEach((n,k)=>{const r=t+2+k;R.push(xrow(r,"24",[xc("B"+r,6,n)]));merges.push(`B${r}:E${r}`)});
+    return{rows:R,merges};
+  },`طلب-ألمنيوم-${c.fileNo||""}-${clientTitle(c)}.xlsx`);
+}
+function glassGroups(c){const T=takeoff(c,S.cfg);const g={};T.glass.forEach(x=>{const k=x.spec||"زجاج";(g[k]=g[k]||[]).push(x)});return g}
+function glassSpecLines(c,spec){const t=String((c.glassSpecEn||{})[spec]||"").trim();if(!t)return null;const p=t.split(/\s*\+\s*|\n/).map(s=>s.trim().toUpperCase()).filter(Boolean);while(p.length<3)p.push("");return p.slice(0,3)}
+async function glassOrderXlsx(c){
+  const G=glassGroups(c);const keys=Object.keys(G);if(!keys.length){toast("لا يوجد زجاج للطلب. أدخل مقاسات الزجاج أو الألمنيوم أولاً");return}
+  const miss=orderMissing(c,"glass").filter(m=>m.k!=="@co");if(miss.length){toast("أكمل المعلومات الناقصة للطلب أولاً: "+miss.map(m=>m.l).join("، "),{kind:"warn"});return}
+  const co=CO();const y=new Date().getFullYear();const po=`GO-${y}-${String(c.fileNo||"").replace(/^\d{4}-/,"")||"0"}`;
+  await fillTemplate("tpl/glass-order.xlsx","GLASS ORDER",head=>{
+    const R=[xrow(1,"",[xc("A1",34,`COMMERCIAL RECORD :  ${co.cr||""}`),xc("B1",34,""),xc("C1",34,""),xc("D1",34,""),xc("E1",34,"")]),
+      xrow(3,"",[xc("A3",34,`TAX NUMBER :  ${co.vat||""}`),xc("B3",34,""),xc("C3",34,""),xc("D3",34,""),xc("E3",34,"")]),
+      tplRow(head,5),tplRow(head,6),xrow(7,"",[xc("A7",35,`PO NO :  ${po}`),xc("B7",35,""),xc("C7",35,""),xc("D7",35,"")]),tplRow(head,8),
+      tplRow(head,9),tplRow(head,10),tplRow(head,11),tplRow(head,12),
+      xrow(13,"27.75",["A","B","C","D","E","F","G","H"].map(L=>xc(L+13,33,L==="A"?`PROJECT NAME ; ${clientTitle(c)}`:""))),
+      xrow(14,"20.25",["A","B","C","D","E","F","G","H"].map(L=>xc(L+14,33,L==="A"?`DATE: ${dmy(today())}`:"")))];
+    const merges=["A1:E2","A3:E4","A5:D6","A7:D8","A9:H10","A11:H12","A13:H13","A14:H14"];
+    let r=16;const totals=[];const L7=["A","B","C","D","E","F","G"];
+    keys.forEach(k=>{const lines=glassSpecLines(c,k)||[k,"",""];
+      R.push(xrow(r,"36.75",L7.map(L=>xc(L+r,31,L==="A"?"DESCRIPTION":""))));merges.push(`A${r}:G${r}`);r++;
+      lines.forEach(t=>{R.push(xrow(r,"33.75",L7.map(L=>xc(L+r,28,L==="A"?t:""))));merges.push(`A${r}:G${r}`);r++});
+      R.push(xrow(r,"32.25",[xc("A"+r,12,"REF"),xc("B"+r,32,"WIDTH "),xc("C"+r,32,""),xc("D"+r,32,"HEIGHT "),xc("E"+r,32,""),xc("F"+r,12,"Q"),xc("G"+r,13,"T . SQM")]));merges.push(`B${r}:C${r}`,`D${r}:E${r}`);r++;
+      const f=r;G[k].forEach(x=>{R.push(xrow(r,"33.75",[xc("A"+r,4,x.ref),xc("B"+r,24,x.w,"n"),xc("C"+r,24,""),xc("D"+r,25,x.h,"n"),xc("E"+r,25,""),xc("F"+r,2,x.qty,"n"),xc("G"+r,2,`(B${r}*D${r}*F${r})/1000000`,"f")]));merges.push(`B${r}:C${r}`,`D${r}:E${r}`);r++});
+      const l=r-1;R.push(xrow(r,"30",[...["A","B","C","D","E"].map(L=>xc(L+r,26,L==="A"?"TOTAL ":"")),xc("F"+r,1,`SUM(F${f}:F${l})`,"f"),xc("G"+r,1,`SUM(G${f}:G${l})`,"f")]));merges.push(`A${r}:E${r}`);totals.push(r);r+=2});
+    if(totals.length>1){R.push(xrow(r,"30",[...["A","B","C","D","E"].map(L=>xc(L+r,27,L==="A"?"GRAND TOTAL":"")),xc("F"+r,21,totals.map(t=>"F"+t).join("+"),"f"),xc("G"+r,21,totals.map(t=>"G"+t).join("+"),"f")],' thickBot="1"'));merges.push(`A${r}:E${r}`);r++}
+    R.push(xrow(r,"",L7.map(L=>xc(L+r,22,L==="A"?(c.glassOrderNote||"ترسل لمصنع برج القمة "):"")))),R.push(xrow(r+1,"32.25",L7.map(L=>xc(L+(r+1),23,""))));merges.push(`A${r}:G${r+1}`);
+    return{rows:R,merges};
+  },`طلب-زجاج-${c.fileNo||""}-${clientTitle(c)}.xlsx`);
+}
+/* missing info for orders, shown beside Claude notes and in the calc tab */
+function orderMissing(c,kind){const m=[];const a=c.colors?.alu||{};
+  if(kind==="alu"){if(!String(c.aluSupplier||"").trim())m.push({k:"aluSupplier",l:"مورّد الألمنيوم",ph:"اسم المورّد"});if(!(a.code||a.color))m.push({k:"@alucode",l:"كود لون الألمنيوم",ph:"مثل 9005 أو ميلفينش"})}
+  if(kind==="glass"){Object.keys(glassGroups(c)).forEach(sp=>{if(!glassSpecLines(c,sp))m.push({k:"@gspec:"+sp,l:`مواصفة الزجاج بالإنجليزي «${sp}»`,ph:"6 MM CLEAR TEMPERED + 12 MM AIR SPACE + 6 MM CLEAR TEMPERED"})});const co=CO();if(!co.cr||!co.vat)m.push({k:"@co",l:"السجل التجاري والرقم الضريبي (من الإعدادات)",ph:""})}
+  return m}
+function missingInputs(c,list){return list.map(x=>x.k==="@co"?`<span class="small neg">${esc(x.l)}: أدخلها من «الإعدادات»</span>`:`<label class="fld miss"><span>${esc(x.l)}</span><input ${x.k.startsWith("@")?`data-miss="${esc(x.k)}"`:`data-cf="${esc(x.k)}"`} placeholder="${esc(x.ph||"")}" ${x.k.startsWith("@gspec")?'dir="ltr"':""}></label>`).join("")}
+function ordersCard(c){
+  const ma=orderMissing(c,"alu"),mg=orderMissing(c,"glass");const hasAlu=(c.alu||[]).length,hasGl=Object.keys(glassGroups(c)).length;
+  if(!hasAlu&&!hasGl)return"";
+  return `<div class="card orders"><h3>طلبات المورّدين</h3>
+    ${S.canWrite&&(ma.length||mg.length)?`<div class="missbox"><b>معلومات ناقصة للطلب</b><div class="miss-grid">${missingInputs(c,[...(hasAlu?ma:[]),...(hasGl?mg:[])])}</div></div>`:""}
+    <div class="toolbar" style="justify-content:flex-start">${hasAlu?`<button class="primary" data-act="ao-xlsx">طلب الألمنيوم Excel</button><button data-act="ao-pdf" ${S.pdfBusy?"disabled":""}>طلب الألمنيوم PDF</button>`:""}${hasGl?`<button class="primary" data-act="go-xlsx">طلب الزجاج Excel</button>`:""}</div>
+    <p class="small muted" style="margin:0">الطلبات تطلع بنفس تصميم ملفات الطلبيات المعتمدة عندكم، وعدد العيدان من «حساب الكميات».</p></div>`;
 }
 
 /* ---------- boot ---------- */
