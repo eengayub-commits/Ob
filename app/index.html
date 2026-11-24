@@ -124,6 +124,9 @@ body.dragging::after{content:"أفلت الملفات هنا للتحليل وا
 .chip.ok{background:var(--ok-soft);color:var(--ok);border-color:transparent}.chip.mid{background:var(--accent-soft);color:var(--accent);border-color:transparent}.chip.low{background:var(--warn-soft);color:var(--warn);border-color:transparent}.chip .spin{width:11px;height:11px}
 .ib-body{margin-top:10px;display:flex;flex-direction:column;gap:8px}.ib-sum{margin:0;font-size:.9rem}.ib-warn{margin:0;padding:8px 12px 8px 12px;list-style:none;background:var(--warn-soft);color:var(--warn);border-radius:8px;font-size:.84rem}.ib-warn li::before{content:"• "}
 .ib-fields{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px}.fld{display:flex;flex-direction:column;gap:3px;font-size:.78rem;color:var(--muted)}.fld input,.fld select{width:100%}.ib-type{max-width:240px}
+.rv{border:1px solid var(--warn-soft);border-inline-start:3px solid var(--warn);border-radius:8px;padding:8px 10px;display:flex;flex-direction:column;gap:6px;background:var(--surface)}
+.rv-h{font-weight:700;font-size:.86rem;color:var(--warn)}.rv-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:4px 0;border-top:1px solid var(--line)}.rv-row:first-of-type{border-top:0}
+.rv-lbl{font-size:.76rem;color:var(--muted)}.rv-why{font-size:.8rem;color:var(--warn)}.rv-row button{padding:4px 12px}
 .ib-act{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap}
 .vatbox{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding:12px 14px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2)}
 .vatrows{display:flex;flex-wrap:wrap;gap:8px 28px}
@@ -858,17 +861,17 @@ function sheetsCard(c){
     const byG=k=>X.rows.filter(r=>r.group===k);
     review=`<div class="exbox">
       <h3>نتيجة القراءة <span class="small muted"><span class="num">${X.rows.length}</span> سطر · <span class="num">${X.count}</span> قطعة · بالمليمتر</span></h3>
-      ${X.flags&&X.flags.length?`<div class="note"><b>ملاحظات للمراجعة:</b><br>${X.flags.map(esc).join("<br>")}</div>`:`<div class="small ok-badge">لا توجد ملاحظات، ومع ذلك راجع الأرقام مع الكشف الأصلي.</div>`}
+      ${exIssues(X)}
       ${S.canWrite?`<div class="toolbar" style="justify-content:flex-start">${S.exsel.size?(S.confirm==="ex-delsel"?`<button class="danger armed" data-act="ex-delsel">تأكيد حذف ${S.exsel.size} بند</button>`:`<button class="danger" data-act="ex-delsel">حذف المحدد (${S.exsel.size})</button>`):""}<span class="addn"><input id="ex-addn" type="number" min="1" max="200" inputmode="numeric" placeholder="العدد" aria-label="عدد البنود المراد إضافتها"><button data-act="ex-addn">إضافة بنود</button></span><button data-act="ex-add">+ بند</button></div>`:""}
       ${Object.keys(GROUPS).filter(k=>byG(k).length).map(k=>`<h3 style="margin-top:4px">${GROUPS[k]}</h3>
       <div class="tablebox"><table class="qitems mitems"><thead><tr>${S.canWrite?`<th><input type="checkbox" data-exselall="${k}" aria-label="تحديد الكل" ${byG(k).every(r=>S.exsel.has(r.id))?"checked":""}></th>`:""}<th>الكود</th><th>النوع (قالب الحساب)</th><th>العرض مم</th><th>الارتفاع مم</th><th>العدد</th><th>المساحة م²</th><th>المجموعة</th><th>ملاحظة</th><th></th></tr></thead><tbody>
-      ${byG(k).map(r=>`<tr class="${r.unclear?"unclear":""} ${S.exsel.has(r.id)?"selrow":""}">${S.canWrite?`<td><input type="checkbox" data-exsel="${esc(r.id)}" ${S.exsel.has(r.id)?"checked":""} aria-label="تحديد"></td>`:""}
+      ${byG(k).map(r=>`<tr class="${r.unclear&&!r.ok?"unclear":""} ${S.exsel.has(r.id)?"selrow":""}">${S.canWrite?`<td><input type="checkbox" data-exsel="${esc(r.id)}" ${S.exsel.has(r.id)?"checked":""} aria-label="تحديد"></td>`:""}
         <td>${exIn(r,"ref","72px")}</td>
         <td><select data-ex="${esc(r.id)}|recipe" ${S.canWrite?"":"disabled"} aria-label="قالب الحساب" style="min-width:190px">${recOpts(r.recipe||exRecipeDefault(r))}</select></td>
         <td>${exIn(r,"w","74px","number")}</td><td>${exIn(r,"h","74px","number")}</td><td>${exIn(r,"qty","52px","number")}</td>
         <td class="num">${area(r.w,r.h,r.qty).toFixed(2)}</td>
         <td><select data-ex="${esc(r.id)}|group" ${S.canWrite?"":"disabled"} aria-label="المجموعة" style="min-width:110px">${Object.entries(GROUPS).map(([g,l])=>`<option value="${g}" ${g===r.group?"selected":""}>${l}</option>`).join("")}</select></td>
-        <td style="white-space:normal">${exIn(r,"note","150px")}${r.unclear?`<div class="small neg">رقم غير واضح${r.alt?`، قراءة بديلة: <span class="num">${esc(r.alt)}</span>`:""}</div>`:""}${r.pending?`<div class="small" style="color:var(--warn)">بانتظار الاعتماد</div>`:""}</td>
+        <td style="white-space:normal">${exIn(r,"note","150px")}${r.pending?`<div class="small" style="color:var(--warn)">بانتظار الاعتماد</div>`:""}</td>
         <td>${S.canWrite?`<button class="danger ghost" data-act="ex-del" data-id="${esc(r.id)}">حذف</button>`:""}</td></tr>`).join("")}
       </tbody><tfoot><tr><td colspan="${S.canWrite?5:4}">الإجمالي</td><td class="num">${sum(byG(k),r=>r.qty)}</td><td class="num">${sum(byG(k),r=>area(r.w,r.h,r.qty)).toFixed(2)}</td><td colspan="3"></td></tr></tfoot></table></div>`).join("")}
       <div class="toolbar">
@@ -887,11 +890,22 @@ function sheetsCard(c){
     ${fileList(c,"measPdf")!==`<p class="muted small">لا توجد ملفات مرفوعة.</p>`?`<h3 style="margin-top:6px">ملفات PDF المحفوظة</h3>${fileList(c,"measPdf")}`:""}
   </div>`;
 }
-function exIn(r,f,w,type="text"){let v=r[f];if(type==="number"&&!N(v))v="";return `<input id="ex-${esc(r.id)}-${f}" data-ex="${esc(r.id)}|${f}" type="${type}" value="${esc(v??"")}" style="min-width:${w};width:${w}" ${type==="number"?'inputmode="numeric" min="0"':""} ${S.canWrite?"":"disabled"} aria-label="${f}">`}
+function exIssueRows(X){return (X.rows||[]).filter(r=>!r.ok&&(r.unclear||!(N(r.w)>0&&N(r.h)>0)||!r.ref))}
+function exIssues(X){
+  const rows=exIssueRows(X);const tot=(X.flags||[]).map((t,i)=>({t,i})).filter(o=>/المكتوب في الكشف/.test(o.t)&&!(X.flagsOk||[]).includes(o.i));
+  if(!rows.length&&!tot.length)return `<div class="small ok-badge">✓ كل الأسطر واضحة</div>`;
+  const why=r=>!r.ref?"بدون كود":!(N(r.w)>0&&N(r.h)>0)?"المقاس ناقص":`رقم غير واضح${r.alt?` · قراءة بديلة <span class="num">${esc(toLat(r.alt))}</span>`:""}`;
+  const btns=(act,id)=>S.canWrite?`<button class="primary" data-act="${act}" data-id="${id}">تأكيد</button><button class="ghost" data-act="${act}" data-id="${id}">تجاوز</button>`:"";
+  return `<div class="rv"><div class="rv-h">يحتاج مراجعة <span class="cnt num">${rows.length+tot.length}</span></div>
+    ${tot.map(o=>`<div class="rv-row"><span class="rv-why">${esc(o.t.replace(/\. راجع.*$/,""))}</span><span style="flex:1"></span>${S.canWrite?`<button class="ghost" data-act="ex-flagok" data-id="${o.i}">تجاوز</button>`:""}</div>`).join("")}
+    ${rows.map(r=>`<div class="rv-row">${exIn(r,"ref","72px","text","rv")}<span class="rv-lbl">عرض</span>${exIn(r,"w","74px","number","rv")}<span class="rv-lbl">ارتفاع</span>${exIn(r,"h","74px","number","rv")}<span class="rv-lbl">عدد</span>${exIn(r,"qty","52px","number","rv")}<span class="rv-why">${why(r)}${r.page?` · ص${r.page}`:""}</span><span style="flex:1"></span>${btns("ex-ok",esc(r.id))}</div>`).join("")}
+  </div>`;
+}
+function exIn(r,f,w,type="text",pre="ex"){let v=r[f];if(type==="number"&&!N(v))v="";return `<input id="${pre}-${esc(r.id)}-${f}" data-ex="${esc(r.id)}|${f}" type="${type}" value="${esc(v??"")}" style="min-width:${w};width:${w}" ${type==="number"?'inputmode="numeric" min="0"':""} ${S.canWrite?"":"disabled"} aria-label="${f}">`}
 
 async function exEdit(c,id,f,v){
   const X=clone(c.measExtract||{rows:[]});const r=X.rows.find(x=>x.id===id);if(!r)return;
-  r[f]=["w","h","qty"].includes(f)?N(v):v;if(f==="w"||f==="h")r.unclear=false;X.count=sum(X.rows,x=>x.qty);
+  r[f]=["w","h","qty"].includes(f)?N(v):toLat(v);if((f==="w"||f==="h")&&N(r.w)>0&&N(r.h)>0){r.unclear=false;r.ok=!!r.ref}X.count=sum(X.rows,x=>x.qty);
   await write(c._id,{measExtract:X});
 }
 
@@ -2098,6 +2112,8 @@ async function act(el){
     if(await mutateList("purchases",l=>{l.push({id:uid(),date:r.date,supplier:r.supplier,invoiceNo:r.invoiceNo,category:r.category,amount:N(r.amount),note:r.note})})){delete S.draft[fk];render();toast("تم تسجيل الفاتورة. يمكنك إرفاق نسختها من الجدول")}
     return;
   }
+  if(a==="ex-ok"&&c){const X=clone(c.measExtract||{rows:[]});const r=X.rows.find(x=>x.id===el.dataset.id);if(r){r.ok=true;r.unclear=false;await write(c._id,{measExtract:X})}return}
+  if(a==="ex-flagok"&&c){const X=clone(c.measExtract||{rows:[]});X.flagsOk=[...(X.flagsOk||[]),+el.dataset.id];await write(c._id,{measExtract:X});return}
   if(a==="ib-apply"){await inboxApply(el.dataset.id);return}
   if(a==="ib-all"){await inboxApplyAll();return}
   if(a==="ib-retry"){if(c)inboxAnalyze(c._id,el.dataset.id);return}
