@@ -141,6 +141,7 @@ body.dragging::after{content:"أفلت الملفات هنا للتحليل وا
 .exc-in{display:flex;gap:8px;align-items:flex-end}.exc-in textarea{flex:1;min-height:44px;resize:vertical}.exc-busy{display:flex;align-items:center;gap:8px}
 .missbox{display:flex;flex-direction:column;gap:6px;border:1px solid var(--warn-soft);border-inline-start:3px solid var(--warn);border-radius:8px;padding:10px 12px}.missbox>b{color:var(--warn);font-size:.86rem}
 .miss-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px}.fld.miss input{width:100%}
+.ord-sec{display:flex;flex-direction:column;gap:8px;padding:10px 0;border-top:1px solid var(--line)}.ord-sec:first-of-type{border-top:0}.ord-sec>b{font-size:.92rem}.fld.need input{border-color:var(--warn);background:var(--warn-soft)}
 .order-box{display:flex;flex-direction:column;gap:8px;border:1px solid var(--line);border-radius:10px;padding:12px;background:var(--surface-2)}
 .ib-act{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap}
 .vatbox{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding:12px 14px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2)}
@@ -215,7 +216,7 @@ const BUY_CATS=["ألمنيوم","زجاج","إكسسوارات","مواد تر�
 const PAY_METHODS=["تحويل بنكي","نقدي","شيك","شبكة"];
 const ALU_SYSTEMS=["سرايا","رويال","كرتن وول","سكوريت","أخرى"];
 const ITEM_TYPES=["شباك سحاب","شباك مفصلي","شباك ثابت","باب سحاب","باب مفصلي","واجهة","أخرى"];
-const TABS=[["info","البيانات"],["docs","العقد وعرض السعر"],["pay","الدفعات"],["colors","الاعتمادات"],["meas","المقاسات"],["shop","المخططات Shop Drawings"],["calc","حساب الكميات"],["cut","Cutting List"],["inst","مواعيد التركيب"],["buy","المشتريات والأرباح"],["photos","الصور والفيديو"],["handover","محضر التسليم"],["invoices","فواتير المبيعات وكشوفات الحساب"]];
+const TABS=[["info","البيانات"],["docs","العقد وعرض السعر"],["pay","الدفعات"],["colors","الاعتمادات"],["meas","المقاسات"],["shop","المخططات Shop Drawings"],["calc","حساب الكميات"],["aorder","طلب الألمنيوم"],["gorder","طلب الزجاج"],["cut","Cutting List"],["inst","مواعيد التركيب"],["buy","المشتريات والأرباح"],["photos","الصور والفيديو"],["handover","محضر التسليم"],["invoices","فواتير المبيعات وكشوفات الحساب"]];
 const MAX_BYTES=20*1024*1024;
 const VAT_RATE=0.15;
 const VAT_MODES=["قبل الضريبة","شامل الضريبة"];
@@ -380,7 +381,7 @@ function listView(){
 function clientView(c){
   const k=calc(c);
   const counts={docs:(c.files?.contract?.length||0)+(c.files?.quote?.length||0)+(c.files?.drawings?.length||0)+(c.files?.other?.length||0),pay:(c.payments||[]).length,inst:(c.installs||[]).length,meas:(c.glass||[]).length+(c.alu||[]).length+((c.files||{}).measSheets||[]).length,invoices:(c.salesInvoices||[]).length,photos:(c.files?.photos||[]).length+(c.files?.photosAfter||[]).length+(c.files?.videos||[]).length,shop:((c.shop&&c.shop.items)||[]).length,buy:(c.purchases||[]).length};
-  const body={info:tabInfo,docs:tabDocs,colors:tabColors,pay:tabPay,inst:tabInst,meas:tabMeas,calc:tabCalc,cut:tabCut,handover:tabHandover,invoices:tabInvoices,shop:tabShop,photos:tabPhotos,buy:tabBuy}[S.tab]||tabInfo;
+  const body={info:tabInfo,docs:tabDocs,colors:tabColors,pay:tabPay,inst:tabInst,meas:tabMeas,calc:tabCalc,cut:tabCut,handover:tabHandover,invoices:tabInvoices,shop:tabShop,photos:tabPhotos,buy:tabBuy,aorder:tabAOrder,gorder:tabGOrder}[S.tab]||tabInfo;
   return `<section class="head">
       <div><div class="fileno">ملف رقم <span class="num">${esc(c.fileNo||"—")}</span></div><h2>${esc(c.name||"بدون اسم")}${c.project?` <span class="proj-name">· ${esc(c.project)}</span>`:""}</h2>
       <div class="small muted">تاريخ التعميد: <span class="num">${esc(c.approvalDate||"—")}</span> ${c.location?"· "+esc(c.location):""} ${locLink(c)} ${c.phone?`· <span class="num">${esc(c.phone)}</span>`:""}</div></div>
@@ -497,7 +498,7 @@ function tabMeas(c){
   const G=c.glass||[],A=c.alu||[];
   const gQty=sum(G,r=>N(r.qty)||1),gArea=sum(G,r=>area(r.w,r.h,r.qty));
   const aQty=sum(A,r=>N(r.qty)||1),aArea=sum(A,r=>area(r.w,r.h,r.qty));
-  return `${sheetsCard(c)}${ordersCard(c)}<div class="card"><div class="toolbar">${chk(mk,"final","المقاسات نهائية ومعتمدة للتصنيع",c.measFinal)}${inp(mk,"date","تاريخ الاعتماد",c.measFinalDate,"date")}${S.canWrite?`<button data-act="save-mfin">حفظ</button>`:""}${c.measFinal?`<span class="ok-badge">✓ معتمدة للتصنيع</span>`:`<span class="note">مقاسات أولية، لا تُرسل للتصنيع قبل الاعتماد</span>`}</div></div>
+  return `${sheetsCard(c)}${ordersLinks(c)}<div class="card"><div class="toolbar">${chk(mk,"final","المقاسات نهائية ومعتمدة للتصنيع",c.measFinal)}${inp(mk,"date","تاريخ الاعتماد",c.measFinalDate,"date")}${S.canWrite?`<button data-act="save-mfin">حفظ</button>`:""}${c.measFinal?`<span class="ok-badge">✓ معتمدة للتصنيع</span>`:`<span class="note">مقاسات أولية، لا تُرسل للتصنيع قبل الاعتماد</span>`}</div></div>
   <div class="card"><h3><span>مقاسات الألمنيوم النهائية <span class="small muted">بالمليمتر</span></span><span class="toolbar">${A.length||G.length?`<button data-act="pdf-dl" data-src="meas" ${S.pdfBusy?"disabled":""}>${S.pdfBusy?"جارٍ إنشاء PDF…":"تنزيل المقاسات PDF"}</button>${S.canWrite&&S.assets?`<button data-act="pdf-save" data-src="meas" ${S.pdfBusy?"disabled":""}>حفظ PDF في ملف العميل</button>`:""}`:""}</span></h3>
     ${S.canWrite?`<div class="toolbar" style="justify-content:flex-start">${S.msel.size?(S.confirm==="m-delsel"?`<button class="danger armed" data-act="m-delsel">تأكيد حذف ${S.msel.size} بند</button>`:`<button class="danger" data-act="m-delsel">حذف المحدد (${S.msel.size})</button>`):""}<span class="addn"><input id="m-addn" type="number" min="1" max="200" inputmode="numeric" placeholder="العدد" aria-label="عدد البنود المراد إضافتها"><button data-act="m-addn">إضافة بنود</button></span><button data-act="m-add">+ بند</button></div>`:""}
     <div class="tablebox"><table class="qitems mitems"><thead><tr>${S.canWrite?`<th><input type="checkbox" data-mselall="1" aria-label="تحديد الكل" ${A.length&&A.every(r=>S.msel.has(r.id))?"checked":""}></th>`:""}<th>الكود</th><th>الدور</th><th>النوع (قالب الحساب)</th><th>العرض مم</th><th>الارتفاع مم</th><th>العدد</th><th>المساحة م²</th><th>ملاحظة</th><th></th></tr></thead><tbody>
@@ -1310,8 +1311,7 @@ function tabCalc(c){
     ${T.profiles.map(p=>`<tr><td><b>${esc(p.name)}</b></td><td>${esc(alu.code||alu.color||"—")}</td><td class="num">${p.pieces}</td><td class="num">${(p.net/1000).toFixed(2)}</td><td class="num"><b>${p.nb}</b>${p.over.length?` <span class="pill bad">${p.over.length} أطول من العود</span>`:""}</td><td><input type="number" min="0" inputmode="numeric" lang="en" style="width:64px" data-aord="${esc(p.name)}" value="${esc((c.aluOrder||{})[p.name]??p.nb)}" ${S.canWrite?"":"disabled"} aria-label="عدد العيدان المطلوبة"></td><td class="num">${(p.waste*100).toFixed(0)}%</td><td class="num">${p.kgm?p.kg.toFixed(1):"—"}</td><td>${p.kgm?priced(p.cost):"—"}</td></tr>`).join("")||`<tr><td colspan="8" class="muted">لا توجد قطع.</td></tr>`}
     </tbody><tfoot><tr><td colspan="4">الإجمالي</td><td class="num">${T.bars}</td><td class="num"><b>${sum(aluOrderRows(c,T),r=>r.bars)}</b></td><td></td><td class="num">${T.kg.toFixed(1)}</td><td>${priced(T.cost.alu)}</td></tr></tfoot></table></div>
     <div class="order-box"><b>طلب الألمنيوم من المورّد</b>
-      ${S.canWrite&&orderMissing(c,"alu").filter(x=>x.k!=="aluSupplier").length?`<div class="miss-grid">${missingInputs(c,orderMissing(c,"alu").filter(x=>x.k!=="aluSupplier"))}</div>`:""}
-      <div class="toolbar" style="justify-content:flex-start">${S.canWrite?`<label class="fld" style="min-width:200px"><span>المورّد</span><input data-cf="aluSupplier" value="${esc(c.aluSupplier||"")}" placeholder="اسم المورّد"></label><label class="fld" style="flex:1;min-width:220px"><span>ملاحظة على الطلب (اختياري)</span><input data-cf="aluOrderNote" value="${esc(c.aluOrderNote||"")}"></label>`:""}</div>
+      <div class="miss-grid">${fieldInputs(orderFields(c,"alu"))}</div>
       <div class="toolbar" style="justify-content:flex-start"><button class="primary" data-act="ao-pdf" ${S.pdfBusy?"disabled":""}>طلب الألمنيوم PDF</button><button data-act="ao-xlsx">طلب الألمنيوم Excel</button>${S.canWrite&&S.assets?`<button data-act="ao-save" ${S.pdfBusy?"disabled":""}>حفظ الطلب في ملف العميل</button>`:""}<span style="flex:1"></span><button class="ghost" data-act="tab" data-tab="cut">خطة القص Cutting List ←</button></div>
       <p class="small muted" style="margin:0">عمود «الطلب» يبدأ بعدد العيدان المحسوب، وتقدر تزيد عليه احتياط أو تعدّله قبل إصدار الطلب.</p></div>`);
   const s2=sec("2","حساب الدهان",`<dl class="kv"><dt>اللون</dt><dd>${esc(colorTxt)}${alu.finish?" · "+esc(alu.finish):""}</dd><dt>عدد العيدان للدهان</dt><dd class="num">${T.bars}</dd><dt>الوزن الإجمالي</dt><dd><span class="num">${T.kg.toFixed(1)}</span> كجم</dd><dt>سعر الدهان للكيلو</dt><dd>${cfg.paintRate?M(cfg.paintRate):`<span class="muted small">أدخل السعر</span>`}</dd><dt>تكلفة الدهان</dt><dd>${priced(T.cost.paint)}</dd></dl>`);
@@ -1322,7 +1322,7 @@ function tabCalc(c){
   const s6=sec("6","حساب الزجاج",`<div class="tablebox"><table><thead><tr><th>المرجع</th><th>المواصفة</th><th>العرض مم</th><th>الارتفاع مم</th><th>العدد</th><th>المساحة م²</th><th></th></tr></thead><tbody>
     ${T.glass.map(x=>`<tr><td><b>${esc(x.ref)}</b></td><td>${esc(x.spec)}</td><td class="num">${x.w}</td><td class="num">${x.h}</td><td class="num">${x.qty}</td><td class="num">${x.m2.toFixed(2)}</td><td class="small muted">${x.src==="manual"?"يدوي":""}</td></tr>`).join("")||`<tr><td colspan="7" class="muted">لا يوجد زجاج.</td></tr>`}
     </tbody><tfoot><tr><td colspan="4">الإجمالي</td><td class="num">${sum(T.glass,x=>x.qty)}</td><td class="num">${T.m2.toFixed(2)}</td><td>${priced(T.cost.glass)}</td></tr></tfoot></table></div>
-    ${T.glass.length?`<div class="order-box"><b>طلب الزجاج من المورّد</b>${S.canWrite&&orderMissing(c,"glass").length?`<div class="miss-grid">${missingInputs(c,orderMissing(c,"glass"))}</div>`:""}${S.canWrite?`<label class="fld"><span>ملاحظة أسفل الطلب</span><input data-cf="glassOrderNote" value="${esc(c.glassOrderNote||"")}" placeholder="ترسل لمصنع برج القمة"></label>`:""}<div class="toolbar" style="justify-content:flex-start"><button class="primary" data-act="go-xlsx">طلب الزجاج Excel</button></div></div>`:""}`);
+    ${Object.keys(glassGroups(c)).length||(c.glass||[]).length?`<div class="order-box"><b>طلب الزجاج من المورّد</b><p class="small muted" style="margin:0">المقاسات من: ${glassSrc(c)==="saved"?"مقاسات الزجاج المحفوظة":"المحسوبة من الألمنيوم"} (تغييرها من تبويب «المقاسات» ← طلبات المورّدين)</p><div class="miss-grid">${fieldInputs(orderFields(c,"glass"))}</div><div class="toolbar" style="justify-content:flex-start"><button class="primary" data-act="go-xlsx">طلب الزجاج Excel</button><button data-act="go-pdf" ${S.pdfBusy?"disabled":""}>طلب الزجاج PDF</button></div></div>`:""}`);
   const s7=sec("7","حساب الربل",accTable(byCat("rubber"),"لا يوجد ربل في القوالب.",priced));
   const k=calc(c);const net=N(c.quoteNet)||k.contract;const C=T.cost;
   const s8=`<div class="card"><h3>التكلفة التقديرية للمواد</h3>
@@ -2201,6 +2201,9 @@ async function act(el){
   if(a==="ao-save"&&c){await aluOrderPdf(c,"save");return}
   if(a==="ao-xlsx"&&c){await aluOrderXlsx(c);return}
   if(a==="go-xlsx"&&c){await glassOrderXlsx(c);return}
+  if(a==="go-pdf"&&c){await glassOrderPdf(c,"dl");return}
+  if(a==="go-save"&&c){await glassOrderPdf(c,"save");return}
+  if(a==="g-src"&&c){await write(c._id,{glassSrc:el.dataset.k});return}
   if(a==="ib-apply"){await inboxApply(el.dataset.id);return}
   if(a==="ib-all"){await inboxApplyAll();return}
   if(a==="ib-retry"){if(c)inboxAnalyze(c._id,el.dataset.id);return}
@@ -2319,7 +2322,7 @@ document.addEventListener("change",async e=>{
   if(el.dataset.alurec&&e.type==="change"){const id=el.dataset.alurec,rc=recipeById(el.value);if(!rc)return;await mutateList("alu",l=>l.map(r=>r.id===id?{...r,recipe:rc.id,system:rc.system,type:rc.name}:r));toast("تم تغيير قالب الحساب");return}
   if(el.dataset.inst&&e.type==="change"){const id=el.dataset.inst,v=el.value;await mutateList("installs",l=>l.map(r=>r.id===id?{...r,status:v}:r));toast("تم تحديث حالة الموعد");return}
   if(el.dataset.aord!=null&&e.type==="change"){const c=cur();if(!c)return;const o={...(c.aluOrder||{})};o[el.dataset.aord]=el.value===""?null:Math.max(0,Math.round(N(el.value)));await write(c._id,{aluOrder:o});return}
-  if(el.dataset.miss&&e.type==="change"){const c=cur();if(!c)return;const k=el.dataset.miss,v=toLat(el.value).trim();if(!v)return;
+  if(el.dataset.miss&&e.type==="change"){const c=cur();if(!c)return;const k=el.dataset.miss,v=toLat(el.value).trim();
     if(k==="@alucode"){const co=clone(c.colors||{});co.alu=co.alu||{};co.alu.code=v;await write(c._id,{colors:co});return}
     if(k.startsWith("@gspec:")){const g={...(c.glassSpecEn||{})};g[k.slice(7)]=v.toUpperCase();await write(c._id,{glassSpecEn:g});return}return}
   if(el.dataset.cf&&e.type==="change"){const c=cur();if(!c)return;await write(c._id,{[el.dataset.cf]:el.value.trim()});return}
@@ -2684,7 +2687,6 @@ async function aluOrderXlsx(c){
     return{rows:R,merges};
   },`طلب-ألمنيوم-${c.fileNo||""}-${clientTitle(c)}.xlsx`);
 }
-function glassGroups(c){const T=takeoff(c,S.cfg);const g={};T.glass.forEach(x=>{const k=x.spec||"زجاج";(g[k]=g[k]||[]).push(x)});return g}
 function glassSpecLines(c,spec){const t=String((c.glassSpecEn||{})[spec]||"").trim();if(!t)return null;const p=t.split(/\s*\+\s*|\n/).map(s=>s.trim().toUpperCase()).filter(Boolean);while(p.length<3)p.push("");return p.slice(0,3)}
 async function glassOrderXlsx(c){
   const G=glassGroups(c);const keys=Object.keys(G);if(!keys.length){toast("لا يوجد زجاج للطلب. أدخل مقاسات الزجاج أو الألمنيوم أولاً");return}
@@ -2716,13 +2718,85 @@ function orderMissing(c,kind){const m=[];const a=c.colors?.alu||{};
   if(kind==="glass"){Object.keys(glassGroups(c)).forEach(sp=>{if(!glassSpecLines(c,sp))m.push({k:"@gspec:"+sp,l:`مواصفة الزجاج بالإنجليزي «${sp}»`,ph:"6 MM CLEAR TEMPERED + 12 MM AIR SPACE + 6 MM CLEAR TEMPERED"})});const co=CO();if(!co.cr||!co.vat)m.push({k:"@co",l:"السجل التجاري والرقم الضريبي (من الإعدادات)",ph:""})}
   return m}
 function missingInputs(c,list){return list.map(x=>x.k==="@co"?`<span class="small neg">${esc(x.l)}: أدخلها من «الإعدادات»</span>`:`<label class="fld miss"><span>${esc(x.l)}</span><input ${x.k.startsWith("@")?`data-miss="${esc(x.k)}"`:`data-cf="${esc(x.k)}"`} placeholder="${esc(x.ph||"")}" ${x.k.startsWith("@gspec")?'dir="ltr"':""}></label>`).join("")}
+
+/* glass order source: saved glass measurements first, computed panes only when chosen */
+const glassSrc=c=>c.glassSrc||((c.glass||[]).length?"saved":"calc");
+function glassGroups(c){const g={};const src=glassSrc(c);
+  const list=src==="saved"?(c.glass||[]).map(r=>({ref:r.ref,spec:[r.type,r.thick,r.color].filter(Boolean).join(" ")||"زجاج",w:N(r.w),h:N(r.h),qty:N(r.qty)||1}))
+    :takeoff(c,S.cfg).glass.filter(x=>x.src!=="manual");
+  list.filter(x=>x.w>0&&x.h>0).forEach(x=>{const k=x.spec||"زجاج";(g[k]=g[k]||[]).push(x)});return g}
+function glassOrderSVGs(c,logo){
+  const co=CO();const G=glassGroups(c);const keys=Object.keys(G);const X1=30,X2=565,W=X2-X1;const y0=new Date().getFullYear();
+  const po=`GO-${y0}-${String(c.fileNo||"").replace(/^\d{4}-/,"")||"0"}`;
+  const pages=[];let s="",y=0;
+  const open=()=>{s=`<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 595 842" width="595" height="842"><rect width="595" height="842" fill="#fff"/><rect x="0" y="0" width="595" height="6" fill="${QC.teal}"/><rect x="0" y="6" width="595" height="2" fill="${QC.bronze}"/>`;
+    if(logo)s+=`<image href="${esc(logo)}" xlink:href="${esc(logo)}" x="${297-26}" y="16" width="52" height="52" preserveAspectRatio="xMidYMid meet"/>`;
+    s+=T(X1,30,`COMMERCIAL RECORD : ${co.cr||"-"}`,{size:7.5,weight:700})+T(X1,42,`TAX NUMBER : ${co.vat||"-"}`,{size:7.5,weight:700})+T(X1,60,"PURCHASE ORDER",{size:10,weight:700,fill:QC.teal})+T(X1,73,`PO NO : ${po}`,{size:8.5,weight:700});
+    s+=T(X2,30,co.nameAr,{size:11,anchor:"end",weight:700})+T(X2,44,"AL QIMMA TOWER FACTORY ( QTG )",{size:8,anchor:"end",weight:700,fill:QC.muted});
+    s+=L(X1,84,X2,84,{stroke:QC.line,sw:.8})+T(X1,100,`PROJECT NAME : ${clientTitle(c)}`,{size:9.5,weight:700})+T(X2,100,`DATE: ${dmy(today())}`,{size:9.5,anchor:"end",weight:700});y=114};
+  const close=()=>{s+=L(X1,808,X2,808,{stroke:QC.line,sw:.6})+T(297,822,c.glassOrderNote||"ترسل لمصنع برج القمة",{size:9,anchor:"middle",weight:700,fill:QC.ink});pages.push(s+"</svg>")};
+  const need=h=>{if(y+h>790){close();open()}};
+  const cw=[110,130,130,70,95];const cx=[];let x=X1;cw.forEach(w=>{cx.push(x);x+=w});
+  const cell=(i,t,yy,o={})=>T(cx[i]+cw[i]/2,yy,String(t),{size:9.5,anchor:"middle",...o});
+  open();let gq=0,ga=0;
+  keys.forEach(k=>{const lines=glassSpecLines(c,k)||[k,"",""];const rows=G[k];
+    need(18*4+22+20*Math.min(rows.length,3));
+    s+=`<rect x="${X1}" y="${y}" width="${W}" height="18" fill="${QC.soft}" stroke="${QC.ink}" stroke-width=".6"/>`+T(297,y+12.5,"DESCRIPTION",{size:8.5,anchor:"middle",weight:700});y+=18;
+    lines.filter(Boolean).forEach(t=>{s+=`<rect x="${X1}" y="${y}" width="${W}" height="17" fill="#fff" stroke="${QC.ink}" stroke-width=".6"/>`+T(297,y+12,t,{size:8.5,anchor:"middle",weight:700});y+=17});
+    const head=()=>{s+=`<rect x="${X1}" y="${y}" width="${W}" height="20" fill="#f4b183" stroke="${QC.ink}" stroke-width=".6"/>`;["REF","WIDTH","HEIGHT","Q","T . SQM"].forEach((h,i)=>s+=cell(i,h,y+14,{weight:700,size:10}));y+=20};head();
+    let tq=0,ta=0;
+    rows.forEach((r,i)=>{if(y+19>780){close();open();head()}const a=r.w*r.h*r.qty/1e6;tq+=r.qty;ta+=a;
+      s+=`<rect x="${X1}" y="${y}" width="${W}" height="19" fill="#fff" stroke="${QC.ink}" stroke-width=".4"/>`;cx.slice(1).forEach(xx=>s+=L(xx,y,xx,y+19,{stroke:QC.ink,sw:.4}));
+      s+=cell(0,r.ref,y+13,{size:8.5})+cell(1,r.w,y+13.5,{weight:700,size:10.5})+cell(2,r.h,y+13.5,{weight:700,size:10.5})+cell(3,r.qty,y+13.5,{weight:700,size:10.5})+cell(4,+a.toFixed(3),y+13.5,{weight:700,size:10.5});y+=19});
+    s+=`<rect x="${X1}" y="${y}" width="${W}" height="20" fill="#fff" stroke="${QC.ink}" stroke-width=".8"/>`+T(cx[0]+(cw[0]+cw[1]+cw[2])/2,y+14,"TOTAL",{size:11,anchor:"middle",weight:700})+cell(3,tq,y+14,{weight:700,size:11})+cell(4,+ta.toFixed(3),y+14,{weight:700,size:11});y+=32;gq+=tq;ga+=ta});
+  if(keys.length>1){need(24);s+=`<rect x="${X1}" y="${y}" width="${W}" height="22" fill="#bfbfbf" stroke="${QC.ink}" stroke-width=".8"/>`+T(cx[0]+(cw[0]+cw[1]+cw[2])/2,y+15,"GRAND TOTAL",{size:11.5,anchor:"middle",weight:700,fill:"#c00000"})+cell(3,gq,y+15,{weight:700,size:11.5,fill:"#c00000"})+cell(4,+ga.toFixed(3),y+15,{weight:700,size:11.5,fill:"#c00000"})}
+  close();return pages;
+}
+async function glassOrderPdf(c,mode){const G=glassGroups(c);if(!Object.keys(G).length){toast("لا يوجد زجاج للطلب. أدخل مقاسات الزجاج أولاً");return}
+  const miss=orderMissing(c,"glass").filter(m=>m.k!=="@co");if(miss.length){toast("أكمل بيانات الطلب أولاً: "+miss.map(m=>m.l).join("، "),{kind:"warn"});return}
+  const logo=await logoHref(true);await svgPdf(c,glassOrderSVGs(c,logo),`طلب-زجاج-${c.fileNo||""}-${clientTitle(c)}.pdf`,mode,"other","تم حفظ طلب الزجاج في «مستندات أخرى»")}
+/* order details: always editable, missing ones highlighted */
+function orderFields(c,kind){const a=c.colors?.alu||{};const f=[];
+  if(kind==="alu"){f.push({k:"aluSupplier",l:"مورّد الألمنيوم",v:c.aluSupplier||"",ph:"اسم المورّد"});f.push({k:"@alucode",l:"كود لون الألمنيوم",v:a.code||a.color||"",ph:"مثل 9005 أو ميلفينش"});f.push({k:"aluOrderNote",l:"ملاحظة على طلب الألمنيوم",v:c.aluOrderNote||"",ph:"اختياري",opt:1})}
+  if(kind==="glass"){f.push({k:"glassSupplier",l:"مورّد الزجاج",v:c.glassSupplier||"",ph:"اختياري",opt:1});Object.keys(glassGroups(c)).forEach(sp=>f.push({k:"@gspec:"+sp,l:`وصف الزجاج بالإنجليزي «${sp}»`,v:(c.glassSpecEn||{})[sp]||"",ph:"6 MM CLEAR TEMPERED + 12 MM AIR SPACE + 6 MM CLEAR TEMPERED",ltr:1}));f.push({k:"glassOrderNote",l:"ملاحظة أسفل طلب الزجاج",v:c.glassOrderNote||"",ph:"ترسل لمصنع برج القمة",opt:1})}
+  return f}
+function fieldInputs(list){return list.map(x=>{const miss=!x.opt&&!String(x.v).trim();return `<label class="fld ${miss?"miss need":""}"><span>${esc(x.l)}${miss?' <b class="neg">· ناقص</b>':""}</span><input ${x.k.startsWith("@")?`data-miss="${esc(x.k)}"`:`data-cf="${esc(x.k)}"`} value="${esc(x.v)}" placeholder="${esc(x.ph||"")}" ${x.ltr?'dir="ltr"':""} ${S.canWrite?"":"disabled"}></label>`}).join("")}
 function ordersCard(c){
-  const ma=orderMissing(c,"alu"),mg=orderMissing(c,"glass");const hasAlu=(c.alu||[]).length,hasGl=Object.keys(glassGroups(c)).length;
-  if(!hasAlu&&!hasGl)return"";
+  const hasAlu=(c.alu||[]).length,G=glassGroups(c),hasGl=Object.keys(G).length||(c.glass||[]).length;
+  if(!hasAlu&&!hasGl)return"";const co=CO();const src=glassSrc(c);
   return `<div class="card orders"><h3>طلبات المورّدين</h3>
-    ${S.canWrite&&(ma.length||mg.length)?`<div class="missbox"><b>معلومات ناقصة للطلب</b><div class="miss-grid">${missingInputs(c,[...(hasAlu?ma:[]),...(hasGl?mg:[])])}</div></div>`:""}
-    <div class="toolbar" style="justify-content:flex-start">${hasAlu?`<button class="primary" data-act="ao-xlsx">طلب الألمنيوم Excel</button><button data-act="ao-pdf" ${S.pdfBusy?"disabled":""}>طلب الألمنيوم PDF</button>`:""}${hasGl?`<button class="primary" data-act="go-xlsx">طلب الزجاج Excel</button>`:""}</div>
-    <p class="small muted" style="margin:0">الطلبات تطلع بنفس تصميم ملفات الطلبيات المعتمدة عندكم، وعدد العيدان من «حساب الكميات».</p></div>`;
+    ${hasAlu?`<div class="ord-sec"><b>طلب الألمنيوم</b><div class="miss-grid">${fieldInputs(orderFields(c,"alu"))}</div>
+      <div class="toolbar" style="justify-content:flex-start"><button class="primary" data-act="ao-xlsx">طلب الألمنيوم Excel</button><button data-act="ao-pdf" ${S.pdfBusy?"disabled":""}>طلب الألمنيوم PDF</button></div></div>`:""}
+    ${hasGl?`<div class="ord-sec"><b>طلب الزجاج</b>
+      <div class="toolbar" style="justify-content:flex-start;gap:6px"><span class="small muted">المقاسات من:</span>${[["saved",`مقاسات الزجاج المحفوظة (${(c.glass||[]).length})`],["calc","المحسوبة من الألمنيوم"]].map(([k,l])=>`<button class="${src===k?"primary":"ghost"}" data-act="g-src" data-k="${k}" ${S.canWrite?"":"disabled"}>${l}</button>`).join("")}</div>
+      <div class="miss-grid">${fieldInputs(orderFields(c,"glass"))}</div>
+      ${!co.cr||!co.vat?`<div class="small neg">السجل التجاري أو الرقم الضريبي غير مدخل في «الإعدادات».</div>`:""}
+      <div class="toolbar" style="justify-content:flex-start"><button class="primary" data-act="go-xlsx">طلب الزجاج Excel</button><button data-act="go-pdf" ${S.pdfBusy?"disabled":""}>طلب الزجاج PDF</button>${S.canWrite&&S.assets?`<button data-act="go-save" ${S.pdfBusy?"disabled":""}>حفظ طلب الزجاج في ملف العميل</button>`:""}</div></div>`:""}
+  </div>`;
+}
+
+
+function ordersLinks(c){const a=(c.alu||[]).length,g=Object.keys(glassGroups(c)).length;if(!a&&!g)return"";
+  return `<div class="card" style="flex-direction:row;align-items:center;gap:8px;flex-wrap:wrap"><b>طلبات المورّدين:</b>${a?`<button data-act="tab" data-tab="aorder">طلب الألمنيوم ←</button>`:""}${g?`<button data-act="tab" data-tab="gorder">طلب الزجاج ←</button>`:""}</div>`}
+function tabAOrder(c){
+  if(!(c.alu||[]).length)return `<div class="card empty"><p class="muted">أدخل مقاسات الألمنيوم أولاً من تبويب «المقاسات».</p></div>`;
+  const T=takeoff(c,S.cfg);const rows=aluOrderRows(c,T);const col=aluColorSuffix(c);
+  return `<div class="card"><h3>بيانات طلب الألمنيوم</h3><div class="miss-grid">${fieldInputs(orderFields(c,"alu"))}</div>
+    <div class="toolbar" style="justify-content:flex-start"><button class="primary" data-act="ao-xlsx">طلب الألمنيوم Excel</button><button data-act="ao-pdf" ${S.pdfBusy?"disabled":""}>طلب الألمنيوم PDF</button>${S.canWrite&&S.assets?`<button data-act="ao-save" ${S.pdfBusy?"disabled":""}>حفظ الطلب في ملف العميل</button>`:""}</div></div>
+  <div class="card"><h3>الأصناف المطلوبة <span class="small muted">عدّل عدد العيدان من هنا</span></h3><div class="tablebox"><table><thead><tr><th>الرقم</th><th>الصنف</th><th>المحسوب</th><th>الطلب (عود)</th></tr></thead><tbody>
+    ${T.profiles.map((p,i)=>`<tr><td class="num">${i+1}</td><td><b>${esc(p.name)}</b>${col?` <span class="muted">-- ${esc(col)}</span>`:""}</td><td class="num">${p.nb}</td><td><input type="number" min="0" inputmode="numeric" lang="en" style="width:70px" data-aord="${esc(p.name)}" value="${esc((c.aluOrder||{})[p.name]??p.nb)}" ${S.canWrite?"":"disabled"}></td></tr>`).join("")}
+    </tbody><tfoot><tr><td colspan="2">الإجمالي</td><td class="num">${T.bars}</td><td class="num"><b>${sum(rows,r=>r.bars)}</b></td></tr></tfoot></table></div></div>`;
+}
+function tabGOrder(c){
+  const G=glassGroups(c);const keys=Object.keys(G);const src=glassSrc(c);const co=CO();
+  const srcBar=`<div class="toolbar" style="justify-content:flex-start;gap:6px"><span class="small muted">المقاسات من:</span>${[["saved",`مقاسات الزجاج المحفوظة (${(c.glass||[]).length})`],["calc","المحسوبة من الألمنيوم"]].map(([k,l])=>`<button class="${src===k?"primary":"ghost"}" data-act="g-src" data-k="${k}" ${S.canWrite?"":"disabled"}>${l}</button>`).join("")}</div>`;
+  if(!keys.length)return `<div class="card">${srcBar}<p class="muted">لا توجد مقاسات زجاج في هذا المصدر. أدخلها من تبويب «المقاسات».</p></div>`;
+  return `<div class="card"><h3>بيانات طلب الزجاج</h3>${srcBar}<div class="miss-grid">${fieldInputs(orderFields(c,"glass"))}</div>
+    ${!co.cr||!co.vat?`<div class="small neg">السجل التجاري أو الرقم الضريبي غير مدخل في «الإعدادات».</div>`:""}
+    <div class="toolbar" style="justify-content:flex-start"><button class="primary" data-act="go-xlsx">طلب الزجاج Excel</button><button data-act="go-pdf" ${S.pdfBusy?"disabled":""}>طلب الزجاج PDF</button>${S.canWrite&&S.assets?`<button data-act="go-save" ${S.pdfBusy?"disabled":""}>حفظ طلب الزجاج في ملف العميل</button>`:""}</div></div>
+  ${keys.map(k=>{const L=glassSpecLines(c,k);const rs=G[k];return `<div class="card"><h3>${esc(k)} <span class="small muted" dir="ltr">${L?esc(L.filter(Boolean).join(" + ")):"بدون وصف إنجليزي"}</span></h3><div class="tablebox"><table><thead><tr><th>REF</th><th>WIDTH</th><th>HEIGHT</th><th>Q</th><th>T.SQM</th></tr></thead><tbody>
+    ${rs.map(r=>`<tr><td><b>${esc(r.ref)}</b></td><td class="num">${r.w}</td><td class="num">${r.h}</td><td class="num">${r.qty}</td><td class="num">${(r.w*r.h*r.qty/1e6).toFixed(3)}</td></tr>`).join("")}
+    </tbody><tfoot><tr><td colspan="3">TOTAL</td><td class="num">${sum(rs,r=>r.qty)}</td><td class="num">${sum(rs,r=>r.w*r.h*r.qty/1e6).toFixed(3)}</td></tr></tfoot></table></div></div>`}).join("")}`;
 }
 
 /* ---------- boot ---------- */
