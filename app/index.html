@@ -158,6 +158,8 @@ body.dragging::after{content:"أفلت الملفات هنا للتحليل وا
 .ord-table th{text-align:center;line-height:1.25}.ord-table th .en{display:block;font-size:.68rem;font-weight:600;color:var(--muted);letter-spacing:.04em}.ord-table td{text-align:center}.ord-table td:nth-child(5){text-align:right}
 .minflag{display:inline-block;margin-inline-start:6px;font-size:.68rem;padding:1px 6px;border-radius:999px;background:var(--warn-soft);color:var(--warn);font-weight:600}
 .cuttbl th,.cuttbl td{text-align:center;white-space:nowrap}.cuttbl thead tr:first-child th{background:#f4d0b5}.cutn{font-size:.7rem;color:#c00000;font-weight:700;margin-inline-start:3px}
+.share{display:inline-flex;gap:6px}.share button{display:inline-flex;align-items:center;gap:6px}.share .wa{color:#128c4a;border-color:#9fd8b6;background:#eefaf2}.share .gm{color:#c5221f;border-color:#f1b5b2;background:#fdf0ef}
+.sec-sep{display:flex;align-items:center;gap:10px;color:var(--muted);font-weight:700;font-size:.9rem;margin:6px 4px}.sec-sep::before,.sec-sep::after{content:"";flex:1;height:1px;background:var(--line)}
 .order-box{display:flex;flex-direction:column;gap:8px;border:1px solid var(--line);border-radius:10px;padding:12px;background:var(--surface-2)}
 .ib-act{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap}
 .vatbox{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding:12px 14px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2)}
@@ -232,7 +234,7 @@ const BUY_CATS=["ألمنيوم","زجاج","إكسسوارات","مواد تر�
 const PAY_METHODS=["تحويل بنكي","نقدي","شيك","شبكة"];
 const ALU_SYSTEMS=["سرايا","رويال","كرتن وول","سكوريت","أخرى"];
 const ITEM_TYPES=["شباك سحاب","شباك مفصلي","شباك ثابت","باب سحاب","باب مفصلي","واجهة","أخرى"];
-const TABS=[["info","البيانات"],["pre","المقاسات الأولية"],["docs","العقد وعرض السعر"],["colors","الاعتمادات"],["meas","المقاسات النهائية"],["shop","المخططات Shop Drawings"],["calc","حساب الكميات"],["cut","Cutting List"],["aorder","طلب الألمنيوم والدهان"],["glassm","مقاسات الزجاج"],["gorder","طلب الزجاج"],["pay","الدفعات"],["inst","مواعيد التركيب"],["buy","المشتريات والأرباح"],["photos","الصور والفيديو"],["handover","محضر التسليم"],["invoices","فواتير المبيعات وكشوفات الحساب"]];
+const TABS=[["info","البيانات"],["pre","المقاسات الأولية"],["docs","عرض السعر والمخططات"],["contract","العقد والاعتمادات"],["meas","المقاسات النهائية"],["calc","حساب الكميات"],["aorder","طلب الألمنيوم والدهان"],["cut","Cutting List"],["acc","الإكسسوارات"],["glassm","مقاسات وطلب الزجاج"],["shop","المخططات Shop Drawings"],["pay","الدفعات"],["inst","مواعيد التركيب"],["buy","المشتريات والأرباح"],["photos","الصور والفيديو"],["handover","محضر التسليم"],["invoices","فواتير المبيعات وكشوفات الحساب"]];
 const MAX_BYTES=20*1024*1024;
 const VAT_RATE=0.15;
 const VAT_MODES=["قبل الضريبة","شامل الضريبة"];
@@ -395,9 +397,10 @@ function listView(){
 }
 
 function clientView(c){
+  S.tab=TAB_ALIAS[S.tab]||S.tab;
   const k=calc(c);
-  const counts={docs:(c.files?.contract?.length||0)+(c.files?.quote?.length||0)+(c.files?.drawings?.length||0)+(c.files?.other?.length||0),pay:(c.payments||[]).length,inst:(c.installs||[]).length,pre:(c.prelim||[]).length,meas:(c.alu||[]).length,glassm:(c.glass||[]).length,invoices:(c.salesInvoices||[]).length,photos:(c.files?.photos||[]).length+(c.files?.photosAfter||[]).length+(c.files?.videos||[]).length,shop:((c.shop&&c.shop.items)||[]).length,buy:(c.purchases||[]).length};
-  const body={info:tabInfo,docs:tabDocs,colors:tabColors,pay:tabPay,inst:tabInst,meas:tabMeas,calc:tabCalc,cut:tabCut,handover:tabHandover,invoices:tabInvoices,shop:tabShop,photos:tabPhotos,buy:tabBuy,aorder:tabAOrder,gorder:tabGOrder,pre:tabPre,glassm:tabGlassM}[S.tab]||tabInfo;
+  const counts={contract:(c.files?.contract?.length||0),docs:(c.files?.quote?.length||0)+(c.files?.drawings?.length||0)+(c.files?.other?.length||0),pay:(c.payments||[]).length,inst:(c.installs||[]).length,pre:(c.prelim||[]).length,meas:(c.alu||[]).length,glassm:(c.glass||[]).length,invoices:(c.salesInvoices||[]).length,photos:(c.files?.photos||[]).length+(c.files?.photosAfter||[]).length+(c.files?.videos||[]).length,shop:((c.shop&&c.shop.items)||[]).length,buy:(c.purchases||[]).length};
+  const body={info:tabInfo,docs:tabDocs,colors:tabColors,pay:tabPay,inst:tabInst,meas:tabMeas,calc:tabCalc,cut:tabCut,handover:tabHandover,invoices:tabInvoices,shop:tabShop,photos:tabPhotos,buy:tabBuy,aorder:tabAOrder,gorder:tabGlassAll,pre:tabPre,glassm:tabGlassAll,contract:tabContract,acc:tabAcc}[S.tab]||tabInfo;
   return `<section class="head">
       <div><div class="fileno">ملف رقم <span class="num">${esc(c.fileNo||"—")}</span></div><h2>${esc(c.name||"بدون اسم")}${c.project?` <span class="proj-name">· ${esc(c.project)}</span>`:""}</h2>
       <div class="small muted">تاريخ التعميد: <span class="num">${esc(c.approvalDate||"—")}</span> ${c.location?"· "+esc(c.location):""} ${locLink(c)} ${c.phone?`· <span class="num">${esc(c.phone)}</span>`:""}</div></div>
@@ -458,7 +461,6 @@ function uploader(cat,label="رفع ملف",accept=""){
 function tabDocs(c){
   const block=(cat,title,hint)=>`<div class="card"><h3>${title} ${uploader(cat)}</h3><p class="small muted" style="margin:0">${hint}</p>${fileList(c,cat)}</div>`;
   return `<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(280px,1fr))">
-    ${block("contract","العقد","العقد الموقّع وأي ملاحق له (PDF أو صورة).")}
     ${block("quote","عرض السعر","عرض السعر المعتمد ونسخه السابقة.")}
     ${block("drawings","المخططات","المخططات المعمارية ومخططات الورشة (Shop Drawings).")}
     ${block("other","مستندات أخرى","أي مستندات أخرى تخص المشروع: خطابات، تصاريح، مراسلات.")}
@@ -2249,6 +2251,9 @@ async function act(el){
   if(a==="ao-save"&&c){await aluOrderPdf(c,"save");return}
   if(a==="ao-xlsx"&&c){await aluOrderXlsx(c);if(!orderMissing(c,"alu").length)write(c._id,{aluOrderedAt:new Date().toISOString()});return}
   if(a==="go-xlsx"&&c){await glassOrderXlsx(c);if(!orderMissing(c,"glass").filter(m=>m.k!=="@co").length)write(c._id,{glassOrderedAt:new Date().toISOString()});return}
+  if(a==="share"&&c){await shareOrder(c,el.dataset.kind,el.dataset.via);return}
+  if(a==="xo-pdf"&&c){await accOrderPdf(c,"dl");return}
+  if(a==="xo-save"&&c){await accOrderPdf(c,"save");return}
   if(a==="cut-pdf"&&c){await cutSheetPdf(c,"dl");return}
   if(a==="cut-save"&&c){await cutSheetPdf(c,"save");return}
   if(a==="go-pdf"&&c){await glassOrderPdf(c,"dl");if(!orderMissing(c,"glass").filter(m=>m.k!=="@co").length)write(c._id,{glassOrderedAt:new Date().toISOString()});return}
@@ -2372,6 +2377,7 @@ document.addEventListener("change",async e=>{
   if(el.dataset.ex&&e.type==="change"){const c=cur();if(!c)return;const i=el.dataset.ex.lastIndexOf("|");await exEdit(c,el.dataset.ex.slice(0,i),el.dataset.ex.slice(i+1),el.value);return}
   if(el.dataset.alurec&&e.type==="change"){const id=el.dataset.alurec,rc=recipeById(el.value);if(!rc)return;await mutateList("alu",l=>l.map(r=>r.id===id?{...r,recipe:rc.id,system:rc.system,type:rc.name}:r));toast("تم تغيير قالب الحساب");return}
   if(el.dataset.inst&&e.type==="change"){const id=el.dataset.inst,v=el.value;await mutateList("installs",l=>l.map(r=>r.id===id?{...r,status:v}:r));toast("تم تحديث حالة الموعد");return}
+  if(el.dataset.xord!=null&&e.type==="change"){const c=cur();if(!c)return;const o={...(c.accOrder||{})};o[el.dataset.xord]=el.value===""?null:Math.max(0,N(el.value));await write(c._id,{accOrder:o});return}
   if(el.dataset.aord!=null&&e.type==="change"){const c=cur();if(!c)return;const o={...(c.aluOrder||{})};o[el.dataset.aord]=el.value===""?null:Math.max(0,Math.round(N(el.value)));await write(c._id,{aluOrder:o});return}
   if(el.dataset.miss&&e.type==="change"){const c=cur();if(!c)return;const k=el.dataset.miss,v=toLat(el.value).trim();
     if(k==="@alucode"||k==="@alufinish"){const co=clone(c.colors||{});co.alu=co.alu||{};co.alu[k==="@alucode"?"code":"finish"]=v;await write(c._id,{colors:co});return}
@@ -2818,8 +2824,10 @@ async function glassOrderPdf(c,mode){const G=glassGroups(c);if(!Object.keys(G).l
   const logo=await logoHref(true);await svgPdf(c,glassOrderSVGs(c,logo),`طلب-زجاج-${c.fileNo||""}-${clientTitle(c)}.pdf`,mode,"other","تم حفظ طلب الزجاج في «مستندات أخرى»")}
 /* order details: always editable, missing ones highlighted */
 function orderFields(c,kind){const a=c.colors?.alu||{};const f=[];
-  if(kind==="alu"){f.push({k:"aluSupplier",l:"مورّد الألمنيوم",v:c.aluSupplier||"",ph:"اسم المورّد"});f.push({k:"@alucode",l:"كود لون الألمنيوم",v:a.code||a.color||"",ph:"مثل 9005 أو ميلفينش"});f.push({k:"aluOrderNote",l:"ملاحظة على طلب الألمنيوم",v:c.aluOrderNote||"",ph:"اختياري",opt:1})}
-  if(kind==="glass"){f.push({k:"glassSupplier",l:"مورّد الزجاج",v:c.glassSupplier||"",ph:"اختياري",opt:1});f.push({k:"glassOrderNote",l:"ملاحظة أسفل الطلب",v:c.glassOrderNote||"",ph:"ترسل لمصنع برج القمة",opt:1});Object.keys(glassGroups(c)).forEach(sp=>f.push({k:"@gspec:"+sp,l:`وصف الزجاج بالإنجليزي · ${sp}`,v:(c.glassSpecEn||{})[sp]||"",ph:"6 MM CLEAR TEMPERED + 12 MM AIR SPACE + 6 MM CLEAR TEMPERED",ltr:1,full:1}))}
+  const contact=(p)=>{f.push({k:p+"SupplierPhone",l:"جوال المورّد (واتساب)",v:c[p+"SupplierPhone"]||"",ph:"05xxxxxxxx",opt:1,ltr:1});f.push({k:p+"SupplierEmail",l:"إيميل المورّد",v:c[p+"SupplierEmail"]||"",ph:"name@example.com",opt:1,ltr:1})};
+  if(kind==="acc"){f.push({k:"accSupplier",l:"مورّد الإكسسوارات",v:c.accSupplier||"",ph:"اسم المورّد",opt:1});contact("acc");f.push({k:"accOrderNote",l:"ملاحظة على الطلب",v:c.accOrderNote||"",ph:"اختياري",opt:1})}
+  if(kind==="alu"){f.push({k:"aluSupplier",l:"مورّد الألمنيوم",v:c.aluSupplier||"",ph:"اسم المورّد"});contact("alu");f.push({k:"@alucode",l:"كود لون الألمنيوم",v:a.code||a.color||"",ph:"مثل 9005 أو ميلفينش"});f.push({k:"aluOrderNote",l:"ملاحظة على طلب الألمنيوم",v:c.aluOrderNote||"",ph:"اختياري",opt:1})}
+  if(kind==="glass"){f.push({k:"glassSupplier",l:"مورّد الزجاج",v:c.glassSupplier||"",ph:"اختياري",opt:1});contact("glass");f.push({k:"glassOrderNote",l:"ملاحظة أسفل الطلب",v:c.glassOrderNote||"",ph:"ترسل لمصنع برج القمة",opt:1});Object.keys(glassGroups(c)).forEach(sp=>f.push({k:"@gspec:"+sp,l:`وصف الزجاج بالإنجليزي · ${sp}`,v:(c.glassSpecEn||{})[sp]||"",ph:"6 MM CLEAR TEMPERED + 12 MM AIR SPACE + 6 MM CLEAR TEMPERED",ltr:1,full:1}))}
   return f}
 function fieldInputs(list){return list.map(x=>{const miss=!x.opt&&!String(x.v).trim();return `<label class="fld ${miss?"miss need":""} ${x.full?"full":""}"><span>${esc(x.l)}${miss?' <b class="neg">· ناقص</b>':""}</span><input ${x.k.startsWith("@")?`data-miss="${esc(x.k)}"`:`data-cf="${esc(x.k)}"`} value="${esc(x.v)}" placeholder="${esc(x.ph||"")}" ${x.ltr?'dir="ltr"':""} ${S.canWrite?"":"disabled"}></label>`}).join("")}
 function ordersCard(c){
@@ -2849,22 +2857,22 @@ function tabAOrder(c){
     <div class="toolbar" style="justify-content:flex-start"><button class="primary" data-act="po-pdf" ${S.pdfBusy?"disabled":""}>أمر الدهان PDF</button>${S.canWrite&&S.assets?`<button data-act="po-save" ${S.pdfBusy?"disabled":""}>حفظ أمر الدهان في ملف العميل</button>`:""}</div></div>`;
   return `${stageBar(c)}${c.measFinal?"":`<div class="note">المقاسات النهائية غير معتمدة بعد. اعتمدها من تبويب «المقاسات النهائية» قبل طلب الألمنيوم.</div>`}<div class="card ord-card"><div class="ord-head"><div><h3 style="margin:0">طلب الألمنيوم</h3><div class="small muted">أمر شراء قطاعات للمورّد · <span class="num">${rows.length}</span> صنف · <span class="num">${tb}</span> عود</div></div>${c.aluOrderedAt?`<span class="ok-badge">✓ صدر بتاريخ <span class="num">${esc(String(c.aluOrderedAt).slice(0,10))}</span></span>`:`<span class="chip">لم يصدر بعد</span>`}</div>
     <div class="ord-row top"><span class="ord-lbl">بيانات الطلب</span><div class="miss-grid" style="flex:1">${fieldInputs(orderFields(c,"alu"))}</div></div>
-    <div class="ord-actions"><button class="primary" data-act="ao-xlsx">تنزيل Excel</button><button data-act="ao-pdf" ${S.pdfBusy?"disabled":""}>تنزيل PDF</button>${S.canWrite&&S.assets?`<button class="ghost" data-act="ao-save" ${S.pdfBusy?"disabled":""}>حفظ PDF في ملف العميل</button>`:""}</div></div>
+    <div class="ord-actions"><button class="primary" data-act="ao-xlsx">تنزيل Excel</button><button data-act="ao-pdf" ${S.pdfBusy?"disabled":""}>تنزيل PDF</button>${shareBtns("alu")}${S.canWrite&&S.assets?`<button class="ghost" data-act="ao-save" ${S.pdfBusy?"disabled":""}>حفظ PDF في ملف العميل</button>`:""}</div></div>
   <div class="card"><h3>الأصناف المطلوبة <span class="small muted">عدّل عدد العيدان من هنا</span></h3><div class="tablebox"><table><thead><tr><th>الرقم</th><th>الصنف</th><th>المحسوب</th><th>الطلب (عود)</th></tr></thead><tbody>
     ${T.profiles.map((p,i)=>`<tr><td class="num">${i+1}</td><td><b>${esc(p.name)}</b>${col?` <span class="muted">-- ${esc(col)}</span>`:""}</td><td class="num">${p.nb}</td><td><input type="number" min="0" inputmode="numeric" lang="en" style="width:70px" data-aord="${esc(p.name)}" value="${esc((c.aluOrder||{})[p.name]??p.nb)}" ${S.canWrite?"":"disabled"}></td></tr>`).join("")}
     </tbody><tfoot><tr><td colspan="2">الإجمالي</td><td class="num">${T.bars}</td><td class="num"><b>${sum(rows,r=>r.bars)}</b></td></tr></tfoot></table></div></div>${paint}<div class="card" style="flex-direction:row;gap:8px;align-items:center"><b>الخطوة التالية:</b><button data-act="tab" data-tab="glassm">مقاسات الزجاج ←</button></div>`;
 }
-function tabGOrder(c){
+function tabGOrder(c,noBar){
   const G=c&&glassGroups(c);const keys=Object.keys(G);const src=glassSrc(c);const co=CO();
   const srcBar=`<div class="ord-row"><span class="ord-lbl">مصدر المقاسات</span><div class="seg">${[["saved",`مقاسات الزجاج المحفوظة <span class="num">(${(c.glass||[]).length})</span>`],["calc","المحسوبة من الألمنيوم"]].map(([k,l])=>`<button class="${src===k?"on":""}" data-act="g-src" data-k="${k}" ${S.canWrite?"":"disabled"}>${l}</button>`).join("")}</div></div>`;
-  if(!keys.length)return `${stageBar(c)}<div class="card">${srcBar}<p class="muted" style="margin:0">لا توجد مقاسات زجاج في هذا المصدر. أدخلها من تبويب «مقاسات الزجاج».</p></div>`;
+  if(!keys.length)return `${noBar?"":stageBar(c)}<div class="card">${srcBar}<p class="muted" style="margin:0">لا توجد مقاسات زجاج في هذا المصدر. أدخلها من تبويب «مقاسات الزجاج».</p></div>`;
   const allQ=keys.reduce((t,k)=>t+sum(G[k],r=>r.qty),0),allA=keys.reduce((t,k)=>t+sum(G[k],gArea),0);
-  return `${stageBar(c)}<div class="card ord-card">
+  return `${noBar?"":stageBar(c)}<div class="card ord-card">
     <div class="ord-head"><div><h3 style="margin:0">طلب الزجاج</h3><div class="small muted">أمر شراء للمورّد بمقاسات القص · <span class="num">${keys.length}</span> نوع · <span class="num">${allQ}</span> لوح · <span class="num">${allA.toFixed(2)}</span> م²</div></div>${c.glassOrderedAt?`<span class="ok-badge">✓ صدر بتاريخ <span class="num">${esc(String(c.glassOrderedAt).slice(0,10))}</span></span>`:`<span class="chip">لم يصدر بعد</span>`}</div>
     ${srcBar}
     <div class="ord-row top"><span class="ord-lbl">بيانات الطلب</span><div class="miss-grid" style="flex:1">${fieldInputs(orderFields(c,"glass"))}</div></div>
     ${!co.cr||!co.vat?`<div class="note small">السجل التجاري أو الرقم الضريبي غير مدخل في «الإعدادات»، وسيظهر فارغاً في رأس الطلب.</div>`:""}
-    <div class="ord-actions"><button class="primary" data-act="go-xlsx">تنزيل Excel</button><button data-act="go-pdf" ${S.pdfBusy?"disabled":""}>تنزيل PDF</button>${S.canWrite&&S.assets?`<button class="ghost" data-act="go-save" ${S.pdfBusy?"disabled":""}>حفظ PDF في ملف العميل</button>`:""}</div>
+    <div class="ord-actions"><button class="primary" data-act="go-xlsx">تنزيل Excel</button><button data-act="go-pdf" ${S.pdfBusy?"disabled":""}>تنزيل PDF</button>${shareBtns("glass")}${S.canWrite&&S.assets?`<button class="ghost" data-act="go-save" ${S.pdfBusy?"disabled":""}>حفظ PDF في ملف العميل</button>`:""}</div>
   </div>
   ${keys.map(k=>{const L=glassSpecLines(c,k);const rs=G[k];const tq=sum(rs,r=>r.qty),ta=sum(rs,gArea);return `<div class="card ord-card">
     <div class="ord-head"><div><h3 style="margin:0">${esc(k)}</h3><div class="ord-spec" dir="ltr">${L?esc(L.filter(Boolean).join("  +  ")):`<span class="neg">أدخل وصف الزجاج بالإنجليزي في بيانات الطلب</span>`}</div></div><div class="ord-chips"><span class="chip"><span class="num">${tq}</span> لوح</span><span class="chip"><span class="num">${ta.toFixed(2)}</span> م²</span></div></div>
@@ -2876,8 +2884,8 @@ function tabGOrder(c){
 
 /* ---------- measurement workflow stages: preliminary → quotation → final → aluminium & paint order → glass sizes → glass order ---------- */
 function exKeys(tab){tab=tab||S.tab;return tab==="pre"?{st:"pre",f:"measSheetsPre",e:"measExtractPre",n:"measNotePre"}:tab==="glassm"?{st:"glass",f:"measSheetsGlass",e:"measExtractGlass",n:"measNoteGlass"}:{st:"final",f:"measSheets",e:"measExtract",n:"measNote"}}
-const STAGES=[["pre","المقاسات الأولية"],["docs","عرض السعر"],["meas","المقاسات النهائية"],["aorder","طلب الألمنيوم والدهان"],["glassm","مقاسات الزجاج"],["gorder","طلب الزجاج"]];
-function stageDone(c,k){return k==="pre"?(c.prelim||[]).length>0:k==="docs"?!!(c.quoteId||c.quoteNo||N(c.quoteValue)||(c.files?.quote||[]).length):k==="meas"?!!c.measFinal:k==="aorder"?!!c.aluOrderedAt:k==="glassm"?(c.glass||[]).length>0:k==="gorder"?!!c.glassOrderedAt:false}
+const STAGES=[["pre","المقاسات الأولية"],["docs","عرض السعر"],["contract","العقد والاعتمادات"],["meas","المقاسات النهائية"],["aorder","طلب الألمنيوم والدهان"],["acc","الإكسسوارات"],["glassm","الزجاج"]];
+function stageDone(c,k){return k==="pre"?(c.prelim||[]).length>0:k==="docs"?!!(c.quoteId||c.quoteNo||N(c.quoteValue)||(c.files?.quote||[]).length):k==="meas"?!!c.measFinal:k==="aorder"?!!c.aluOrderedAt:k==="glassm"?!!c.glassOrderedAt:k==="contract"?!!((c.files?.contract||[]).length||c.colors?.alu?.approved):k==="acc"?!!c.accOrderedAt:false}
 function stageBar(c){return `<nav class="stages" aria-label="مراحل المقاسات">${STAGES.map(([k,l],i)=>{const d=stageDone(c,k);return `<button class="stage ${S.tab===k?"on":""} ${d?"done":""}" data-act="tab" data-tab="${k}"><span class="sn">${d?"✓":i+1}</span>${l}</button>`}).join('<span class="sarrow" aria-hidden="true">←</span>')}</nav>`}
 const KIND_OPTS=sel=>KIND_LIST.map(([k,v])=>`<option value="${k}" ${k===sel?"selected":""}>${esc(v[0])}</option>`).join("")+`<option value="other" ${sel==="other"?"selected":""}>بند عام / أعمال أخرى</option>`;
 const splitRef=ref=>{const m=/^([BGFSTR])\s*[-–]\s*(.+)$/i.exec(String(ref||"").trim());return m?{floor:m[1].toUpperCase(),ref:m[2]}:{floor:"",ref:String(ref||"").trim()}};
@@ -2974,6 +2982,77 @@ function cutSheetTable(c){const rows=cutRows(c);if(!rows.length)return"";const H
   <tr><th>W</th><th>H</th><th>W</th><th>H</th><th>W</th><th>H</th><th>H</th><th>W</th><th>H</th></tr></thead><tbody>
   ${rows.map(r=>`<tr><td class="num">${r.no}</td><td>${esc(r.room)}</td><td><b>${esc(r.ref)}</b></td>${["halkW","halkH","dorfaW","dorfaH","screenW","screenH","tabshaH"].map(k=>`<td>${cell(r,k)}</td>`).join("")}<td>${r.glass?`<span dir="ltr"><b class="num">${cm(r.glass.w)}</b><span class="cutn">×${r.glass.n}</span></span>`:""}</td><td>${r.glass?`<b class="num">${cm(r.glass.h)}</b>`:""}</td><td class="num">${r.q}</td></tr>`).join("")}
   </tbody></table></div></div>`}
+
+/* ---------- tabs: contract & approvals, accessories order, glass sizes + order ---------- */
+const TAB_ALIAS={colors:"contract",gorder:"glassm"};
+function tabContract(c){
+  return `<div class="card"><h3>العقد ${uploader("contract")}</h3><p class="small muted" style="margin:0">العقد الموقّع وأي ملاحق له (PDF أو صورة).</p>${fileList(c,"contract")}</div>${tabColors(c)}`;
+}
+function tabGlassAll(c){return tabGlassM(c)+`<div class="sec-sep"><span>طلب الزجاج</span></div>`+tabGOrder(c,true)}
+function accOrderRows(c){const T=takeoff(c,S.cfg);const ov=c.accOrder||{};
+  return T.acc.filter(a=>a.cat!=="tape").map(a=>{const base=a.unit==="حبة"||a.unit==="طقم"||a.unit==="علبة"?Math.ceil(a.qty-1e-9):Math.round(a.qty*10)/10;const o=ov[a.name];return{name:a.name,unit:a.unit,cat:a.cat,calc:base,qty:o!=null&&o!==""?N(o):base}}).filter(r=>r.qty>0)}
+function tabAcc(c){
+  if(!(c.alu||[]).length)return `${stageBar(c)}<div class="card empty"><p class="muted">أدخل المقاسات النهائية أولاً.</p></div>`;
+  const rows=accOrderRows(c);const cats=[["acc","الإكسسوارات"],["screw","المسامير والزوايا"],["rubber","الربل والفرش"]];
+  return `${stageBar(c)}<div class="card ord-card"><div class="ord-head"><div><h3 style="margin:0">طلب الإكسسوارات</h3><div class="small muted">محسوبة من قوالب الحساب للمقاسات النهائية · <span class="num">${rows.length}</span> صنف</div></div>${c.accOrderedAt?`<span class="ok-badge">✓ صدر بتاريخ <span class="num">${esc(String(c.accOrderedAt).slice(0,10))}</span></span>`:`<span class="chip">لم يصدر بعد</span>`}</div>
+    <div class="ord-row top"><span class="ord-lbl">بيانات الطلب</span><div class="miss-grid" style="flex:1">${fieldInputs(orderFields(c,"acc"))}</div></div>
+    <div class="ord-actions"><button class="primary" data-act="xo-pdf" ${S.pdfBusy?"disabled":""}>تنزيل PDF</button>${shareBtns("acc")}${S.canWrite&&S.assets?`<button class="ghost" data-act="xo-save" ${S.pdfBusy?"disabled":""}>حفظ PDF في ملف العميل</button>`:""}</div></div>
+  ${cats.map(([k,l])=>{const rs=rows.filter(r=>r.cat===k);if(!rs.length)return"";return `<div class="card"><h3>${l}</h3><div class="tablebox"><table class="ord-table"><thead><tr><th>#</th><th>الصنف</th><th>الوحدة</th><th>المحسوب</th><th>الطلب</th></tr></thead><tbody>
+    ${rs.map((r,i)=>`<tr><td class="num muted">${i+1}</td><td style="text-align:right"><b>${esc(r.name)}</b></td><td>${esc(r.unit)}</td><td class="num">${r.calc}</td><td><input type="number" min="0" step="any" lang="en" inputmode="decimal" style="width:80px" data-xord="${esc(r.name)}" value="${esc(r.qty)}" ${S.canWrite?"":"disabled"}></td></tr>`).join("")}</tbody></table></div></div>`}).join("")}`;
+}
+/* generic order sheet (accessories) */
+function listOrderSVG(c,o,logo){
+  const co=CO();const X1=30,X2=565,W=X2-X1;
+  let s=`<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 595 842" width="595" height="842"><rect width="595" height="842" fill="#fff"/><rect x="0" y="0" width="595" height="6" fill="${QC.teal}"/><rect x="0" y="6" width="595" height="2" fill="${QC.bronze}"/>`;
+  if(logo)s+=`<image href="${esc(logo)}" xlink:href="${esc(logo)}" x="${X2-52}" y="20" width="52" height="52" preserveAspectRatio="xMidYMid meet"/>`;
+  s+=T(X2-60,44,co.nameAr,{size:15,anchor:"end",weight:700})+T(X2-60,60,"لجميع أعمال الألمنيوم والزجاج والسيكوريت",{size:8.5,anchor:"end",fill:QC.muted})+T(X1,44,co.nameEn,{size:11,weight:700})+T(X1,58,"ALUMINIUM & GLASS WORKS",{size:7.5,fill:QC.muted})+L(X1,82,X2,82,{stroke:QC.line,sw:.8});
+  s+=T(X2,112,o.title,{size:19,anchor:"end",weight:700,fill:QC.teal})+T(X1,112,o.en,{size:12,weight:700,fill:QC.teal});
+  let y=126;const info=[["رقم الطلب",o.no],["التاريخ",today()],["المورّد",o.supplier||"—"],["العميل",c.name||"—"],["رقم الملف",c.fileNo||"—"],["المشروع",c.project||c.location||"—"]];
+  s+=`<rect x="${X1}" y="${y}" width="${W}" height="62" rx="6" fill="${QC.soft}"/>`;info.forEach((r,i)=>{const col=i%3,row=Math.floor(i/3);const cx=X2-12-col*(W/3);const yy=y+22+row*22;s+=T(cx,yy,r[0]+":",{size:8.5,anchor:"end",fill:QC.muted})+T(cx-56,yy,String(r[1]).slice(0,24),{size:9.5,anchor:"end",weight:700})});
+  y+=80;const C=[["م",30],["الصنف",305],["الوحدة",90],["الكمية",110]];let x=X2;const cx=C.map(([l,w])=>{const r={l,w,x0:x-w};x-=w;return r});
+  s+=`<rect x="${X1}" y="${y}" width="${W}" height="24" fill="${QC.teal}"/>`;cx.forEach(k=>s+=T(k.x0+k.w/2,y+16,k.l,{size:9.5,anchor:"middle",weight:700,fill:"#fff"}));y+=24;
+  o.rows.forEach((r,i)=>{if(y>760)return;s+=`<rect x="${X1}" y="${y}" width="${W}" height="20" fill="${i%2?"#fff":QC.soft}"/>`+T(cx[0].x0+cx[0].w/2,y+14,String(i+1),{size:9,anchor:"middle"})+T(cx[1].x0+cx[1].w-8,y+14,r.name,{size:9.5,anchor:"end",weight:600})+T(cx[2].x0+cx[2].w/2,y+14,r.unit,{size:9,anchor:"middle"})+T(cx[3].x0+cx[3].w/2,y+14.5,String(r.qty),{size:11,anchor:"middle",weight:700,fill:QC.teal})+L(X1,y+20,X2,y+20,{stroke:QC.line,sw:.4});y+=20});
+  y+=24;(o.notes||[]).forEach((n,i)=>s+=T(X2,y+i*15,"• "+n,{size:8.8,anchor:"end"}));
+  s+=L(X1,808,X2,808,{stroke:QC.line,sw:.6})+T(297,822,"مصنع برج القمة للأعمال المعدنية - الرياض - حي السلي",{size:8,anchor:"middle",fill:QC.muted});return s+"</svg>";
+}
+async function accOrderPdfBlob(c){const rows=accOrderRows(c);const {jsPDF}=await loadJsPdf();const logo=await logoHref(true);const y=new Date().getFullYear();
+  const pdf=new jsPDF({unit:"mm",format:"a4",orientation:"portrait",compress:true});pdf.addImage(await svgToJpeg(listOrderSVG(c,{title:"طلب توريد إكسسوارات",en:"ACCESSORIES ORDER",no:`ACC-${y}-${String(c.fileNo||"").replace(/^\d{4}-/,"")}`,supplier:c.accSupplier||"",rows,notes:[c.accOrderNote,(c.colors?.acc?.brand||c.colors?.acc?.color)?`نوع/لون الإكسسوارات: ${[c.colors.acc.brand,c.colors.acc.color].filter(Boolean).join(" - ")}`:""].filter(Boolean)},logo),3.5,595,842),"JPEG",0,0,210,297);return pdf.output("blob")}
+async function accOrderPdf(c,mode){const rows=accOrderRows(c);if(!rows.length){toast("لا توجد إكسسوارات محسوبة");return}if(S.pdfBusy)return;S.pdfBusy=true;render();
+  try{const b=await accOrderPdfBlob(c);const name=`طلب-إكسسوارات-${c.fileNo||""}-${clientTitle(c)}.pdf`.replace(/[\\/:*?"<>|]/g,"-");
+    if(mode==="save"){const r=await S.assets.upload(new File([b],name,{type:"application/pdf"}));await mutateFiles("other",l=>l.concat([{id:r.id,name,type:"application/pdf",size:r.sizeBytes,at:new Date().toISOString()}]));toast("تم حفظ طلب الإكسسوارات في «مستندات أخرى»")}
+    else if(S.downloads)await S.downloads.save({filename:name,data:b});write(c._id,{accOrderedAt:new Date().toISOString()})}catch(e){if(!(e&&e.code==="declined"))toast("تعذّر إنشاء ملف PDF")}
+  S.pdfBusy=false;render()}
+/* ---------- share orders by WhatsApp / Gmail ---------- */
+const shareBtns=kind=>`<span class="share"><button class="wa" data-act="share" data-kind="${kind}" data-via="wa" title="مشاركة على واتساب"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.7.8-.8 1-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.2-.4.7-1.3a.5.5 0 0 0 0-.4l-.8-1.9c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.1 5.1 0 0 0 1.1 2.7 11.7 11.7 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6a2.7 2.7 0 0 0 1.8-1.2 2.2 2.2 0 0 0 .1-1.2c0-.1-.2-.2-.4-.3Z"/></svg>واتساب</button><button class="gm" data-act="share" data-kind="${kind}" data-via="gm" title="إرسال بالإيميل (Gmail)"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Zm0 4.2-8 5-8-5V6l8 5 8-5Z"/></svg>Gmail</button></span>`;
+const waPhone=p=>{let d=toLat(p).replace(/\D/g,"");if(d.startsWith("00"))d=d.slice(2);if(d.startsWith("05"))d="966"+d.slice(1);else if(d.startsWith("5")&&d.length===9)d="966"+d;return d};
+function orderText(c,kind){const head=`${CO().nameAr}\n`;const who=`العميل: ${clientTitle(c)}${c.fileNo?` · ملف ${c.fileNo}`:""}\nالتاريخ: ${dmy(today())}`;
+  if(kind==="alu"){const T=takeoff(c,S.cfg);const rows=aluOrderRows(c,T);const col=aluColorSuffix(c);return `${head}طلب توريد قطاعات ألمنيوم\n${who}\nاللون: ${col||"—"}${c.colors?.alu?.finish?` · ${c.colors.alu.finish}`:""}\n\n${rows.map((r,i)=>`${i+1}) ${r.name} — ${r.bars} عود`).join("\n")}\n\nالإجمالي: ${sum(rows,r=>r.bars)} عود (طول ${aluOrderMeta(c).barM} م)${c.aluOrderNote?`\nملاحظة: ${c.aluOrderNote}`:""}`}
+  if(kind==="glass"){const G=glassGroups(c);return `${head}GLASS PURCHASE ORDER - طلب زجاج\n${who}\n`+Object.keys(G).map(k=>{const L=glassSpecLines(c,k);const rs=G[k];return `\n▪ ${L?L.filter(Boolean).join(" + "):k}\n# | W × H | Q | REF | m²\n${rs.map((r,i)=>`${i+1} | ${r.w} × ${r.h} | ${r.qty} | ${r.ref} | ${gArea(r).toFixed(3)}`).join("\n")}\nTOTAL: ${sum(rs,r=>r.qty)} pcs · ${sum(rs,gArea).toFixed(2)} m²`}).join("\n")+(c.glassOrderNote?`\n\n${c.glassOrderNote}`:"")}
+  if(kind==="acc"){const rows=accOrderRows(c);return `${head}طلب توريد إكسسوارات\n${who}\n\n${rows.map((r,i)=>`${i+1}) ${r.name} — ${r.qty} ${r.unit}`).join("\n")}${c.accOrderNote?`\n\nملاحظة: ${c.accOrderNote}`:""}`}
+  if(kind==="paint"){const T=takeoff(c,S.cfg);const rows=aluOrderRows(c,T);const al=c.colors?.alu||{};return `${head}أمر دهان قطاعات ألمنيوم\n${who}\nاللون: ${[al.color,al.code].filter(Boolean).join(" - ")}${al.finish?` · ${al.finish}`:""}\nعدد العيدان: ${sum(rows,r=>r.bars)}`}
+  return ""}
+async function orderPdfBlob(c,kind){
+  const {jsPDF}=await loadJsPdf();const logo=await logoHref(true);
+  if(kind==="acc")return accOrderPdfBlob(c);
+  const svgs=kind==="glass"?glassOrderSVGs(c,logo):[aluOrderSVG(c,aluOrderRows(c,takeoff(c,S.cfg)),logo)];
+  const pdf=new jsPDF({unit:"mm",format:"a4",orientation:"portrait",compress:true});for(let i=0;i<svgs.length;i++){if(i)pdf.addPage("a4","portrait");pdf.addImage(await svgToJpeg(svgs[i],3.5,595,842),"JPEG",0,0,210,297)}return pdf.output("blob")}
+async function shareOrder(c,kind,via){
+  const names={alu:"طلب-ألمنيوم",glass:"طلب-زجاج",acc:"طلب-إكسسوارات"};const sup={alu:["aluSupplierPhone","aluSupplierEmail"],glass:["glassSupplierPhone","glassSupplierEmail"],acc:["accSupplierPhone","accSupplierEmail"]}[kind];
+  const miss=kind==="acc"?[]:orderMissing(c,kind).filter(m=>m.k!=="@co");if(miss.length){toast("أكمل بيانات الطلب أولاً: "+miss.map(m=>m.l).join("، "),{kind:"warn"});return}
+  const text=orderText(c,kind);const title=`${names[kind].replace(/-/g," ")} - ${clientTitle(c)}`;
+  let file=null;try{S.pdfBusy=true;render();const b=await orderPdfBlob(c,kind);file=new File([b],`${names[kind]}-${c.fileNo||""}-${clientTitle(c)}.pdf`.replace(/[\\/:*?"<>|]/g,"-"),{type:"application/pdf"})}catch(e){}finally{S.pdfBusy=false;render()}
+  // 1) native share sheet with the PDF attached (phones, Windows share)
+  try{if(file&&navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title,text});write(c._id,{[kind+"OrderedAt"]:new Date().toISOString()});return}}catch(e){if(e&&e.name==="AbortError")return}
+  // 2) save the PDF, then open WhatsApp / Gmail with the full order as text
+  if(file&&S.downloads){try{await S.downloads.save({filename:file.name,data:file})}catch(e){}}
+  const ph=waPhone(c[sup[0]]||""),em=String(c[sup[1]]||"").trim();
+  const msg=text+(file?"\n\n(ملف PDF للطلب مرفق)":"");
+  const url=via==="wa"?`https://wa.me/${ph}?text=${encodeURIComponent(msg)}`:`https://mail.google.com/mail/?view=cm&fs=1${em?`&to=${encodeURIComponent(em)}`:""}&su=${encodeURIComponent(title)}&body=${encodeURIComponent(msg)}`;
+  const w=window.open(url,"_blank","noopener");
+  if(!w){try{await navigator.clipboard.writeText(msg)}catch(e){}toast("تعذّر فتح الرابط تلقائياً. نسخت نص الطلب، الصقه في المحادثة وأرفق ملف PDF",{kind:"warn"})}
+  else toast(file?"حُفظ ملف PDF. أرفقه في المحادثة اللي انفتحت مع نص الطلب":"انفتحت المحادثة مع نص الطلب",{kind:"info"});
+  write(c._id,{[kind+"OrderedAt"]:new Date().toISOString()});
+}
 
 /* ---------- boot ---------- */
 fromHash();
