@@ -140,7 +140,7 @@ body.dragging::after{content:"أفلت الملفات هنا للتحليل وا
 .exc-who{display:block;font-size:.72rem;font-weight:700;opacity:.75;margin-bottom:2px}
 .exc-in{display:flex;gap:8px;align-items:flex-end}.exc-in textarea{flex:1;min-height:44px;resize:vertical}.exc-busy{display:flex;align-items:center;gap:8px}
 .missbox{display:flex;flex-direction:column;gap:6px;border:1px solid var(--warn-soft);border-inline-start:3px solid var(--warn);border-radius:8px;padding:10px 12px}.missbox>b{color:var(--warn);font-size:.86rem}
-.miss-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px}.fld.miss input{width:100%}
+.miss-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px 12px}.fld.miss input{width:100%}
 .ord-sec{display:flex;flex-direction:column;gap:8px;padding:10px 0;border-top:1px solid var(--line)}.ord-sec:first-of-type{border-top:0}.ord-sec>b{font-size:.92rem}.fld.need input{border-color:var(--warn);background:var(--warn-soft)}
 .stages{display:flex;align-items:center;gap:4px;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px 10px}
 .stage{display:inline-flex;align-items:center;gap:6px;border:0;background:none;padding:6px 10px;border-radius:999px;font-size:.84rem;color:var(--muted);font-weight:600}
@@ -148,6 +148,15 @@ body.dragging::after{content:"أفلت الملفات هنا للتحليل وا
 .stage.done{color:var(--ok)}.stage.done .sn{background:var(--ok-soft);border-color:transparent;color:var(--ok)}
 .stage.on{background:var(--accent);color:var(--accent-ink)}.stage.on .sn{background:var(--accent-ink);color:var(--accent);border-color:transparent}.sarrow{color:var(--line);font-size:.8rem}
 .next-step{display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--line);padding-top:10px}
+.ord-card{gap:12px}.ord-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap}
+.ord-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding-top:10px;border-top:1px solid var(--line)}.ord-row.top{align-items:flex-start}
+.ord-lbl{min-width:96px;font-size:.82rem;font-weight:700;color:var(--muted);padding-top:4px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface-2)}.seg button{border:0;border-radius:0;background:none;padding:7px 14px;font-size:.84rem}.seg button+button{border-inline-start:1px solid var(--line)}.seg button.on{background:var(--accent);color:var(--accent-ink)}
+.fld.full{grid-column:1/-1}.fld input[dir=ltr]{text-align:left;font-family:ui-monospace,Consolas,monospace;font-size:.84rem;letter-spacing:.02em}
+.ord-actions{display:flex;gap:8px;flex-wrap:wrap;padding-top:12px;border-top:1px solid var(--line)}
+.ord-spec{font-size:.8rem;color:var(--muted);font-weight:600;letter-spacing:.03em;margin-top:2px;text-align:right}.ord-chips{display:flex;gap:6px}
+.ord-table th{text-align:center;line-height:1.25}.ord-table th .en{display:block;font-size:.68rem;font-weight:600;color:var(--muted);letter-spacing:.04em}.ord-table td{text-align:center}.ord-table td:nth-child(5){text-align:right}
+.minflag{display:inline-block;margin-inline-start:6px;font-size:.68rem;padding:1px 6px;border-radius:999px;background:var(--warn-soft);color:var(--warn);font-weight:600}
 .order-box{display:flex;flex-direction:column;gap:8px;border:1px solid var(--line);border-radius:10px;padding:12px;background:var(--surface-2)}
 .ib-act{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap}
 .vatbox{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding:12px 14px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2)}
@@ -2807,9 +2816,9 @@ async function glassOrderPdf(c,mode){const G=glassGroups(c);if(!Object.keys(G).l
 /* order details: always editable, missing ones highlighted */
 function orderFields(c,kind){const a=c.colors?.alu||{};const f=[];
   if(kind==="alu"){f.push({k:"aluSupplier",l:"مورّد الألمنيوم",v:c.aluSupplier||"",ph:"اسم المورّد"});f.push({k:"@alucode",l:"كود لون الألمنيوم",v:a.code||a.color||"",ph:"مثل 9005 أو ميلفينش"});f.push({k:"aluOrderNote",l:"ملاحظة على طلب الألمنيوم",v:c.aluOrderNote||"",ph:"اختياري",opt:1})}
-  if(kind==="glass"){f.push({k:"glassSupplier",l:"مورّد الزجاج",v:c.glassSupplier||"",ph:"اختياري",opt:1});Object.keys(glassGroups(c)).forEach(sp=>f.push({k:"@gspec:"+sp,l:`وصف الزجاج بالإنجليزي «${sp}»`,v:(c.glassSpecEn||{})[sp]||"",ph:"6 MM CLEAR TEMPERED + 12 MM AIR SPACE + 6 MM CLEAR TEMPERED",ltr:1}));f.push({k:"glassOrderNote",l:"ملاحظة أسفل طلب الزجاج",v:c.glassOrderNote||"",ph:"ترسل لمصنع برج القمة",opt:1})}
+  if(kind==="glass"){f.push({k:"glassSupplier",l:"مورّد الزجاج",v:c.glassSupplier||"",ph:"اختياري",opt:1});f.push({k:"glassOrderNote",l:"ملاحظة أسفل الطلب",v:c.glassOrderNote||"",ph:"ترسل لمصنع برج القمة",opt:1});Object.keys(glassGroups(c)).forEach(sp=>f.push({k:"@gspec:"+sp,l:`وصف الزجاج بالإنجليزي · ${sp}`,v:(c.glassSpecEn||{})[sp]||"",ph:"6 MM CLEAR TEMPERED + 12 MM AIR SPACE + 6 MM CLEAR TEMPERED",ltr:1,full:1}))}
   return f}
-function fieldInputs(list){return list.map(x=>{const miss=!x.opt&&!String(x.v).trim();return `<label class="fld ${miss?"miss need":""}"><span>${esc(x.l)}${miss?' <b class="neg">· ناقص</b>':""}</span><input ${x.k.startsWith("@")?`data-miss="${esc(x.k)}"`:`data-cf="${esc(x.k)}"`} value="${esc(x.v)}" placeholder="${esc(x.ph||"")}" ${x.ltr?'dir="ltr"':""} ${S.canWrite?"":"disabled"}></label>`}).join("")}
+function fieldInputs(list){return list.map(x=>{const miss=!x.opt&&!String(x.v).trim();return `<label class="fld ${miss?"miss need":""} ${x.full?"full":""}"><span>${esc(x.l)}${miss?' <b class="neg">· ناقص</b>':""}</span><input ${x.k.startsWith("@")?`data-miss="${esc(x.k)}"`:`data-cf="${esc(x.k)}"`} value="${esc(x.v)}" placeholder="${esc(x.ph||"")}" ${x.ltr?'dir="ltr"':""} ${S.canWrite?"":"disabled"}></label>`}).join("")}
 function ordersCard(c){
   const hasAlu=(c.alu||[]).length,G=glassGroups(c),hasGl=Object.keys(G).length||(c.glass||[]).length;
   if(!hasAlu&&!hasGl)return"";const co=CO();const src=glassSrc(c);
@@ -2835,22 +2844,31 @@ function tabAOrder(c){
     <dl class="kv"><dt>اللون</dt><dd>${esc([al.color,al.code].filter(Boolean).join(" · ")||"—")}</dd><dt>نوع الدهان</dt><dd>${esc(al.finish||"—")}</dd><dt>عدد العيدان</dt><dd class="num">${tb}</dd><dt>الوزن التقريبي</dt><dd><span class="num">${tk.toFixed(1)}</span> كجم</dd></dl>
     <div class="miss-grid">${fieldInputs([{k:"paintSupplier",l:"مصبغة الدهان",v:c.paintSupplier||"",ph:"اسم المصبغة"},{k:"@alucode",l:"كود اللون",v:al.code||al.color||"",ph:"مثل 9005"},{k:"@alufinish",l:"نوع الدهان",v:al.finish||"",ph:"بودرة / أنودايز / خشبي",opt:1}])}</div>
     <div class="toolbar" style="justify-content:flex-start"><button class="primary" data-act="po-pdf" ${S.pdfBusy?"disabled":""}>أمر الدهان PDF</button>${S.canWrite&&S.assets?`<button data-act="po-save" ${S.pdfBusy?"disabled":""}>حفظ أمر الدهان في ملف العميل</button>`:""}</div></div>`;
-  return `${stageBar(c)}${c.measFinal?"":`<div class="note">المقاسات النهائية غير معتمدة بعد. اعتمدها من تبويب «المقاسات النهائية» قبل طلب الألمنيوم.</div>`}<div class="card"><h3>بيانات طلب الألمنيوم ${c.aluOrderedAt?`<span class="ok-badge">✓ صدر بتاريخ ${esc(String(c.aluOrderedAt).slice(0,10))}</span>`:""}</h3><div class="miss-grid">${fieldInputs(orderFields(c,"alu"))}</div>
-    <div class="toolbar" style="justify-content:flex-start"><button class="primary" data-act="ao-xlsx">طلب الألمنيوم Excel</button><button data-act="ao-pdf" ${S.pdfBusy?"disabled":""}>طلب الألمنيوم PDF</button>${S.canWrite&&S.assets?`<button data-act="ao-save" ${S.pdfBusy?"disabled":""}>حفظ الطلب في ملف العميل</button>`:""}</div></div>
+  return `${stageBar(c)}${c.measFinal?"":`<div class="note">المقاسات النهائية غير معتمدة بعد. اعتمدها من تبويب «المقاسات النهائية» قبل طلب الألمنيوم.</div>`}<div class="card ord-card"><div class="ord-head"><div><h3 style="margin:0">طلب الألمنيوم</h3><div class="small muted">أمر شراء قطاعات للمورّد · <span class="num">${rows.length}</span> صنف · <span class="num">${tb}</span> عود</div></div>${c.aluOrderedAt?`<span class="ok-badge">✓ صدر بتاريخ <span class="num">${esc(String(c.aluOrderedAt).slice(0,10))}</span></span>`:`<span class="chip">لم يصدر بعد</span>`}</div>
+    <div class="ord-row top"><span class="ord-lbl">بيانات الطلب</span><div class="miss-grid" style="flex:1">${fieldInputs(orderFields(c,"alu"))}</div></div>
+    <div class="ord-actions"><button class="primary" data-act="ao-xlsx">تنزيل Excel</button><button data-act="ao-pdf" ${S.pdfBusy?"disabled":""}>تنزيل PDF</button>${S.canWrite&&S.assets?`<button class="ghost" data-act="ao-save" ${S.pdfBusy?"disabled":""}>حفظ PDF في ملف العميل</button>`:""}</div></div>
   <div class="card"><h3>الأصناف المطلوبة <span class="small muted">عدّل عدد العيدان من هنا</span></h3><div class="tablebox"><table><thead><tr><th>الرقم</th><th>الصنف</th><th>المحسوب</th><th>الطلب (عود)</th></tr></thead><tbody>
     ${T.profiles.map((p,i)=>`<tr><td class="num">${i+1}</td><td><b>${esc(p.name)}</b>${col?` <span class="muted">-- ${esc(col)}</span>`:""}</td><td class="num">${p.nb}</td><td><input type="number" min="0" inputmode="numeric" lang="en" style="width:70px" data-aord="${esc(p.name)}" value="${esc((c.aluOrder||{})[p.name]??p.nb)}" ${S.canWrite?"":"disabled"}></td></tr>`).join("")}
     </tbody><tfoot><tr><td colspan="2">الإجمالي</td><td class="num">${T.bars}</td><td class="num"><b>${sum(rows,r=>r.bars)}</b></td></tr></tfoot></table></div></div>${paint}<div class="card" style="flex-direction:row;gap:8px;align-items:center"><b>الخطوة التالية:</b><button data-act="tab" data-tab="glassm">مقاسات الزجاج ←</button></div>`;
 }
 function tabGOrder(c){
-  const G=glassGroups(c);const keys=Object.keys(G);const src=glassSrc(c);const co=CO();
-  const srcBar=`<div class="toolbar" style="justify-content:flex-start;gap:6px"><span class="small muted">المقاسات من:</span>${[["saved",`مقاسات الزجاج المحفوظة (${(c.glass||[]).length})`],["calc","المحسوبة من الألمنيوم"]].map(([k,l])=>`<button class="${src===k?"primary":"ghost"}" data-act="g-src" data-k="${k}" ${S.canWrite?"":"disabled"}>${l}</button>`).join("")}</div>`;
-  if(!keys.length)return `${stageBar(c)}<div class="card">${srcBar}<p class="muted">لا توجد مقاسات زجاج في هذا المصدر. أدخلها من تبويب «المقاسات».</p></div>`;
-  return `${stageBar(c)}<div class="card"><h3>بيانات طلب الزجاج ${c.glassOrderedAt?`<span class="ok-badge">✓ صدر بتاريخ ${esc(String(c.glassOrderedAt).slice(0,10))}</span>`:""}</h3>${srcBar}<div class="miss-grid">${fieldInputs(orderFields(c,"glass"))}</div>
-    ${!co.cr||!co.vat?`<div class="small neg">السجل التجاري أو الرقم الضريبي غير مدخل في «الإعدادات».</div>`:""}
-    <div class="toolbar" style="justify-content:flex-start"><button class="primary" data-act="go-xlsx">طلب الزجاج Excel</button><button data-act="go-pdf" ${S.pdfBusy?"disabled":""}>طلب الزجاج PDF</button>${S.canWrite&&S.assets?`<button data-act="go-save" ${S.pdfBusy?"disabled":""}>حفظ طلب الزجاج في ملف العميل</button>`:""}</div></div>
-  ${keys.map(k=>{const L=glassSpecLines(c,k);const rs=G[k];return `<div class="card"><h3>${esc(k)} <span class="small muted" dir="ltr">${L?esc(L.filter(Boolean).join(" + ")):"بدون وصف إنجليزي"}</span></h3><div class="tablebox"><table><thead><tr><th>#</th><th>العرض WIDTH</th><th>الارتفاع HEIGHT</th><th>العدد Q</th><th>المرجع REF</th><th>إجمالي الأمتار T.SQM</th></tr></thead><tbody>
-    ${rs.map((r,i)=>`<tr><td class="num">${i+1}</td><td class="num"><b>${r.w}</b></td><td class="num"><b>${r.h}</b></td><td class="num">${r.qty}</td><td>${esc(r.ref)}</td><td class="num">${gArea(r).toFixed(3)}${r.w*r.h/1e6<GMIN?` <span class="small muted">(حد أدنى ${GMIN})</span>`:""}</td></tr>`).join("")}
-    </tbody><tfoot><tr><td colspan="3">TOTAL</td><td class="num">${sum(rs,r=>r.qty)}</td><td></td><td class="num">${sum(rs,gArea).toFixed(3)}</td></tr></tfoot></table></div><p class="small muted" style="margin:0">إجمالي الأمتار = العرض × الارتفاع لكل لوح (وإذا كان أقل من ${GMIN} م² يُحسب ${GMIN}) × العدد.</p><div></div></div>`}).join("")}`;
+  const G=c&&glassGroups(c);const keys=Object.keys(G);const src=glassSrc(c);const co=CO();
+  const srcBar=`<div class="ord-row"><span class="ord-lbl">مصدر المقاسات</span><div class="seg">${[["saved",`مقاسات الزجاج المحفوظة <span class="num">(${(c.glass||[]).length})</span>`],["calc","المحسوبة من الألمنيوم"]].map(([k,l])=>`<button class="${src===k?"on":""}" data-act="g-src" data-k="${k}" ${S.canWrite?"":"disabled"}>${l}</button>`).join("")}</div></div>`;
+  if(!keys.length)return `${stageBar(c)}<div class="card">${srcBar}<p class="muted" style="margin:0">لا توجد مقاسات زجاج في هذا المصدر. أدخلها من تبويب «مقاسات الزجاج».</p></div>`;
+  const allQ=keys.reduce((t,k)=>t+sum(G[k],r=>r.qty),0),allA=keys.reduce((t,k)=>t+sum(G[k],gArea),0);
+  return `${stageBar(c)}<div class="card ord-card">
+    <div class="ord-head"><div><h3 style="margin:0">طلب الزجاج</h3><div class="small muted">أمر شراء للمورّد بمقاسات القص · <span class="num">${keys.length}</span> نوع · <span class="num">${allQ}</span> لوح · <span class="num">${allA.toFixed(2)}</span> م²</div></div>${c.glassOrderedAt?`<span class="ok-badge">✓ صدر بتاريخ <span class="num">${esc(String(c.glassOrderedAt).slice(0,10))}</span></span>`:`<span class="chip">لم يصدر بعد</span>`}</div>
+    ${srcBar}
+    <div class="ord-row top"><span class="ord-lbl">بيانات الطلب</span><div class="miss-grid" style="flex:1">${fieldInputs(orderFields(c,"glass"))}</div></div>
+    ${!co.cr||!co.vat?`<div class="note small">السجل التجاري أو الرقم الضريبي غير مدخل في «الإعدادات»، وسيظهر فارغاً في رأس الطلب.</div>`:""}
+    <div class="ord-actions"><button class="primary" data-act="go-xlsx">تنزيل Excel</button><button data-act="go-pdf" ${S.pdfBusy?"disabled":""}>تنزيل PDF</button>${S.canWrite&&S.assets?`<button class="ghost" data-act="go-save" ${S.pdfBusy?"disabled":""}>حفظ PDF في ملف العميل</button>`:""}</div>
+  </div>
+  ${keys.map(k=>{const L=glassSpecLines(c,k);const rs=G[k];const tq=sum(rs,r=>r.qty),ta=sum(rs,gArea);return `<div class="card ord-card">
+    <div class="ord-head"><div><h3 style="margin:0">${esc(k)}</h3><div class="ord-spec" dir="ltr">${L?esc(L.filter(Boolean).join("  +  ")):`<span class="neg">أدخل وصف الزجاج بالإنجليزي في بيانات الطلب</span>`}</div></div><div class="ord-chips"><span class="chip"><span class="num">${tq}</span> لوح</span><span class="chip"><span class="num">${ta.toFixed(2)}</span> م²</span></div></div>
+    <div class="tablebox"><table class="ord-table"><thead><tr><th>#</th><th>العرض<span class="en">WIDTH</span></th><th>الارتفاع<span class="en">HEIGHT</span></th><th>العدد<span class="en">Q</span></th><th>المرجع<span class="en">REF</span></th><th>إجمالي الأمتار<span class="en">T.SQM</span></th></tr></thead><tbody>
+    ${rs.map((r,i)=>`<tr><td class="num muted">${i+1}</td><td class="num"><b>${r.w}</b></td><td class="num"><b>${r.h}</b></td><td class="num">${r.qty}</td><td>${esc(r.ref)}</td><td class="num">${gArea(r).toFixed(3)}${r.w*r.h/1e6<GMIN?`<span class="minflag">حد أدنى</span>`:""}</td></tr>`).join("")}
+    </tbody><tfoot><tr><td colspan="3">الإجمالي TOTAL</td><td class="num">${tq}</td><td></td><td class="num">${ta.toFixed(3)}</td></tr></tfoot></table></div></div>`}).join("")}
+  <p class="small muted" style="margin:0 4px">إجمالي الأمتار لكل لوح = العرض × الارتفاع، وإذا كان أقل من <span class="num">${GMIN}</span> م² يُحسب <span class="num">${GMIN}</span>، ثم يُضرب في العدد.</p>`;
 }
 
 /* ---------- measurement workflow stages: preliminary → quotation → final → aluminium & paint order → glass sizes → glass order ---------- */
