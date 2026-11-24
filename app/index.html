@@ -831,20 +831,25 @@ async function runExtract(c){
     const pages=[];for(const f of sheets){const imgs=await sheetImages(f);imgs.forEach(b=>pages.push({b,src:f.name}))}
     if(!pages.length)throw{code:"image_rejected"};
     const rows=[],flags=[],totals=[];
+    const prevPend=((S.clients.find(x=>x._id===cid)||c).pendingSite||[]).map(p=>p.ref).filter(Boolean);
+    const pf=prevPend.length?(a,b)=>exPrompt(a,b)+`\nNOTE: a previous survey of this project listed these openings WITHOUT sizes because they were not ready on site yet: ${prevPend.join(", ")}. Look for them carefully on this sheet and read their sizes if now written. An opening written without a size means it is still not ready on site: return it with w_cm and h_cm null and do NOT mention it in flags.`:(a,b)=>exPrompt(a,b)+`\nAn opening written without a size means it is not ready on site yet: return it with w_cm and h_cm null and do NOT mention it in flags.`;
     for(let i=0;i<pages.length;i++){
       ex.msg=`جارٍ قراءة الصفحة ${i+1} من ${pages.length}… (قد تأخذ دقيقة)`;render();
-      const out=await readPage(exPrompt,i+1,pages.length,pages[i].b,ex.ctl.signal,"rows",st=>{ex.msg=st==="verify"?`مراجعة أرقام الصفحة ${i+1} من ${pages.length} والتأكد منها…`:`قراءة الصفحة ${i+1} من ${pages.length} بدقة عالية…`;render()});
+      const out=await readPage(pf,i+1,pages.length,pages[i].b,ex.ctl.signal,"rows",st=>{ex.msg=st==="verify"?`مراجعة أرقام الصفحة ${i+1} من ${pages.length} والتأكد منها…`:`قراءة الصفحة ${i+1} من ${pages.length} بدقة عالية…`;render()});
       (out&&out.rows||[]).forEach(r=>{const w=Math.round(N(r.w_cm)*10),h=Math.round(N(r.h_cm)*10);
         rows.push({id:uid(),ref:String(r.ref||"").trim(),w,h,qty:Math.max(1,Math.round(N(r.qty)||1)),group:GROUPS[r.group]?r.group:"regular",note:String(r.note||""),unclear:!!r.unclear,alt:String(r.alt||""),pending:!!r.pending,page:i+1})});
       (out&&out.flags||[]).forEach(t=>t&&flags.push(`ص${i+1}: ${t}`));
       if(out&&out.stated_total!=null&&N(out.stated_total)>0)totals.push({page:i+1,n:N(out.stated_total),txt:String(out.stated_total_text||"")});
     }
+    const cNow=S.clients.find(x=>x._id===cid)||c;let pend=[...(cNow.pendingSite||[])];const readyRows=[],done=[];
+    rows.forEach(r=>{if(exReady(r)){readyRows.push(r);const k=pend.findIndex(p=>p.ref&&p.ref===r.ref);if(k>=0){done.push(r.ref);pend.splice(k,1)}}
+      else if(!pend.some(p=>p.ref&&p.ref===r.ref))pend.push({ref:r.ref,qty:r.qty,group:r.group,note:r.note,at:new Date().toISOString()})});
+    const allRows=[...rows];rows.length=0;readyRows.forEach(r=>rows.push(r));
     const count=sum(rows,r=>r.qty);
-    totals.forEach(t=>{const pc=sum(rows.filter(r=>r.page===t.page),r=>r.qty);if(pc!==t.n)flags.unshift(`ص${t.page}: المكتوب في الكشف ${t.n} قطعة${t.txt?` («${t.txt}»)`:""} لكن المستخرج ${pc}. راجع الأسطر الناقصة أو الزائدة.`)});
-    rows.forEach(r=>{if(!r.ref)flags.push(`سطر بدون كود في الصفحة ${r.page} (${r.w}×${r.h}).`)});
+    totals.forEach(t=>{const pc=sum(allRows.filter(r=>r.page===t.page),r=>r.qty);if(pc!==t.n)flags.unshift(`ص${t.page}: المكتوب في الكشف ${t.n} قطعة${t.txt?` («${t.txt}»)`:""} لكن المستخرج ${pc}. راجع الأسطر الناقصة أو الزائدة.`)});
     const res={rows,flags,count,at:new Date().toISOString(),pages:pages.length};
-    S.ex[cid]={busy:false};await write(cid,{measExtract:res});
-    toast(`استُخرج ${rows.length} سطر (${count} قطعة). راجعها قبل الإضافة.`);
+    S.ex[cid]={busy:false};await write(cid,{measExtract:res,pendingSite:pend});
+    toast(`استُخرج ${rows.length} سطر (${count} قطعة)${done.length?`. اكتملت مقاسات ${done.join("، ")} من الحصر السابق`:""}`);
   }catch(e){S.ex[cid]={busy:false,err:sampleErr(e)}}
   render();
 }
@@ -890,11 +895,12 @@ function sheetsCard(c){
     ${fileList(c,"measPdf")!==`<p class="muted small">لا توجد ملفات مرفوعة.</p>`?`<h3 style="margin-top:6px">ملفات PDF المحفوظة</h3>${fileList(c,"measPdf")}`:""}
   </div>`;
 }
-function exIssueRows(X){return (X.rows||[]).filter(r=>!r.ok&&(r.unclear||!(N(r.w)>0&&N(r.h)>0)||!r.ref))}
+const exReady=r=>N(r.w)>0&&N(r.h)>0;
+function exIssueRows(X){return (X.rows||[]).filter(r=>!r.ok&&exReady(r)&&(r.unclear||!r.ref))}
 function exIssues(X){
   const rows=exIssueRows(X);const tot=(X.flags||[]).map((t,i)=>({t,i})).filter(o=>/المكتوب في الكشف/.test(o.t)&&!(X.flagsOk||[]).includes(o.i));
   if(!rows.length&&!tot.length)return `<div class="small ok-badge">✓ كل الأسطر واضحة</div>`;
-  const why=r=>!r.ref?"بدون كود":!(N(r.w)>0&&N(r.h)>0)?"المقاس ناقص":`رقم غير واضح${r.alt?` · قراءة بديلة <span class="num">${esc(toLat(r.alt))}</span>`:""}`;
+  const why=r=>!r.ref?"بدون كود":`رقم غير واضح${r.alt?` · قراءة بديلة <span class="num">${esc(toLat(r.alt))}</span>`:""}`;
   const btns=(act,id)=>S.canWrite?`<button class="primary" data-act="${act}" data-id="${id}">تأكيد</button><button class="ghost" data-act="${act}" data-id="${id}">تجاوز</button>`:"";
   return `<div class="rv"><div class="rv-h">يحتاج مراجعة <span class="cnt num">${rows.length+tot.length}</span></div>
     ${tot.map(o=>`<div class="rv-row"><span class="rv-why">${esc(o.t.replace(/\. راجع.*$/,""))}</span><span style="flex:1"></span>${S.canWrite?`<button class="ghost" data-act="ex-flagok" data-id="${o.i}">تجاوز</button>`:""}</div>`).join("")}
@@ -2051,9 +2057,10 @@ async function act(el){
   if(a==="ex-del"){const X=clone(c.measExtract||{rows:[]});X.rows=X.rows.filter(r=>r.id!==el.dataset.id);X.count=sum(X.rows,r=>r.qty);await write(c._id,{measExtract:X});return}
   if(a==="ex-apply"){
     const X=c.measExtract;if(!X||!X.rows.length){toast("لا توجد أسطر للإضافة");return}
-    const bad=X.rows.find(r=>!r.ref||!(N(r.w)>0)||!(N(r.h)>0));if(bad){toast("أكمل الكود والمقاس لكل الأسطر أولاً");return}
-    const add=X.rows.map(r=>{const rc=recipeById(r.recipe||exRecipeDefault(r));return{id:uid(),ref:r.ref,w:N(r.w),h:N(r.h),qty:N(r.qty)||1,recipe:rc?rc.id:"",system:rc?rc.system:"",type:rc?rc.name:"",group:r.group,note:[r.pending?"بانتظار الاعتماد":"",r.unclear?"رقم غير واضح":"",r.note].filter(Boolean).join(" · ")}});
-    if(await write(c._id,{alu:[...(c.alu||[]),...add],measExtract:{...X,appliedAt:new Date().toISOString()}}))toast(`أُضيف ${add.length} سطر إلى مقاسات الألمنيوم`);
+    const bad=X.rows.find(r=>!r.ref&&exReady(r));if(bad){toast("أكمل الكود لكل الأسطر أولاً");return}
+    const notReady=X.rows.filter(r=>!exReady(r));const pend=[...(c.pendingSite||[])];notReady.forEach(r=>{if(!pend.some(p=>p.ref&&p.ref===r.ref))pend.push({ref:r.ref,qty:r.qty,group:r.group,note:r.note,at:new Date().toISOString()})});
+    const add=X.rows.filter(exReady).map(r=>{const rc=recipeById(r.recipe||exRecipeDefault(r));return{id:uid(),ref:r.ref,w:N(r.w),h:N(r.h),qty:N(r.qty)||1,recipe:rc?rc.id:"",system:rc?rc.system:"",type:rc?rc.name:"",group:r.group,note:[r.pending?"بانتظار الاعتماد":"",r.unclear?"رقم غير واضح":"",r.note].filter(Boolean).join(" · ")}});
+    if(await write(c._id,{alu:[...(c.alu||[]),...add],pendingSite:pend,measExtract:{...X,appliedAt:new Date().toISOString()}}))toast(`أُضيف ${add.length} سطر إلى مقاسات الألمنيوم`);
     return;
   }
   if(a==="save-info"){
