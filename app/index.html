@@ -157,6 +157,7 @@ body.dragging::after{content:"أفلت الملفات هنا للتحليل وا
 .ord-spec{font-size:.8rem;color:var(--muted);font-weight:600;letter-spacing:.03em;margin-top:2px;text-align:right}.ord-chips{display:flex;gap:6px}
 .ord-table th{text-align:center;line-height:1.25}.ord-table th .en{display:block;font-size:.68rem;font-weight:600;color:var(--muted);letter-spacing:.04em}.ord-table td{text-align:center}.ord-table td:nth-child(5){text-align:right}
 .minflag{display:inline-block;margin-inline-start:6px;font-size:.68rem;padding:1px 6px;border-radius:999px;background:var(--warn-soft);color:var(--warn);font-weight:600}
+.cuttbl th,.cuttbl td{text-align:center;white-space:nowrap}.cuttbl thead tr:first-child th{background:#f4d0b5}.cutn{font-size:.7rem;color:#c00000;font-weight:700;margin-inline-start:3px}
 .order-box{display:flex;flex-direction:column;gap:8px;border:1px solid var(--line);border-radius:10px;padding:12px;background:var(--surface-2)}
 .ib-act{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap}
 .vatbox{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding:12px 14px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2)}
@@ -567,7 +568,7 @@ function render(){
 
 /* ---------- take-off engine (حساب الكميات) ---------- */
 const P={
-  sFrame:"حلق سحاب 10سم سرايا 1.3مم", sSash:"درفة جنب سحاب سرايا 1.3مم زجاج 24", sScreen:"درفة سلك سحاب سرايا", sInter:"تحويلة (طبشة) شنكل سرايا",
+  sFrame:"حلق سحاب 10سم سرايا سماكة 1.5مم", sSash:"درفة جنب سحاب سرايا سماكة 1.5مم زجاج 24مم", sScreen:"درفة سلك سحاب سرايا سماكة 1.3مم", sInter:"تحويلة (طبشة) شنكل سرايا 10سم",
   rFrame:"حلق سحاب 12 سم رويال 1.8مم", rSash:"درفة جنب سحاب رويال 1.6مم زجاج 24", rInter:"تحويلة شنكل رويال 1.3مم", rScreen:"درفة سلك سحاب سرايا 1.2مم",
   cFrame:"حلق مفصلات بوكس 10.5 سم 1.5 مم", cSash:"درفة 6 سم سرايا 1.5", bead24:"بركلوز مدبول 24 سماكة 1.3",
   dFrame:"حلق 10.5سم مفصلات سرايا بوكس 1.8مم (باب)", dSash:"درفة 6سم سرايا 1.8مم (باب)", dKick:"قاطع كعب 12سم 1.3مم", bead1:"بركلوز سرايا سنجل 1.3مم"
@@ -579,9 +580,9 @@ const DEFAULT_CFG={
   profiles:[[P.sFrame,1.10],[P.sSash,0.95],[P.sScreen,0.45],[P.sInter,0.40],[P.rFrame,1.65],[P.rSash,1.20],[P.rInter,0.45],[P.rScreen,0.42],[P.cFrame,1.25],[P.cSash,1.05],[P.bead24,0.25],[P.dFrame,1.50],[P.dSash,1.30],[P.dKick,1.10],[P.bead1,0.22]].map(([name,kg])=>({name,kg})),
   recipes:[
     {id:"sar-slide2",name:"شباك سحاب سرايا 10سم - درفتين",system:"سرايا",
-      pieces:[{p:P.sFrame,n:2,f:"W"},{p:P.sFrame,n:2,f:"H"},{p:P.sSash,n:4,f:"W/2-10"},{p:P.sSash,n:4,f:"H-60"},{p:P.sInter,n:2,f:"H-60"},{p:P.sScreen,n:2,f:"W/2-10"},{p:P.sScreen,n:2,f:"H-60"}],
-      glass:[{n:2,w:"W/2-110",h:"H-160"}],
-      acc:[{name:"عجلات سحاب",unit:"حبة",q:"4",price:0},{name:"عجلات سلك",unit:"حبة",q:"2",price:0},{name:"قفل سحاب",unit:"حبة",q:"1",price:0},{name:"ماسكة سحاب",unit:"حبة",q:"2",price:0},{name:"زاوية تجميع 4*4",unit:"حبة",q:"12",price:0},{name:"فرشة",unit:"م.ط",q:"4*((W/2-10)+(H-60))/1000",price:0},{name:"جلدة زجاج",unit:"م.ط",q:"8*((W/2-110)+(H-160))/1000",price:0},{name:"سلك شبك",unit:"م²",q:"(W/2-10)*(H-60)/1000000",price:0}]},
+      pieces:[{p:P.sFrame,n:2,f:"W"},{p:P.sFrame,n:2,f:"H"},{p:P.sSash,n:4,f:"W/2"},{p:P.sSash,n:4,f:"H-65"},{p:P.sScreen,n:2,f:"W/2"},{p:P.sScreen,n:2,f:"H-55"},{p:P.sInter,n:2,f:"H-65"}],
+      glass:[{n:2,w:"W/2-95",h:"H-160"}],
+      acc:[{name:"عجلات سحاب",unit:"حبة",q:"4",price:0},{name:"عجلات سلك",unit:"حبة",q:"2",price:0},{name:"قفل سحاب",unit:"حبة",q:"1",price:0},{name:"ماسكة سحاب",unit:"حبة",q:"2",price:0},{name:"زاوية تجميع 4*4",unit:"حبة",q:"12",price:0},{name:"فرشة",unit:"م.ط",q:"4*((W/2)+(H-65))/1000",price:0},{name:"جلدة زجاج",unit:"م.ط",q:"8*((W/2-95)+(H-160))/1000",price:0},{name:"سلك شبك",unit:"م²",q:"(W/2)*(H-55)/1000000",price:0}]},
     {id:"roy-slide2",name:"شباك سحاب رويال 12سم - درفتين",system:"رويال",
       pieces:[{p:P.rFrame,n:2,f:"W"},{p:P.rFrame,n:2,f:"H"},{p:P.rSash,n:4,f:"W/2-10"},{p:P.rSash,n:4,f:"H-70"},{p:P.rInter,n:2,f:"H-70"},{p:P.rScreen,n:2,f:"W/2-10"},{p:P.rScreen,n:2,f:"H-70"}],
       glass:[{n:2,w:"W/2-120",h:"H-180"}],
@@ -642,17 +643,17 @@ function takeoff(c,cfg){
   for(const row of c.alu||[]){
     const r=recipeById(row.recipe);const q=N(row.qty)||1;
     if(!r){warn.push(`«${row.ref}» بدون قالب حساب، اختر له نوعاً من تبويب المقاسات.`);continue}
-    const W=N(row.w),H=N(row.h);units+=q;const det={ref:row.ref,recipe:r.name,q,W,H,pcs:[]};
+    const W=N(row.w),H=N(row.h);units+=q;const det={ref:row.ref,recipe:r.name,q,W,H,pcs:[],gl:[],floor:row.floor||"",note:row.note||""};
     for(const pc of r.pieces||[]){
       const len=Math.round(ev(pc.f,W,H)),n=Math.round(N(pc.n))*q;
       if(!(len>0)){warn.push(`معادلة «${pc.f}» في ${r.name} أعطت قيمة غير صحيحة للمرجع ${row.ref}.`);continue}
       (pieces[pc.p]=pieces[pc.p]||[]);for(let k=0;k<n;k++)pieces[pc.p].push({len,ref:row.ref});
-      det.pcs.push({p:pc.p,len,n});
+      det.pcs.push({p:pc.p,len,n,f:pc.f});
     }
     for(const gl of r.glass||[]){
       const w=Math.round(ev(gl.w,W,H)),h=Math.round(ev(gl.h,W,H)),n=Math.round(N(gl.n))*q;
       if(!(w>0&&h>0)){warn.push(`مقاس زجاج غير صحيح في ${r.name} للمرجع ${row.ref}.`);continue}
-      glass.push({ref:row.ref,spec:gSpec,w,h,qty:n,src:"auto"});
+      glass.push({ref:row.ref,spec:gSpec,w,h,qty:n,src:"auto"});det.gl.push({w,h,n});
     }
     for(const a of r.acc||[]){
       const v=ev(a.q,W,H);if(!isFinite(v)){warn.push(`كمية «${a.name}» غير صحيحة في ${r.name}.`);continue}
@@ -1352,7 +1353,7 @@ function tabCut(c){
   const cfg=S.cfg;const T=takeoff(c,cfg);
   if(!(c.alu||[]).length)return noMeas;
   return calcHead(c,T,cfg,`<div class="stats"><div class="stat"><span>القطاعات</span><b class="num">${T.profiles.length}</b></div><div class="stat"><span>عدد القطع</span><b class="num">${sum(T.profiles,p=>p.pieces)}</b></div><div class="stat"><span>عدد العيدان</span><b class="num">${T.bars}</b></div><div class="stat"><span>متوسط الهدر</span><b class="num">${T.bars?((1-sum(T.profiles,p=>p.net)/(T.bars*N(cfg.barLen)))*100).toFixed(0):0}%</b></div></div>`)+
-  `<div class="card"><h3>Cutting List · خطة القص على العيدان</h3>
+  cutSheetTable(c)+`<div class="card"><h3>Cutting List · خطة القص على العيدان</h3>
     ${T.profiles.map((p,pi)=>`<details class="cut" ${pi===0?"open":""}><summary><b>${esc(p.name)}</b> <span class="muted small">· <span class="num">${p.nb}</span> عود · <span class="num">${p.pieces}</span> قطعة · هدر <span class="num">${(p.waste*100).toFixed(0)}%</span></span></summary>
       <div class="tablebox"><table><thead><tr><th>العود</th><th>القطع (الطول مم × العدد)</th><th>المستخدم</th><th>المتبقي</th></tr></thead><tbody>
       ${p.bars.map((b,i)=>`<tr><td class="num">${i+1}</td><td style="white-space:normal">${groupBar(b).map(e=>`<span class="cutpc"><b class="num">${e.len}</b> × <span class="num">${e.n}</span> <span class="muted small">${esc([...e.refs].join("، "))}</span></span>`).join("")}</td><td class="num">${money(b.used)}</td><td class="num ${b.off<300?"muted":""}">${money(b.off)}</td></tr>`).join("")}
@@ -2248,6 +2249,8 @@ async function act(el){
   if(a==="ao-save"&&c){await aluOrderPdf(c,"save");return}
   if(a==="ao-xlsx"&&c){await aluOrderXlsx(c);if(!orderMissing(c,"alu").length)write(c._id,{aluOrderedAt:new Date().toISOString()});return}
   if(a==="go-xlsx"&&c){await glassOrderXlsx(c);if(!orderMissing(c,"glass").filter(m=>m.k!=="@co").length)write(c._id,{glassOrderedAt:new Date().toISOString()});return}
+  if(a==="cut-pdf"&&c){await cutSheetPdf(c,"dl");return}
+  if(a==="cut-save"&&c){await cutSheetPdf(c,"save");return}
   if(a==="go-pdf"&&c){await glassOrderPdf(c,"dl");if(!orderMissing(c,"glass").filter(m=>m.k!=="@co").length)write(c._id,{glassOrderedAt:new Date().toISOString()});return}
   if(a==="go-save"&&c){await glassOrderPdf(c,"save");return}
   if(a==="g-src"&&c){await write(c._id,{glassSrc:el.dataset.k});return}
@@ -2915,6 +2918,62 @@ function tabGlassM(c){
   </div>`;
 }
 function stageNextBtn(c,from){const i=STAGES.findIndex(s=>s[0]===from);const n=STAGES[i+1];return n?`<button data-act="tab" data-tab="${n[0]}">الخطوة التالية: ${n[1]} ←</button>`:""}
+
+
+/* ---------- Cutting List sheet (factory layout: HALK / DORFA / SCREEN / TABSHA / GLASS, with count per cut) ---------- */
+const cutRole=p=>/سلك/.test(p)?"screen":/حلق/.test(p)?"halk":/تحويلة|طبشة|شنكل|انترلوك/.test(p)?"tabsha":/درف/.test(p)?"dorfa":"other";
+const isHeightF=f=>/H/.test(String(f||""))&&!/W/.test(String(f||""));
+const cm=v=>{const x=Math.round(N(v))/10;return String(+x.toFixed(1))};
+function cutRows(c){const T=takeoff(c,S.cfg);return T.perUnit.map((d,i)=>{const o={no:i+1,ref:d.ref,room:[d.floor,d.note].filter(Boolean).join(" - "),q:d.q,recipe:d.recipe,cells:{},other:[]};
+  d.pcs.forEach(x=>{const r=cutRole(x.p);if(r==="other"){o.other.push(x);return}const k=r+(isHeightF(x.f)?"H":"W");if(r==="tabsha"&&!isHeightF(x.f))return o.other.push(x);(o.cells[k]=o.cells[k]||[]).push({len:x.len,n:x.n})});
+  if(d.gl[0])o.glass=d.gl[0];return o})}
+function cutSheetSVGs(c){
+  const T=takeoff(c,S.cfg);const rows=cutRows(c);const co=CO();const VW=842,VH=595,X1=22,X2=820;
+  const nb=re=>sum(T.profiles.filter(p=>cutRole(p.name)===re),p=>p.nb);
+  const cols=[["no","WINDOW\nNUMBER",44],["room","ROOM",92],["ref","CODE\nWINDOW",58],["halkW","WIDTH",60],["halkH","HEIGHT",60],["dorfaW","WIDTH",60],["dorfaH","HEIGHT",60],["screenW","WIDTH",60],["screenH","HEIGHT",60],["tabshaH","HEIGHT",62],["glassW","WIDTH",56],["glassH","HEIGHT",56],["rem","REMARKS",70]];
+  let x=X1;const cx={};cols.forEach(([k,,w])=>{cx[k]={x,w};x+=w});
+  const groups=[["HALK","halk",["halkW","halkH"]],["DORFA","dorfa",["dorfaW","dorfaH"]],["SCREEN","screen",["screenW","screenH"]],["TABSHA","tabsha",["tabshaH"]],["GLASS","",["glassW","glassH"]]];
+  const per=15,pages=[];const RH=27;
+  for(let pg=0;pg<Math.max(1,Math.ceil(rows.length/per));pg++){
+    let s=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${VW} ${VH}" width="${VW}" height="${VH}"><rect width="${VW}" height="${VH}" fill="#fff"/>`;
+    s+=T_(X1,30,"CUTTING LIST",14,700,QC.teal)+T_(X1+120,30,`# ${String(rows[0]&&rows[0].recipe||"").replace(/.*سرايا.*/,"Saraya Sliding")}`,10,600,"#444")+`<text x="${X2}" y="30" font-size="11" font-weight="700" text-anchor="start" direction="rtl" font-family="${SF}">${esc(co.nameAr)}</text>`;
+    const y0=44;s+=`<rect x="${X1}" y="${y0}" width="${X2-X1}" height="22" fill="${QC.soft}" stroke="#222" stroke-width=".8"/>`+T_(X1+8,y0+15,`PROJECT NAME :`,9.5,700)+`<text x="${X1+300}" y="${y0+15}" font-size="9.5" font-weight="700" direction="rtl" text-anchor="start" font-family="${SF}">${esc(toLat(String(c.name||"").trim()+(c.fileNo?"  ‎("+c.fileNo+")‎":"")))}</text>`+T_(X1+430,y0+15,`BUILDING :`,9.5,700)+`<text x="${X1+620}" y="${y0+15}" font-size="9.5" font-weight="700" direction="rtl" text-anchor="start" font-family="${SF}">${esc(toLat(c.project||""))}</text>`+`<rect x="${X1+630}" y="${y0+1}" width="168" height="20" fill="${QC.soft}"/>`+T_(X1+640,y0+15,`DATE : ${dmy(today())}`,9.5,700);
+    const y1=y0+22,hh1=20,hh2=18;
+    // group header
+    cols.slice(0,3).forEach(([k,l])=>{const {x,w}=cx[k];s+=`<rect x="${x}" y="${y1}" width="${w}" height="${hh1+hh2}" fill="#fff" stroke="#222" stroke-width=".8"/>`;l.split("\n").forEach((t,i,a)=>s+=T_(x+w/2,y1+(hh1+hh2)/2+4+(i-(a.length-1)/2)*10,t,7.5,700,"#111","middle"))});
+    groups.forEach(([lab,role,ks])=>{const a=cx[ks[0]],b=cx[ks[ks.length-1]];const w=b.x+b.w-a.x;const n=role?nb(role):0;
+      s+=`<rect x="${a.x}" y="${y1}" width="${w}" height="${hh1}" fill="#f4b183" stroke="#222" stroke-width=".8"/>`+T_(a.x+w/2,y1+14,lab+(n?` (${n} PCS)`:""),ks.length>1?9:7,700,"#111","middle");
+      ks.forEach(k=>{const {x,w}=cx[k];const per=k==="glassW"||k==="glassH"?"":"";s+=`<rect x="${x}" y="${y1+hh1}" width="${w}" height="${hh2}" fill="${QC.soft}" stroke="#222" stroke-width=".6"/>`+T_(x+w/2,y1+hh1+12.5,cols.find(c=>c[0]===k)[1],7.5,700,"#111","middle")})});
+    {const {x,w}=cx.rem;s+=`<rect x="${x}" y="${y1}" width="${w}" height="${hh1+hh2}" fill="#fff" stroke="#222" stroke-width=".8"/>`+T_(x+w/2,y1+23,"REMARKS",7.5,700,"#111","middle")}
+    let y=y1+hh1+hh2;
+    rows.slice(pg*per,pg*per+per).forEach((r,i)=>{s+=`<rect x="${X1}" y="${y}" width="${X2-X1}" height="${RH}" fill="${i%2?"#fff":"#fafbfc"}"/>`;
+      cols.forEach(([k,,w])=>{s+=`<rect x="${cx[k].x}" y="${y}" width="${w}" height="${RH}" fill="none" stroke="#222" stroke-width=".5"/>`});
+      const put=(k,v,sub,o={})=>{const {x,w}=cx[k];s+=T_(x+w/2-(sub?7:0),y+(sub?17:17.5),v,o.size||10.5,o.w||700,o.fill||"#111","middle",o.ar);if(sub)s+=T_(x+w-3,y+RH-4,sub,7,700,"#c00000","end")};
+      put("no",r.no+".",0,{size:9,w:600});put("room",r.room.slice(0,16),0,{size:7.5,w:500,ar:1});put("ref",r.ref,0,{size:9});
+      Object.entries(r.cells).forEach(([k,arr])=>{if(!cx[k])return;const x0=arr[0];put(k,cm(x0.len),"×"+sum(arr,e=>e.n))});
+      if(r.glass){put("glassW",cm(r.glass.w),"×"+r.glass.n);put("glassH",cm(r.glass.h),"")}
+      put("rem",r.q>1?`QTY ${r.q}`:"",0,{size:8,w:600,fill:"#c00000"});y+=RH});
+    if(pg===Math.ceil(rows.length/per)-1||rows.length===0){y+=10;s+=T_(X1,y+12,`TOTAL WINDOWS : ${sum(rows,r=>r.q)}   ·   CM, the red number is the count of cuts for each size (per window × quantity)`,8,600,"#444");
+      const tot=T.profiles.map(p=>`${p.name} : ${p.nb} عود`).join("   ·   ");s+=`<text x="${X2}" y="${y+28}" font-size="8" text-anchor="start" direction="rtl" font-family="${SF}">${esc(tot)}</text>`}
+    s+=T_(VW/2,VH-12,`${pg+1} / ${Math.max(1,Math.ceil(rows.length/per))}`,8,500,"#888","middle");
+    pages.push(s+"</svg>")}
+  return pages;
+}
+function T_(x,y,t,size=9,w=400,fill="#111",anchor="start",ar){t=toLat(String(t??""));const rtl=!!ar;return `<text x="${x}" y="${y}" font-size="${size}" font-weight="${w}" fill="${fill}" text-anchor="${anchor}"${rtl?' direction="rtl"':""} font-family="${SF}">${esc(t)}</text>`}
+async function cutSheetPdf(c,mode){if(!(c.alu||[]).length){toast("أدخل المقاسات النهائية أولاً");return}if(S.pdfBusy)return;S.pdfBusy=true;render();
+  try{const {jsPDF}=await loadJsPdf();const pdf=new jsPDF({unit:"mm",format:"a4",orientation:"landscape",compress:true});const svgs=cutSheetSVGs(c);
+    for(let i=0;i<svgs.length;i++){if(i)pdf.addPage("a4","landscape");pdf.addImage(await svgToJpeg(svgs[i],3.2,842,595),"JPEG",0,0,297,210)}
+    const b=pdf.output("blob");const name=`Cutting-List-${c.fileNo||""}-${clientTitle(c)}.pdf`.replace(/[\\/:*?"<>|]/g,"-");
+    if(mode==="save"){const r=await S.assets.upload(new File([b],name,{type:"application/pdf"}));await mutateFiles("other",l=>l.concat([{id:r.id,name,type:"application/pdf",size:r.sizeBytes,at:new Date().toISOString()}]));toast("تم حفظ Cutting List في «مستندات أخرى»")}
+    else if(S.downloads)await S.downloads.save({filename:name,data:b});else toast("التنزيل غير متاح هنا")}catch(e){if(!(e&&e.code==="declined"))toast("تعذّر إنشاء ملف PDF")}
+  S.pdfBusy=false;render()}
+function cutSheetTable(c){const rows=cutRows(c);if(!rows.length)return"";const H=(k)=>{return k};
+  const cell=(r,k)=>{const a=r.cells[k];return a?`<span dir="ltr"><b class="num">${cm(a[0].len)}</b><span class="cutn">×${sum(a,e=>e.n)}</span></span>`:""};
+  return `<div class="card"><h3><span>جدول القص لكل شباك <span class="small muted">بالسنتيمتر · الرقم الأحمر = عدد القطع من المقاس (للشباك × العدد)</span></span><span class="toolbar"><button class="primary" data-act="cut-pdf" ${S.pdfBusy?"disabled":""}>Cutting List PDF</button>${S.canWrite&&S.assets?`<button data-act="cut-save" ${S.pdfBusy?"disabled":""}>حفظ في ملف العميل</button>`:""}</span></h3>
+  <div class="tablebox"><table class="cuttbl"><thead><tr><th rowspan="2">#</th><th rowspan="2">الدور / الموقع</th><th rowspan="2">الكود</th><th colspan="2">HALK الحلق</th><th colspan="2">DORFA الدرفة</th><th colspan="2">SCREEN السلك</th><th>TABSHA الطبشة</th><th colspan="2">GLASS الزجاج</th><th rowspan="2">العدد</th></tr>
+  <tr><th>W</th><th>H</th><th>W</th><th>H</th><th>W</th><th>H</th><th>H</th><th>W</th><th>H</th></tr></thead><tbody>
+  ${rows.map(r=>`<tr><td class="num">${r.no}</td><td>${esc(r.room)}</td><td><b>${esc(r.ref)}</b></td>${["halkW","halkH","dorfaW","dorfaH","screenW","screenH","tabshaH"].map(k=>`<td>${cell(r,k)}</td>`).join("")}<td>${r.glass?`<span dir="ltr"><b class="num">${cm(r.glass.w)}</b><span class="cutn">×${r.glass.n}</span></span>`:""}</td><td>${r.glass?`<b class="num">${cm(r.glass.h)}</b>`:""}</td><td class="num">${r.q}</td></tr>`).join("")}
+  </tbody></table></div></div>`}
 
 /* ---------- boot ---------- */
 fromHash();
