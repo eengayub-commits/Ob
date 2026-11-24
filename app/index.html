@@ -157,6 +157,7 @@ body.dragging::after{content:"أفلت الملفات هنا للتحليل وا
 .ord-spec{font-size:.8rem;color:var(--muted);font-weight:600;letter-spacing:.03em;margin-top:2px;text-align:right}.ord-chips{display:flex;gap:6px}
 .ord-table th{text-align:center;line-height:1.25}.ord-table th .en{display:block;font-size:.68rem;font-weight:600;color:var(--muted);letter-spacing:.04em}.ord-table td{text-align:center}.ord-table td:nth-child(5){text-align:right}
 .minflag{display:inline-block;margin-inline-start:6px;font-size:.68rem;padding:1px 6px;border-radius:999px;background:var(--warn-soft);color:var(--warn);font-weight:600}
+.cut-info{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px 16px;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:10px 14px}.cut-info div{display:flex;flex-direction:column;gap:1px}.cut-info span{font-size:.74rem;color:var(--muted);font-weight:600}.cut-info b{font-size:.9rem;text-align:right}
 .cuttbl th,.cuttbl td{text-align:center;white-space:nowrap}.cuttbl thead tr:first-child th{background:#f4d0b5}.cutn{font-size:.7rem;color:#c00000;font-weight:700;margin-inline-start:3px}
 .share{display:inline-flex;gap:6px}.share button{display:inline-flex;align-items:center;gap:6px}.share .wa{color:#128c4a;border-color:#9fd8b6;background:#eefaf2}.share .gm{color:#c5221f;border-color:#f1b5b2;background:#fdf0ef}
 .sec-sep{display:flex;align-items:center;gap:10px;color:var(--muted);font-weight:700;font-size:.9rem;margin:6px 4px}.sec-sep::before,.sec-sep::after{content:"";flex:1;height:1px;background:var(--line)}
@@ -2952,12 +2953,16 @@ function cutSheetSVGs(c){
   const cols=[["no","WINDOW\nNUMBER",44],["room","ROOM",92],["ref","CODE\nWINDOW",58],["halkW","WIDTH",60],["halkH","HEIGHT",60],["dorfaW","WIDTH",60],["dorfaH","HEIGHT",60],["screenW","WIDTH",60],["screenH","HEIGHT",60],["tabshaH","HEIGHT",62],["glassW","WIDTH",56],["glassH","HEIGHT",56],["rem","REMARKS",70]];
   let x=X1;const cx={};cols.forEach(([k,,w])=>{cx[k]={x,w};x+=w});
   const groups=[["HALK","halk",["halkW","halkH"]],["DORFA","dorfa",["dorfaW","dorfaH"]],["SCREEN","screen",["screenW","screenH"]],["TABSHA","tabsha",["tabshaH"]],["GLASS","",["glassW","glassH"]]];
-  const per=15,pages=[];const RH=27;
+  const per=15,pages=[];const RH=26;
   for(let pg=0;pg<Math.max(1,Math.ceil(rows.length/per));pg++){
     let s=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${VW} ${VH}" width="${VW}" height="${VH}"><rect width="${VW}" height="${VH}" fill="#fff"/>`;
     s+=T_(X1,30,"CUTTING LIST",14,700,QC.teal)+T_(X1+120,30,`# ${String(rows[0]&&rows[0].recipe||"").replace(/.*سرايا.*/,"Saraya Sliding")}`,10,600,"#444")+`<text x="${X2}" y="30" font-size="11" font-weight="700" text-anchor="start" direction="rtl" font-family="${SF}">${esc(co.nameAr)}</text>`;
-    const y0=44;s+=`<rect x="${X1}" y="${y0}" width="${X2-X1}" height="22" fill="${QC.soft}" stroke="#222" stroke-width=".8"/>`+T_(X1+8,y0+15,`PROJECT NAME :`,9.5,700)+`<text x="${X1+300}" y="${y0+15}" font-size="9.5" font-weight="700" direction="rtl" text-anchor="start" font-family="${SF}">${esc(toLat(String(c.name||"").trim()+(c.fileNo?"  ‎("+c.fileNo+")‎":"")))}</text>`+T_(X1+430,y0+15,`BUILDING :`,9.5,700)+`<text x="${X1+620}" y="${y0+15}" font-size="9.5" font-weight="700" direction="rtl" text-anchor="start" font-family="${SF}">${esc(toLat(c.project||""))}</text>`+`<rect x="${X1+630}" y="${y0+1}" width="168" height="20" fill="${QC.soft}"/>`+T_(X1+640,y0+15,`DATE : ${dmy(today())}`,9.5,700);
-    const y1=y0+22,hh1=20,hh2=18;
+    const y0=42,BH=40,ar=(x,y,t,sz=9.5)=>`<text x="${x}" y="${y}" font-size="${sz}" font-weight="700" direction="rtl" text-anchor="start" font-family="${SF}">${esc(toLat(t||""))}</text>`;
+    s+=`<rect x="${X1}" y="${y0}" width="${X2-X1}" height="${BH}" fill="${QC.soft}" stroke="#222" stroke-width=".8"/><line x1="${X1}" y1="${y0+BH/2}" x2="${X2}" y2="${y0+BH/2}" stroke="#bbb" stroke-width=".5"/><line x1="${X1+600}" y1="${y0}" x2="${X1+600}" y2="${y0+BH}" stroke="#bbb" stroke-width=".5"/>`;
+    s+=T_(X1+8,y0+14,"CLIENT :",8.5,700,QC.muted)+T_(X1+62,y0+14,c.nameEn||"",9.5,700)+ar(X1+592,y0+14,String(c.name||"").trim());
+    s+=T_(X1+8,y0+34,"LOCATION :",8.5,700,QC.muted)+T_(X1+70,y0+34,c.locationEn||"",9.5,700)+ar(X1+592,y0+34,c.location||"");
+    s+=T_(X1+608,y0+14,"FILE NO :",8.5,700,QC.muted)+T_(X1+662,y0+14,c.fileNo||"",9.5,700)+T_(X1+608,y0+34,"DATE :",8.5,700,QC.muted)+T_(X1+662,y0+34,dmy(today()),9.5,700);
+    const y1=y0+BH,hh1=20,hh2=18;
     // group header
     cols.slice(0,3).forEach(([k,l])=>{const {x,w}=cx[k];s+=`<rect x="${x}" y="${y1}" width="${w}" height="${hh1+hh2}" fill="#fff" stroke="#222" stroke-width=".8"/>`;l.split("\n").forEach((t,i,a)=>s+=T_(x+w/2,y1+(hh1+hh2)/2+4+(i-(a.length-1)/2)*10,t,7.5,700,"#111","middle"))});
     groups.forEach(([lab,role,ks])=>{const a=cx[ks[0]],b=cx[ks[ks.length-1]];const w=b.x+b.w-a.x;const n=role?nb(role):0;
@@ -2988,8 +2993,10 @@ async function cutSheetPdf(c,mode){if(!(c.alu||[]).length){toast("أدخل ال�
   S.pdfBusy=false;render()}
 function cutSheetTable(c){const rows=cutRows(c);if(!rows.length)return"";const H=(k)=>{return k};
   const cell=(r,k)=>{const a=r.cells[k];return a?`<span dir="ltr"><b class="num">${cm(a[0].len)}</b><span class="cutn">×${sum(a,e=>e.n)}</span></span>`:""};
+  const infoBar=`<div class="cut-info"><div><span>العميل</span><b>${esc(c.name||"—")}</b>${c.nameEn?`<b dir="ltr">${esc(c.nameEn)}</b>`:""}</div><div><span>رقم الملف</span><b class="num">${esc(c.fileNo||"—")}</b></div><div><span>المدينة والحي</span><b>${esc(c.location||"—")}</b>${c.locationEn?`<b dir="ltr">${esc(c.locationEn)}</b>`:""}</div><div><span>التاريخ</span><b class="num">${esc(dmy(today()))}</b></div></div>
+    ${S.canWrite&&(!c.nameEn||!c.locationEn)?`<div class="miss-grid">${fieldInputs([...(!c.nameEn?[{k:"nameEn",l:"اسم العميل بالإنجليزي",v:"",ph:"Client name",ltr:1}]:[]),...(!c.locationEn?[{k:"locationEn",l:"المدينة والحي بالإنجليزي",v:"",ph:"Riyadh - Al Worood",ltr:1}]:[])])}</div>`:""}`;
   return `<div class="card"><h3><span>جدول القص لكل شباك <span class="small muted">بالسنتيمتر · الرقم الأحمر = عدد قطع الألمنيوم من المقاس · الزجاج: العرض × الارتفاع لوح واحد، وعدد الألواح في الملاحظات</span></span><span class="toolbar"><button class="primary" data-act="cut-pdf" ${S.pdfBusy?"disabled":""}>Cutting List PDF</button>${S.canWrite&&S.assets?`<button data-act="cut-save" ${S.pdfBusy?"disabled":""}>حفظ في ملف العميل</button>`:""}</span></h3>
-  <div class="tablebox"><table class="cuttbl"><thead><tr><th rowspan="2">#</th><th rowspan="2">الدور / الموقع</th><th rowspan="2">الكود</th><th colspan="2">HALK الحلق</th><th colspan="2">DORFA الدرفة</th><th colspan="2">SCREEN السلك</th><th>TABSHA الطبشة</th><th colspan="2">GLASS الزجاج</th><th rowspan="2">عدد الشبابيك</th><th rowspan="2">ملاحظات</th></tr>
+  ${infoBar}<div class="tablebox"><table class="cuttbl"><thead><tr><th rowspan="2">#</th><th rowspan="2">الدور / الموقع</th><th rowspan="2">الكود</th><th colspan="2">HALK الحلق</th><th colspan="2">DORFA الدرفة</th><th colspan="2">SCREEN السلك</th><th>TABSHA الطبشة</th><th colspan="2">GLASS الزجاج</th><th rowspan="2">عدد الشبابيك</th><th rowspan="2">ملاحظات</th></tr>
   <tr><th>W</th><th>H</th><th>W</th><th>H</th><th>W</th><th>H</th><th>H</th><th>W</th><th>H</th></tr></thead><tbody>
   ${rows.map(r=>`<tr><td class="num">${r.no}</td><td>${esc(r.room)}</td><td><b>${esc(r.ref)}</b></td>${["halkW","halkH","dorfaW","dorfaH","screenW","screenH","tabshaH"].map(k=>`<td>${cell(r,k)}</td>`).join("")}<td>${r.glass?`<b class="num">${cm(r.glass.w)}</b>`:""}</td><td>${r.glass?`<b class="num">${cm(r.glass.h)}</b>`:""}</td><td class="num">${r.q}</td><td>${r.glass?`<span class="cutn" style="font-size:.8rem">= <span class="num">${r.glass.n}</span> حبة زجاج</span>`:""}</td></tr>`).join("")}
   </tbody></table></div></div>`}
