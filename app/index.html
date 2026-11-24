@@ -2366,6 +2366,9 @@ const onField=e=>{const el=e.target;
       if(nv!==prev){for(let k=i0+1;k<its.length;k++){const f=flr(its[k].floor);if(f===""||f===prev)its[k].floor=nv;else break}}}}const mm=/^items\.(\d+)\.(type|sys)$/.exec(el.dataset.q);const itm=mm?S.qd.items[+mm[1]]:null;const oldDef=itm?defPrice(itm.type,itm.sys||defSys(S.qd)):0,oldAdd=itm?defAddon(itm.type):0,oldType=itm?itm.type:"";
     setPath(S.qd,el.dataset.q,v);
     if(itm&&e.type==="change"){if(mm[2]==="type"){const no=KOPT(itm.type);if(no.unit)itm.pricing="unit";else if(itm.pricing==="unit"&&KOPT(oldType).unit)itm.pricing="m2"}if(!N(itm.price)||N(itm.price)===oldDef)itm.price=defPrice(itm.type,itm.sys||defSys(S.qd));if(!N(itm.addon)||N(itm.addon)===oldAdd)itm.addon=defAddon(itm.type)}
+    {const pm=/^items\.(\d+)\.price$/.exec(el.dataset.q);if(pm&&e.type==="change"){const its=S.qd.items||[],src=its[+pm[1]],old=N(el.defaultValue),nv=N(v);
+      if(src&&old!==nv&&src.type!=="other"){const sy=src.sys||defSys(S.qd);const hit=its.filter(x=>x!==src&&x.type===src.type&&(x.sys||defSys(S.qd))===sy&&(x.pricing||"m2")===(src.pricing||"m2")&&N(x.price)===old);
+        if(hit.length){hit.forEach(x=>x.price=nv);const lbl=(KINDS[src.type]||[src.type])[0];toast(`عُدّل سعر «${lbl}» إلى ${money(nv)} في ${hit.length} بند آخر`,{kind:"ok",action:{label:"تراجع",fn:()=>{hit.forEach(x=>x.price=old);render();qScheduleSave()}}})}}}}
     if(e.type==="change"){if(/^items\.\d+\.type$/.test(el.dataset.q)&&v==="other"){const it=getPath(S.qd,el.dataset.q.replace(/\.type$/,""));if(it.pricing==="m2")it.pricing="lump"}render();qScheduleSave()}return}
   if(el.id==="qq"){S.qq=el.value;render();return}
   if(el.id==="qstatusFilter"&&e.type==="change"){S.qstatus=el.value;render();return}
