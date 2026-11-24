@@ -857,7 +857,7 @@ async function sheetImages(f){
   return [];
 }
 function exPrompt(i,n){return `You are reading page ${i} of ${n}: a photographed HANDWRITTEN site measurement sheet (Arabic/English) for aluminium windows and doors at Al Qimma Tower Factory (مصنع برج القمة), Saudi Arabia.
-Measurements on the sheet are in CENTIMETERS. Precision is the top priority: read every number twice, and never guess a digit silently.
+Measurements on the sheet are in CENTIMETERS. If the sheet is the factory's CUTTING LIST form (columns HALK / DORFA / SCREEN / TABSHA / GLASS), each row is one window: its size is the HALK (frame) WIDTH and HEIGHT; ignore the DORFA, SCREEN, TABSHA and GLASS columns; ref = the window number (or the CODE if written); "2 pcs" in remarks refers to glass panes, not the window quantity (qty = 1 unless a window count is written). Precision is the top priority: read every number twice, and never guess a digit silently.
 For every window/door line return:
 - ref: the code and the window/door number in ONE string formatted "floor-code", e.g. "14-D3". If no floor is written, just the code, e.g. "W1".
 - w_cm, h_cm: width and height exactly as written, in cm (decimals allowed, e.g. 145.5).
@@ -1321,7 +1321,7 @@ const noMeas=`<div class="card empty"><h2>لا توجد مقاسات بعد</h2>
 function tabCalc(c){
   const cfg=S.cfg;const T=takeoff(c,cfg);const alu=c.colors?.alu||{};
   const colorTxt=[alu.color,alu.code].filter(Boolean).join(" · ")||"لم يُحدد اللون";
-  if(!(c.alu||[]).length&&!(c.glass||[]).length)return noMeas;
+  if(!(c.alu||[]).length&&!(c.glass||[]).length)return pendingReadNote(c)||noMeas;
   const priced=n=>n?M(n):`<span class="muted small">أدخل السعر</span>`;
   const byCat=k=>T.acc.filter(a=>a.cat===k);
   const head=calcHead(c,T,cfg,`<div class="stats"><div class="stat"><span>الوحدات</span><b class="num">${T.units}</b></div><div class="stat"><span>عيدان الألمنيوم</span><b class="num">${T.bars}</b></div><div class="stat"><span>وزن الألمنيوم</span><b><span class="num">${money(Math.round(T.kg*10)/10)}</span><span class="cur">كجم</span></b></div><div class="stat"><span>مساحة الزجاج</span><b><span class="num">${T.m2.toFixed(2)}</span><span class="cur">م²</span></b></div><div class="stat"><span>تكلفة المواد التقديرية</span><b>${M(T.cost.total)}</b></div></div>`);
@@ -1351,9 +1351,10 @@ function tabCalc(c){
   return head+s1+s2+s3+s4+s5+s6+s7+s8;
 }
 
+function pendingReadNote(c){const X=c.measExtract;return X&&X.rows&&X.rows.length&&!X.appliedAt?`<div class="card"><div class="note">قُرئ كشف المقاسات النهائية (<span class="num">${X.rows.length}</span> سطر) لكن النتيجة لم تُضف للمقاسات النهائية بعد، لذلك لا يظهر الحساب.</div><div class="toolbar" style="justify-content:flex-start"><button class="primary" data-act="ex-apply">إضافة النتيجة إلى المقاسات النهائية</button><button data-act="tab" data-tab="meas">مراجعتها أولاً في المقاسات النهائية</button></div></div>`:""}
 function tabCut(c){
   const cfg=S.cfg;const T=takeoff(c,cfg);
-  if(!(c.alu||[]).length)return noMeas;
+  if(!(c.alu||[]).length)return pendingReadNote(c)||noMeas;
   return calcHead(c,T,cfg,`<div class="stats"><div class="stat"><span>القطاعات</span><b class="num">${T.profiles.length}</b></div><div class="stat"><span>عدد القطع</span><b class="num">${sum(T.profiles,p=>p.pieces)}</b></div><div class="stat"><span>عدد العيدان</span><b class="num">${T.bars}</b></div><div class="stat"><span>متوسط الهدر</span><b class="num">${T.bars?((1-sum(T.profiles,p=>p.net)/(T.bars*N(cfg.barLen)))*100).toFixed(0):0}%</b></div></div>`)+
   cutSheetTable(c)+`<div class="card"><h3>Cutting List · خطة القص على العيدان</h3>
     ${T.profiles.map((p,pi)=>`<details class="cut" ${pi===0?"open":""}><summary><b>${esc(p.name)}</b> <span class="muted small">· <span class="num">${p.nb}</span> عود · <span class="num">${p.pieces}</span> قطعة · هدر <span class="num">${(p.waste*100).toFixed(0)}%</span></span></summary>
