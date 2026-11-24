@@ -2021,6 +2021,7 @@ async function qSheetRead(){
       if(out&&out.client)for(const k of ["name","phone","project","location"])if(out.client[k]&&!client[k])client[k]=String(out.client[k]);
       if(out&&N(out.stated_total)>0)stated+=N(out.stated_total);
       (out&&out.flags||[]).forEach(t=>t&&flags.push(`ص${i+1}: ${t}`));}
+    qSplitDoors(q,items);
     const cnt=sum(items,x=>x.qty);if(stated&&stated!==cnt)flags.unshift(`المكتوب في الورقة ${stated} قطعة لكن المستخرج ${cnt}. راجع الأسطر.`);
     items.forEach(x=>{if(!(x.w>0&&x.h>0)&&x.type!=="other")flags.push(`«${x.ref}» بدون مقاس واضح، أدخله يدوياً.`)});
     // replace the single untouched starter line, otherwise append
@@ -2070,6 +2071,7 @@ async function act(el){
     if(a==="q-door"){const i=+el.dataset.i;const p=q.items[i];if(!p)return;const sy=p.sys||defSys(q);
       q.items.splice(i+1,0,{id:uid(),ref:qRefKey(p.ref)+"A",floor:p.floor||"",type:"door1",sys:sy,desc:`باب درفة مفصلي ضمن البند ${p.ref}`,w:1000,h:2400,qty:1,pricing:"m2",price:defPrice("door1",sy),addon:0});
       if(!/خصم الباب/.test(p.desc||""))p.desc=[p.desc,"بعد خصم الباب"].filter(Boolean).join(" - ");
+      if(/^cw_(door|swing)$/.test(p.type)){if(p.type==="cw_swing")q.items[i+1].type="door2";p.type="cw_fixed";p.price=defPrice("cw_fixed",sy)}
       render();qScheduleSave();toast(`أُضيف الباب ${qRefKey(p.ref)}A بمقاس 1.00 × 2.40 وخُصمت مساحته من البند ${p.ref}`);return}
     if(a==="q-mv"){const i=+el.dataset.i,j=i+(+el.dataset.d);if(j<0||j>=q.items.length)return;[q.items[i],q.items[j]]=[q.items[j],q.items[i]];render();qScheduleSave();return}
     if(a==="q-pay-add"){q.payTerms=q.payTerms||[];q.payTerms.push({label:"دفعة",pct:0});render();qScheduleSave();return}
@@ -3097,6 +3099,15 @@ async function exApplyFinal(c,X,XK,auto){
     const src=[fromSheet?`${fromSheet} من الكشف`:"",fromQ?`${fromQ} من عرض السعر`:"",def?`${def} افتراضي (شباك سحاب) راجعها`:""].filter(Boolean).join("، ");
     toast(`${auto?"أُضيفت تلقائياً ":"أُضيف "}${add.length} شباك إلى المقاسات النهائية. أنواع الشبابيك: ${src||"—"}`,{kind:def?"warn":"ok",action:{label:"Cutting List",fn:()=>{S.tab="cut";render();window.scrollTo(0,0)}}})}
 }
+
+
+/* façade with a door → façade (deducted) + door item "<ref>A" (standard 1.00 × 2.40 when no size) */
+function qSplitDoors(q,items){
+  for(let i=0;i<items.length;i++){const p=items[i];if(!/^cw_(door|swing)$/.test(p.type))continue;const pr=qRefKey(p.ref);if(!pr||/[A-Z]$/.test(pr))continue;
+    const has=items.some(x=>x!==p&&qRefKey(x.ref)===pr+"A");const sy=p.sys||defSys(q);const dt=p.type==="cw_swing"?"door2":"door1";
+    p.type="cw_fixed";p.price=defPrice("cw_fixed",sy);if(!/خصم الباب/.test(p.desc||""))p.desc=[p.desc,"بعد خصم الباب"].filter(Boolean).join(" - ");
+    if(!has){items.splice(i+1,0,{id:uid(),ref:pr+"A",floor:p.floor||"",type:dt,sys:sy,desc:`باب ضمن البند ${p.ref}`,w:1000,h:2400,qty:N(p.qty)||1,pricing:"m2",price:defPrice(dt,sy),addon:0});i++}}
+  return items}
 
 /* ---------- boot ---------- */
 fromHash();
