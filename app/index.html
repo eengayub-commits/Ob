@@ -175,6 +175,11 @@ input[data-num]{font-variant-numeric:tabular-nums}
 .cuttbl th,.cuttbl td{text-align:center;white-space:nowrap}.cuttbl thead tr:first-child th{background:#f4d0b5}.cutn{font-size:.7rem;color:#c00000;font-weight:700;margin-inline-start:3px}
 .share{display:inline-flex;gap:6px}.share button{display:inline-flex;align-items:center;gap:6px}.share .wa{color:#128c4a;border-color:#9fd8b6;background:#eefaf2}.share .gm{color:#c5221f;border-color:#f1b5b2;background:#fdf0ef}
 .sec-sep{display:flex;align-items:center;gap:10px;color:var(--muted);font-weight:700;font-size:.9rem;margin:6px 4px}.sec-sep::before,.sec-sep::after{content:"";flex:1;height:1px;background:var(--line)}
+.pboard{gap:10px}.pb-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.pb-kpis{display:flex;gap:6px;flex-wrap:wrap}
+.pb-dots{display:flex;gap:3px}.pb-dots i{width:12px;height:12px;border-radius:50%;background:var(--surface-2);border:1px solid var(--line)}.pb-dots i.d{background:var(--ok);border-color:var(--ok)}.pb-dots i.c{background:var(--accent);border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.pb-table tr.late td:first-child{box-shadow:inset -3px 0 0 var(--bad)}
+.bk{flex-direction:row;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.bk.due{border-color:var(--warn);background:var(--warn-soft)}
+.sup-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px}.sup{display:flex;flex-direction:column;gap:3px;border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:var(--surface)}.sup.on{border-color:var(--ok);background:var(--ok-soft)}
 .order-box{display:flex;flex-direction:column;gap:8px;border:1px solid var(--line);border-radius:10px;padding:12px;background:var(--surface-2)}
 .ib-act{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap}
 .vatbox{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding:12px 14px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2)}
@@ -396,7 +401,7 @@ function listView(){
     </tbody></table></div>`;
   }
 
-  return `${sectionNav()}${stats}
+  return `${sectionNav()}${stats}${backupBanner()}${prodBoard()}
   <div class="split">
     <section style="display:flex;flex-direction:column;gap:12px;min-width:0">
       <div class="toolbar">
@@ -458,7 +463,7 @@ function tabInfo(c){
     <div class="vatbox"><div id="quote-calc" class="vatrows">${quoteCalcHtml(fk,c)}</div>
       ${S.canWrite?`<button data-act="quote-to-contract">اعتماد الإجمالي كقيمة العقد</button>`:""}</div>
     ${area_(fk,"notes","ملاحظات",c.notes)}
-    <div class="toolbar">${S.canWrite?`<button class="primary" data-act="save-info">حفظ البيانات</button>`:""}<span style="flex:1"></span>${del("client:"+c._id,"حذف ملف العميل")}</div>
+    <div class="toolbar">${S.canWrite?`<button class="primary" data-act="save-info">حفظ البيانات</button>`:""}<button data-act="backup-one" ${S.backupBusy?"disabled":""}>${S.backupBusy?"جارٍ التجهيز…":"تنزيل مجلد العميل (ZIP)"}</button><span style="flex:1"></span>${del("client:"+c._id,"حذف ملف العميل")}</div>
   </div>`;
 }
 
@@ -500,7 +505,7 @@ function tabColors(c){
 
 function tabPay(c,k){
   const fk="pay:"+c._id;const list=[...(c.payments||[])].sort((a,b)=>String(a.date).localeCompare(String(b.date)));
-  return `<div class="card"><h3>الدفعات المحوّلة</h3>
+  return payPlanCard(c)+`<div class="card"><h3>الدفعات المحوّلة</h3>
     <div class="tablebox"><table><thead><tr><th>التاريخ</th><th>المبلغ</th><th>الطريقة</th><th>البيان</th><th></th></tr></thead><tbody>
       ${list.map(p=>`<tr><td class="num">${esc(p.date)}</td><td>${M(p.amount)}</td><td>${esc(p.method||"")}</td><td>${esc(p.note||"")}${p.fileId?` <button class="linkbtn" data-act="view" data-id="${esc(p.fileId)}" data-name="${esc(p.fileName||"إيصال")}">عرض الإيصال</button>`:""}</td><td>${del("pay:"+p.id)}</td></tr>`).join("")||`<tr><td colspan="5" class="muted">لم تُسجّل دفعات بعد.</td></tr>`}
     </tbody><tfoot><tr><td>إجمالي المدفوع</td><td class="pos">${M(k.paid)}</td><td>المتبقي</td><td class="${k.remaining>0?"neg":"pos"}" colspan="2">${M(k.remaining)}</td></tr></tfoot></table></div>
@@ -568,7 +573,7 @@ function tabBuy(c,k){
     <dt>المحصّل فعلياً</dt><dd>${M(k.paid)}</dd>
     <dt>الربح النقدي الحالي</dt><dd class="${k.paid-k.cost>=0?"pos":"neg"}">${M(k.paid-k.cost)}</dd></dl>
     <p class="small muted" style="margin:0">الربح النقدي = المحصّل حتى الآن ناقص المشتريات المدفوعة.</p>
-  </aside></div>`;
+  </aside></div>`+costCompare(c);
 }
 
 function render(){
@@ -739,6 +744,7 @@ function settingsView(){
     ${[["stamp","ختم الشركة (يظهر في عروض الأسعار)"],["signature","التوقيع (يظهر في عروض الأسعار)"]].map(([k,l])=>`<div class="fld">${l}<div class="toolbar">${S.cfgDraft.company&&S.cfgDraft.company[k]?`<img src="${blob(S.cfgDraft.company[k])}" alt="" style="height:52px;width:auto;border:1px solid var(--line);border-radius:6px;background:#fff;padding:2px">${S.canWrite?`<button class="ghost danger" data-act="co-img-del" data-k="${k}">إزالة</button>`:""}`:""}${S.canWrite&&S.assets?`<span class="btn upl">${S.busy["co_"+k]?"جارٍ الرفع…":"رفع صورة PNG"}<input type="file" data-coimg="${k}" accept="image/png,image/jpeg"></span>`:""}</div></div>`).join("")}
     <div class="fld">شعار الشركة (للعروض والمستندات)<div class="toolbar">${S.cfgDraft.company&&S.cfgDraft.company.logo?`<img src="${blob(S.cfgDraft.company.logo)}" alt="الشعار" style="height:44px;width:auto;border:1px solid var(--line);border-radius:6px;background:#fff;padding:2px">`:""}${S.canWrite&&S.assets?`<span class="btn upl">${S.busy.logo?"جارٍ الرفع…":"رفع الشعار PNG/JPG"}<input type="file" data-logo="1" accept="image/png,image/jpeg"></span>`:`<span class="small muted">رفع الشعار متاح للمحررين</span>`}</div></div>
   </div></div>
+  ${suppliersCard()}
   <div class="card"><h3>المواصفات الفنية في عروض الأسعار</h3>
     <p class="small muted" style="margin:0">تظهر في كل عروض الأسعار. السطر اللي يبدأ بـ # عنوان قسم، وكل سطر بالشكل: النص العربي | English. اتركها فاضية لاستخدام المواصفات الافتراضية.</p>
     <textarea id="s-specText" data-s="specText" rows="14" placeholder="${esc(SPEC_DEFAULT)}" ${S.canWrite?"":"disabled"}>${esc(S.cfgDraft.specText||SPEC_DEFAULT)}</textarea></div>
@@ -2102,11 +2108,15 @@ async function act(el){
     if(a==="del"&&String(el.dataset.key).startsWith("quote:")){const key=el.dataset.key;if(S.confirm!==key){S.confirm=key;render();clearTimeout(act._t);act._t=setTimeout(()=>{S.confirm=null;render()},4000);return}
       S.confirm=null;const id=S.qid;clearTimeout(qSaveT);S.qid=null;S.qd=null;try{await db.doc("quotes/"+id).delete();toast("حُذف العرض")}catch(e){handleWriteErr(e)}try{history.replaceState(null,"","#quotes")}catch(e){}render();return}
   }
+  if(a==="backup-all"){const v=document.getElementById("bk-vid");await backupZip(S.clients,!!(v&&v.checked));return}
+  if(a==="sup-add"){S.cfgDraft.suppliers=[...(S.cfgDraft.suppliers||[]),{kind:"alu",name:"",price:"",phone:"",email:""}];render();return}
+  if(a==="sup-del"){S.cfgDraft.suppliers.splice(+el.dataset.i,1);render();return}
   if(a==="open-settings"){S.cfgDraft=clone(S.cfg);S.settings=true;S.confirm=null;render();window.scrollTo(0,0);return}
   if(a==="save-settings"){
     if(!db||!S.canWrite)return;
     const d=S.cfgDraft;d.recipes.forEach(r=>{r.pieces.forEach(x=>x.n=N(x.n));r.glass.forEach(x=>x.n=N(x.n));r.acc.forEach(x=>x.price=N(x.price))});d.profiles.forEach(x=>x.kg=N(x.kg));d.prices=Object.fromEntries(Object.entries({...DEFAULT_CFG.prices,...(d.prices||{})}).map(([k,v])=>[k,N(v)]));["barLen","trim","kerf","aluPrice","paintRate","glassPrice","tapeFactor","tapeRoll","tapePrice"].forEach(k=>d[k]=N(d[k]));
     if(d.barLen<=0){toast("طول العود يجب أن يكون أكبر من صفر");return}
+    d.suppliers=(d.suppliers||[]).filter(s=>String(s.name||"").trim()).map(s=>({kind:s.kind||"alu",name:String(s.name).trim(),price:N(s.price),phone:toLat(s.phone||"").trim(),email:String(s.email||"").trim()}));
     try{await db.doc("settings/takeoff").set({...d,updatedAt:new Date().toISOString()});S.everWrote=true;toast("حُفظت قوالب الحساب")}catch(e){handleWriteErr(e)}
     return;
   }
@@ -2281,6 +2291,10 @@ async function act(el){
   if(a==="ao-save"&&c){await aluOrderPdf(c,"save");return}
   if(a==="ao-xlsx"&&c){await aluOrderXlsx(c);if(!orderMissing(c,"alu").length)write(c._id,{aluOrderedAt:new Date().toISOString()});return}
   if(a==="go-xlsx"&&c){await glassOrderXlsx(c);if(!orderMissing(c,"glass").filter(m=>m.k!=="@co").length)write(c._id,{glassOrderedAt:new Date().toISOString()});return}
+  if(a==="backup-one"&&c){await backupZip([c],true);return}
+  if(a==="pay-remind"&&c){const ph=waPhone(c.phone||"");const w=window.open(`https://wa.me/${ph}?text=${encodeURIComponent(payRemindText(c))}`,"_blank","noopener");if(!w){try{await navigator.clipboard.writeText(payRemindText(c))}catch(e){}toast("نسخت نص التذكير، الصقه في محادثة العميل",{kind:"info"})}return}
+  if(a==="sup-pick"&&c){const s=(S.cfg.suppliers||[]).find(x=>x.kind===el.dataset.kind&&x.name===el.dataset.name);if(!s)return;const pre=el.dataset.kind==="paint"?"paint":el.dataset.kind;
+    const patch={[pre+"Supplier"]:s.name};if(pre!=="paint"){patch[pre+"SupplierPhone"]=s.phone||"";patch[pre+"SupplierEmail"]=s.email||""}if(await write(c._id,patch))toast(`تم اختيار ${s.name}`);return}
   if(a==="share"&&c){await shareOrder(c,el.dataset.kind,el.dataset.via);return}
   if(a==="xo-pdf"&&c){await accOrderPdf(c,"dl");return}
   if(a==="xo-save"&&c){await accOrderPdf(c,"save");return}
@@ -2887,9 +2901,11 @@ function tabAOrder(c){
   const al=c.colors?.alu||{};const tb=sum(rows,r=>r.bars),tk=sum(rows,r=>r.kg);
   const paint=`<div class="card"><h3>أمر الدهان ${c.paintOrderedAt?`<span class="ok-badge">✓ صدر بتاريخ ${esc(String(c.paintOrderedAt).slice(0,10))}</span>`:""}</h3>
     <dl class="kv"><dt>اللون</dt><dd>${esc([al.color,al.code].filter(Boolean).join(" · ")||"—")}</dd><dt>نوع الدهان</dt><dd>${esc(al.finish||"—")}</dd><dt>عدد العيدان</dt><dd class="num">${tb}</dd><dt>الوزن التقريبي</dt><dd><span class="num">${tk.toFixed(1)}</span> كجم</dd></dl>
+    ${supCompare(c,"paint")}
     <div class="miss-grid">${fieldInputs([{k:"paintSupplier",l:"مصبغة الدهان",v:c.paintSupplier||"",ph:"اسم المصبغة"},{k:"@alucode",l:"كود اللون",v:al.code||al.color||"",ph:"مثل 9005"},{k:"@alufinish",l:"نوع الدهان",v:al.finish||"",ph:"بودرة / أنودايز / خشبي",opt:1}])}</div>
     <div class="toolbar" style="justify-content:flex-start"><button class="primary" data-act="po-pdf" ${S.pdfBusy?"disabled":""}>أمر الدهان PDF</button>${S.canWrite&&S.assets?`<button data-act="po-save" ${S.pdfBusy?"disabled":""}>حفظ أمر الدهان في ملف العميل</button>`:""}</div></div>`;
   return `${stageBar(c)}${c.measFinal?"":`<div class="note">المقاسات النهائية غير معتمدة بعد. اعتمدها من تبويب «المقاسات النهائية» قبل طلب الألمنيوم.</div>`}<div class="card ord-card"><div class="ord-head"><div><h3 style="margin:0">طلب الألمنيوم</h3><div class="small muted">أمر شراء قطاعات للمورّد · <span class="num">${rows.length}</span> صنف · <span class="num">${tb}</span> عود</div></div>${c.aluOrderedAt?`<span class="ok-badge">✓ صدر بتاريخ <span class="num">${esc(String(c.aluOrderedAt).slice(0,10))}</span></span>`:`<span class="chip">لم يصدر بعد</span>`}</div>
+    ${supCompare(c,"alu")}
     <div class="ord-row top"><span class="ord-lbl">بيانات الطلب</span><div class="miss-grid" style="flex:1">${fieldInputs(orderFields(c,"alu"))}</div></div>
     <div class="ord-actions"><button class="primary" data-act="ao-xlsx">تنزيل Excel</button><button data-act="ao-pdf" ${S.pdfBusy?"disabled":""}>تنزيل PDF</button>${shareBtns("alu")}${S.canWrite&&S.assets?`<button class="ghost" data-act="ao-save" ${S.pdfBusy?"disabled":""}>حفظ PDF في ملف العميل</button>`:""}</div></div>
   <div class="card"><h3>الأصناف المطلوبة <span class="small muted">عدّل عدد العيدان من هنا</span></h3><div class="tablebox"><table><thead><tr><th>الرقم</th><th>الصنف</th><th>المحسوب</th><th>الطلب (عود)</th></tr></thead><tbody>
@@ -2904,6 +2920,7 @@ function tabGOrder(c,noBar){
   return `${noBar?"":stageBar(c)}<div class="card ord-card">
     <div class="ord-head"><div><h3 style="margin:0">طلب الزجاج</h3><div class="small muted">أمر شراء للمورّد بمقاسات القص · <span class="num">${keys.length}</span> نوع · <span class="num">${allQ}</span> لوح · <span class="num">${allA.toFixed(2)}</span> م²</div></div>${c.glassOrderedAt?`<span class="ok-badge">✓ صدر بتاريخ <span class="num">${esc(String(c.glassOrderedAt).slice(0,10))}</span></span>`:`<span class="chip">لم يصدر بعد</span>`}</div>
     ${srcBar}
+    ${supCompare(c,"glass")}
     <div class="ord-row top"><span class="ord-lbl">بيانات الطلب</span><div class="miss-grid" style="flex:1">${fieldInputs(orderFields(c,"glass"))}</div></div>
     ${!co.cr||!co.vat?`<div class="note small">السجل التجاري أو الرقم الضريبي غير مدخل في «الإعدادات»، وسيظهر فارغاً في رأس الطلب.</div>`:""}
     <div class="ord-actions"><button class="primary" data-act="go-xlsx">تنزيل Excel</button><button data-act="go-pdf" ${S.pdfBusy?"disabled":""}>تنزيل PDF</button>${shareBtns("glass")}${S.canWrite&&S.assets?`<button class="ghost" data-act="go-save" ${S.pdfBusy?"disabled":""}>حفظ PDF في ملف العميل</button>`:""}</div>
@@ -3148,6 +3165,100 @@ const TAB_ICON={
   photos:["#e67700",P_("M3 7h4l2-3h6l2 3h4v13H3V7Zm9 10a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z")],
   handover:["#087f5b",P_("M7 11 3 15l4 4m-4-4h11a4 4 0 0 0 0-8h-1M17 3l4 4-4 4")],
   invoices:["#364fc7",P_("M6 3h12v18l-3-2-3 2-3-2-3 2V3Zm3 5h6m-6 4h6m-6 4h3")]};
+
+/* ================= high-priority features ================= */
+/* ---- 1) production tracking ---- */
+const STAGE_DAYS={pre:0,docs:3,contract:7,meas:20,calc:22,aorder:25,cut:30,acc:30,glassm:35};
+function curStage(c){let last=-1;STAGES.forEach(([k],i)=>{if(stageDone(c,k))last=i});const i=last+1;return i>=STAGES.length?null:i}
+const daysSince=d=>{if(!d)return 0;const t=new Date(String(d).slice(0,10)+"T00:00:00");return Math.max(0,Math.floor((new Date(today()+"T00:00:00")-t)/864e5))};
+function lateInfo(c){const i=curStage(c);if(i==null||c.status==="مكتمل"||c.status==="ملغي")return null;const k=STAGES[i][0];const d=daysSince(c.approvalDate||c.createdAt);const lim=STAGE_DAYS[k]||0;return d>lim&&lim>0?{k,days:d-lim}:null}
+function prodBoard(){
+  const act=S.clients.filter(c=>!["مكتمل","ملغي","عرض سعر"].includes(c.status));if(!act.length)return"";
+  const rows=act.map(c=>({c,i:curStage(c),late:lateInfo(c),due:payDue(c).outstanding,d:daysSince(c.approvalDate||c.createdAt)})).sort((a,b)=>(b.late?b.late.days+1000:0)-(a.late?a.late.days+1000:0)||b.due-a.due||b.d-a.d);
+  const nLate=rows.filter(r=>r.late).length,dueSum=sum(rows,r=>Math.max(0,r.due));
+  return `<div class="card pboard"><div class="pb-head"><h3 style="margin:0">متابعة الإنتاج</h3><div class="pb-kpis"><span class="chip">${act.length} مشروع نشط</span>${nLate?`<span class="chip low">${nLate} متأخر</span>`:`<span class="chip ok">لا يوجد تأخير</span>`}${dueSum>0?`<span class="chip mid">دفعات مستحقة ${money(dueSum)} ر.س</span>`:""}</div></div>
+  <div class="tablebox"><table class="pb-table"><thead><tr><th>الملف</th><th>العميل / المشروع</th><th>المراحل</th><th>المرحلة الحالية</th><th>منذ التعميد</th><th>دفعة مستحقة</th></tr></thead><tbody>
+  ${rows.map(({c,i,late,due,d})=>`<tr class="click ${late?"late":""}" data-act="open" data-id="${esc(c._id)}" data-tab="${i==null?"info":STAGES[i][0]}" tabindex="0">
+    <td class="num">${esc(c.fileNo||"—")}</td><td><b>${esc(c.name||"")}</b>${c.project?`<div class="small muted">${esc(c.project)}</div>`:""}</td>
+    <td><div class="pb-dots">${STAGES.map(([k,l],j)=>`<i class="${stageDone(c,k)?"d":j===i?"c":""}" title="${esc(l)}"></i>`).join("")}</div></td>
+    <td>${i==null?`<span class="ok-badge">✓ اكتملت المراحل</span>`:`<b>${esc(STAGES[i][1])}</b>${late?`<div class="small neg">متأخر ${late.days} يوم</div>`:""}`}</td>
+    <td class="num">${d} يوم</td><td>${due>0?`<b class="neg">${M(due)}</b>`:`<span class="muted small">—</span>`}</td></tr>`).join("")}
+  </tbody></table></div><p class="small muted" style="margin:0">التأخير محسوب من تاريخ التعميد: العقد خلال 7 أيام، المقاسات النهائية 20، طلب الألمنيوم 25، الـ Cutting List والإكسسوارات 30، الزجاج 35 يوم.</p></div>`;
+}
+/* ---- 2) payment schedule & reminders ---- */
+function payPlan(c){const q=S.quotes.find(x=>x._id===c.quoteId);const pt=(q&&Array.isArray(q.payTerms)&&q.payTerms.length?q.payTerms:Q_PAY).map(x=>({label:x.label,pct:N(x.pct)}));
+  const trig=[()=>true,()=>!!c.aluOrderedAt||(c.installs||[]).length>0,()=>!!c.glassOrderedAt,()=>!!(c.handover&&c.handover.done)||c.status==="مكتمل"];
+  return pt.map((p,i)=>({...p,due:(trig[i]||trig[trig.length-1])()}))}
+function payDue(c){const k=calc(c);const plan=payPlan(c);let cum=0,dueAmt=0;const rows=plan.map(p=>{const amt=r2(k.contract*p.pct/100);cum+=amt;if(p.due)dueAmt+=amt;return{...p,amt,cum}});
+  let left=k.paid;rows.forEach(r=>{r.paid=Math.min(r.amt,Math.max(0,left));left-=r.amt});return{rows,dueAmt:r2(dueAmt),paid:k.paid,outstanding:r2(dueAmt-k.paid)}}
+function payPlanCard(c){const P=payDue(c);if(!calc(c).contract)return"";
+  return `<div class="card"><h3>جدول الدفعات حسب مراحل التنفيذ ${P.outstanding>0?`<span class="chip low">مستحق الآن ${money(P.outstanding)} ر.س</span>`:`<span class="chip ok">لا يوجد مستحق</span>`}</h3>
+  <div class="tablebox"><table><thead><tr><th>الدفعة</th><th>النسبة</th><th>المبلغ</th><th>المدفوع منها</th><th>الحالة</th></tr></thead><tbody>
+  ${P.rows.map(r=>{const st=r.paid>=r.amt-0.01?`<span class="chip ok">مدفوعة</span>`:r.due?`<span class="chip low">مستحقة</span>`:`<span class="chip">لم تستحق بعد</span>`;return `<tr><td>${esc(r.label)}</td><td class="num">${r.pct}%</td><td>${M(r.amt)}</td><td>${M(r.paid)}</td><td>${st}</td></tr>`}).join("")}
+  </tbody></table></div>
+  ${P.outstanding>0&&S.canWrite?`<div class="toolbar" style="justify-content:flex-start"><button class="wa" data-act="pay-remind" style="color:#128c4a;border-color:#9fd8b6;background:#eefaf2">تذكير العميل بالدفعة على واتساب</button></div>`:""}
+  <p class="small muted" style="margin:0">الدفعة تصير مستحقة تلقائياً: الأولى عند التعميد، الثانية عند طلب الألمنيوم أو بدء التركيب، الثالثة عند طلب الزجاج، والأخيرة عند التسليم.</p></div>`}
+function payRemindText(c){const P=payDue(c);const co=CO();const r=P.rows.find(x=>x.due&&x.paid<x.amt-0.01);
+  return `السلام عليكم ${String(c.name||"").trim()}،\nنفيدكم من ${co.nameAr} بخصوص مشروعكم${c.project?` (${c.project})`:""} رقم الملف ${c.fileNo||""}:\nتم الوصول لمرحلة «${r?r.label:"الدفعة المستحقة"}».\nالمبلغ المستحق: ${money(P.outstanding)} ر.س\n${co.bank?`\nالتحويل على حسابنا في ${co.bank} باسم ${co.nameAr}${co.iban?`\nالآيبان: ${co.iban}`:""}`:""}\n\nشاكرين تعاونكم.`}
+/* ---- 3) expected vs actual cost ---- */
+function costCompare(c){const T=takeoff(c,S.cfg);const k=calc(c);const C=T.cost;
+  const supAlu=(S.cfg.suppliers||[]).find(s=>s.kind==="alu"&&s.name===c.aluSupplier),supGl=(S.cfg.suppliers||[]).find(s=>s.kind==="glass"&&s.name===c.glassSupplier),supP=(S.cfg.suppliers||[]).find(s=>s.kind==="paint"&&s.name===c.paintSupplier);
+  const kg=sum(aluOrderRows(c,T),r=>r.kg),m2=sum(Object.values(glassGroups(c)).flat(),gArea);
+  const expAlu=(supAlu&&N(supAlu.price)?kg*N(supAlu.price):C.alu)+(supP&&N(supP.price)?kg*N(supP.price):C.paint),expGl=supGl&&N(supGl.price)?m2*N(supGl.price):C.glass,expAcc=C.acc+C.screw+C.rubber+C.tape;
+  const act=cat=>sum((c.purchases||[]).filter(p=>p.category===cat),p=>p.amount);
+  const rows=[["ألمنيوم ودهان",expAlu,act("ألمنيوم")],["زجاج",expGl,act("زجاج")],["إكسسوارات ومسامير وربل",expAcc,act("إكسسوارات")]];
+  const other=sum((c.purchases||[]).filter(p=>!["ألمنيوم","زجاج","إكسسوارات"].includes(p.category)),p=>p.amount);
+  const te=sum(rows,r=>r[1]),ta=sum(rows,r=>r[2])+other;
+  return `<div class="card"><h3>التكلفة المتوقعة مقابل الفعلية</h3>
+  <div class="tablebox"><table><thead><tr><th>البند</th><th>المتوقع من الحصر</th><th>الفعلي من الفواتير</th><th>الفرق</th></tr></thead><tbody>
+  ${rows.map(([l,e,a])=>{const d=a-e;return `<tr><td>${l}</td><td>${e?M(e):`<span class="small muted">أدخل الأسعار</span>`}</td><td>${M(a)}</td><td>${e&&a?`<b class="${d>0?"neg":"pos"}">${d>0?"+":""}${M(d)}</b>${d>0&&e?` <span class="small neg">(${(d/e*100).toFixed(0)}% زيادة)</span>`:""}`:"—"}</td></tr>`}).join("")}
+  ${other?`<tr><td>مواد تركيب وعمالة ونقل وأخرى</td><td>—</td><td>${M(other)}</td><td>—</td></tr>`:""}
+  </tbody><tfoot><tr><td>الإجمالي</td><td>${M(te)}</td><td>${M(ta)}</td><td></td></tr>
+  <tr><td>الربح المتوقع</td><td colspan="3"><b class="${k.contract-te>=0?"pos":"neg"}">${M(k.contract-te)}</b> <span class="small muted">· الفعلي حتى الآن ${M(k.contract-ta)}</span></td></tr></tfoot></table></div>
+  <p class="small muted" style="margin:0">المتوقع يُحسب من الحصر بأسعار المورّد المختار للطلب (من «الموردون وأسعارهم» في الإعدادات)، وإلا من أسعار الإعدادات العامة.</p></div>`}
+/* ---- 4) suppliers & price comparison ---- */
+const SUP_KINDS={alu:["ألمنيوم","ر.س / كجم"],glass:["زجاج","ر.س / م²"],paint:["دهان","ر.س / كجم"],acc:["إكسسوارات","—"]};
+function suppliersCard(){const d=S.cfgDraft;d.suppliers=d.suppliers||[];
+  return `<div class="card"><h3>الموردون وأسعارهم <span class="small muted">تُستخدم لمقارنة الأسعار عند الطلب وحساب التكلفة المتوقعة</span></h3>
+  <div class="tablebox"><table class="qitems"><thead><tr><th>النوع</th><th>اسم المورّد</th><th>السعر</th><th>الوحدة</th><th>الجوال (واتساب)</th><th>الإيميل</th><th></th></tr></thead><tbody>
+  ${d.suppliers.map((s,i)=>`<tr><td><select data-s="suppliers.${i}.kind" ${S.canWrite?"":"disabled"}>${Object.entries(SUP_KINDS).map(([k,v])=>`<option value="${k}" ${k===s.kind?"selected":""}>${v[0]}</option>`).join("")}</select></td>
+    <td><input data-s="suppliers.${i}.name" value="${esc(s.name||"")}" style="min-width:150px" ${S.canWrite?"":"disabled"}></td><td><input type="number" data-s="suppliers.${i}.price" value="${esc(N(s.price)||"")}" placeholder="0" style="width:90px" ${S.canWrite?"":"disabled"}></td><td class="small muted">${(SUP_KINDS[s.kind]||["",""])[1]}</td>
+    <td><input data-s="suppliers.${i}.phone" value="${esc(s.phone||"")}" dir="ltr" style="width:130px" ${S.canWrite?"":"disabled"}></td><td><input data-s="suppliers.${i}.email" value="${esc(s.email||"")}" dir="ltr" style="width:170px" ${S.canWrite?"":"disabled"}></td>
+    <td>${S.canWrite?`<button class="danger ghost" data-act="sup-del" data-i="${i}">حذف</button>`:""}</td></tr>`).join("")||`<tr><td colspan="7" class="muted">أضف موردي الألمنيوم والزجاج والدهان مع أسعارهم.</td></tr>`}
+  </tbody></table></div>${S.canWrite?`<div><button data-act="sup-add">+ مورّد</button></div>`:""}</div>`}
+function supCompare(c,kind){const sups=(S.cfg.suppliers||[]).filter(s=>s.kind===kind&&s.name);if(!sups.length)return `<div class="ord-row"><span class="ord-lbl">مقارنة الموردين</span><span class="small muted">أضف الموردين وأسعارهم من «الإعدادات ← الموردون وأسعارهم» ليقارن البرنامج الأسعار هنا.</span></div>`;
+  const T=takeoff(c,S.cfg);const qty=kind==="glass"?sum(Object.values(glassGroups(c)).flat(),gArea):sum(aluOrderRows(c,T),r=>r.kg);const unit=kind==="glass"?"م²":"كجم";
+  const cur=kind==="alu"?c.aluSupplier:kind==="glass"?c.glassSupplier:c.paintSupplier;const list=sups.map(s=>({s,t:N(s.price)*qty})).sort((a,b)=>(a.t||1e15)-(b.t||1e15));const best=list.find(x=>x.t>0);
+  return `<div class="ord-row top"><span class="ord-lbl">مقارنة الموردين</span><div style="flex:1"><div class="small muted" style="margin-bottom:4px">الكمية: <span class="num">${qty.toFixed(1)}</span> ${unit}</div><div class="sup-list">${list.map(({s,t})=>`<div class="sup ${s.name===cur?"on":""}"><b>${esc(s.name)}${best&&best.s===s?` <span class="chip ok">الأرخص</span>`:""}</b><span class="small muted"><span class="num">${money(s.price)}</span> ${SUP_KINDS[kind][1]}</span><span>${t?M(t):"—"}</span>${S.canWrite?(s.name===cur?`<span class="small pos">✓ المختار</span>`:`<button class="ghost" data-act="sup-pick" data-kind="${kind}" data-name="${esc(s.name)}">اختيار</button>`):""}</div>`).join("")}</div></div></div>`}
+/* ---- 5) backup: one ZIP, a folder per client ---- */
+const FOLDER={contract:"العقد",quote:"عرض السعر",drawings:"المخططات",measSheetsPre:"المقاسات/الأولية",measSheets:"المقاسات/النهائية",measSheetsGlass:"المقاسات/الزجاج",measPdf:"المقاسات/ملفات PDF",colors:"الاعتمادات",receipts:"الدفعات",salesInv:"فواتير المبيعات",statements:"كشوف الحساب",handover:"محضر التسليم",photos:"الصور/قبل التسليم",photosAfter:"الصور/بعد التسليم",videos:"الفيديو",other:"مستندات أخرى"};
+const safeName=s=>String(s||"").replace(/[\\/:*?"<>|]/g,"-").replace(/\s+/g," ").trim().slice(0,80);
+function clientCsv(c){const k=calc(c);const L=[];const add=(...r)=>L.push(r.map(csvCell).join(","));
+  add("بيانات العميل");[["اسم العميل",c.name],["Client",c.nameEn],["رقم الملف",c.fileNo],["المشروع",c.project],["الموقع",c.location],["الجوال",c.phone],["تاريخ التعميد",c.approvalDate],["الحالة",c.status],["رقم العقد",c.contractNo],["قيمة العقد",k.contract],["المدفوع",k.paid],["المتبقي",k.remaining],["المشتريات",k.cost],["الربح",k.profit]].forEach(r=>add(...r));
+  add();add("الدفعات");add("التاريخ","المبلغ","الطريقة","البيان");(c.payments||[]).forEach(p=>add(p.date,p.amount,p.method,p.note));
+  add();add("المشتريات");add("التاريخ","المورد","رقم الفاتورة","البند","المبلغ");(c.purchases||[]).forEach(p=>add(p.date,p.supplier,p.invoiceNo,p.category,p.amount));
+  add();add("المقاسات النهائية (مم)");add("الكود","الدور","النوع","العرض","الارتفاع","العدد");(c.alu||[]).forEach(r=>add(r.ref,r.floor,r.type,r.w,r.h,r.qty));
+  add();add("مقاسات الزجاج (مم)");add("المرجع","النوع","العرض","الارتفاع","العدد");(c.glass||[]).forEach(r=>add(r.ref,[r.type,r.thick,r.color].filter(Boolean).join(" "),r.w,r.h,r.qty));
+  return "﻿"+L.join("\r\n")}
+async function backupZip(list,withVideo){
+  if(!S.downloads){toast("التنزيل غير متاح هنا");return}if(S.backupBusy)return;S.backupBusy=true;render();
+  try{const JSZip=await loadJsZip();const z=new JSZip();let n=0,fail=0;const all=[];
+    list.forEach(c=>{const dir=safeName(`${c.fileNo||"بدون رقم"} - ${c.name||""}${c.project?" - "+c.project:""}`)+"/";
+      z.file(dir+"بيانات العميل.csv",clientCsv(c));z.file(dir+"data.json",JSON.stringify(c,null,1));
+      Object.entries(c.files||{}).forEach(([cat,fs])=>{if(cat==="videos"&&!withVideo)return;(fs||[]).forEach(f=>all.push({dir:dir+(FOLDER[cat]||cat)+"/",f}))});
+      (c.purchases||[]).forEach(p=>{if(p.fileId)all.push({dir:dir+"المشتريات/",f:{id:p.fileId,name:p.fileName||`فاتورة-${p.invoiceNo||p.id}`}})})});
+    const used=new Set();
+    for(const {dir,f} of all){n++;toast(`جارٍ تجهيز النسخة الاحتياطية… ${n} من ${all.length}`,{kind:"info",duration:1500});
+      try{const b=await fetchFile(f);let nm=dir+safeName(f.name||f.id);let k=1;while(used.has(nm)){nm=dir+safeName((f.name||"").replace(/(\.[^.]+)?$/,`-${++k}$1`))}used.add(nm);z.file(nm,b)}catch(e){fail++}}
+    const blob=await z.generateAsync({type:"blob",compression:"DEFLATE"});
+    await S.downloads.save({filename:list.length===1?`${safeName(`${list[0].fileNo} - ${list[0].name}`)}.zip`:`نسخة احتياطية - برج القمة - ${today()}.zip`,data:blob});
+    if(list.length>1&&db){try{await db.doc("settings/takeoff").update({lastBackupAt:new Date().toISOString()});S.cfg.lastBackupAt=new Date().toISOString()}catch(e){}}
+    toast(`تمت النسخة الاحتياطية: ${list.length} عميل، ${all.length-fail} ملف${fail?`، تعذّر ${fail} ملف`:""}`,{kind:fail?"warn":"ok"})}
+  catch(e){if(!(e&&e.code==="declined"))toast("تعذّر إنشاء النسخة الاحتياطية")}
+  S.backupBusy=false;render()}
+function backupBanner(){if(!S.canWrite||!S.clients.length)return"";const d=S.cfg.lastBackupAt?daysSince(S.cfg.lastBackupAt):null;
+  return `<div class="card bk ${d==null||d>=7?"due":""}"><div><b>النسخة الاحتياطية</b><div class="small muted">${d==null?"لم تؤخذ نسخة احتياطية بعد.":d===0?"آخر نسخة اليوم.":`آخر نسخة قبل ${d} يوم.`} ملف ZIP واحد، وداخله مجلد لكل عميل باسمه ورقم ملفه، فيه كل ملفاته مرتبة وبياناته في ملف Excel.</div></div>
+  <div class="toolbar"><label class="small" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="bk-vid"> مع الفيديو</label><button class="${d==null||d>=7?"primary":""}" data-act="backup-all" ${S.backupBusy?"disabled":""}>${S.backupBusy?"جارٍ التجهيز…":"تنزيل نسخة احتياطية الآن"}</button></div></div>`}
 
 /* ---------- boot ---------- */
 fromHash();
