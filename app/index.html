@@ -142,11 +142,14 @@ body.dragging::after{content:"أفلت الملفات هنا للتحليل وا
 .missbox{display:flex;flex-direction:column;gap:6px;border:1px solid var(--warn-soft);border-inline-start:3px solid var(--warn);border-radius:8px;padding:10px 12px}.missbox>b{color:var(--warn);font-size:.86rem}
 .miss-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px 12px}.fld.miss input{width:100%}
 .ord-sec{display:flex;flex-direction:column;gap:8px;padding:10px 0;border-top:1px solid var(--line)}.ord-sec:first-of-type{border-top:0}.ord-sec>b{font-size:.92rem}.fld.need input{border-color:var(--warn);background:var(--warn-soft)}
-.stages{display:flex;align-items:center;gap:4px;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px 10px}
-.stage{display:inline-flex;align-items:center;gap:6px;border:0;background:none;padding:6px 10px;border-radius:999px;font-size:.84rem;color:var(--muted);font-weight:600}
-.stage .sn{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:.72rem;background:var(--surface-2);border:1px solid var(--line)}
-.stage.done{color:var(--ok)}.stage.done .sn{background:var(--ok-soft);border-color:transparent;color:var(--ok)}
-.stage.on{background:var(--accent);color:var(--accent-ink)}.stage.on .sn{background:var(--accent-ink);color:var(--accent);border-color:transparent}.sarrow{color:var(--line);font-size:.8rem}
+.stages{display:flex;flex-direction:column;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.st-head{display:flex;align-items:center;gap:10px}.st-head b{font-size:.88rem}.st-prog{flex:1;height:5px;border-radius:99px;background:var(--surface-2);overflow:hidden;max-width:260px}.st-prog i{display:block;height:100%;background:var(--ok);border-radius:99px}
+.st-list{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:6px;counter-reset:st}
+.stage{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:4px;border:1px solid var(--line);background:var(--surface-2);padding:7px 4px;border-radius:10px;font-size:.76rem;color:var(--muted);font-weight:600;text-align:center;line-height:1.25;min-height:58px}
+.stage .sn{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:.72rem;background:var(--surface);border:1px solid var(--line);flex:none}
+.stage.done{color:var(--ok);border-color:#bfe3cc;background:var(--ok-soft)}.stage.done .sn{background:var(--ok);border-color:transparent;color:#fff}
+.stage.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}.stage.on .sn{background:var(--accent-ink);color:var(--accent);border-color:transparent}
+@media (max-width:900px){.st-list{grid-template-columns:repeat(3,minmax(0,1fr))}}
 .next-step{display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--line);padding-top:10px}
 .ord-card{gap:12px}.ord-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap}
 .ord-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding-top:10px;border-top:1px solid var(--line)}.ord-row.top{align-items:flex-start}
@@ -462,7 +465,7 @@ function uploader(cat,label="رفع ملف",accept=""){
 }
 function tabDocs(c){
   const block=(cat,title,hint)=>`<div class="card"><h3>${title} ${uploader(cat)}</h3><p class="small muted" style="margin:0">${hint}</p>${fileList(c,cat)}</div>`;
-  return `<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(280px,1fr))">
+  return `${stageBar(c)}<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(280px,1fr))">
     ${block("quote","عرض السعر","عرض السعر المعتمد ونسخه السابقة.")}
     ${block("drawings","المخططات","المخططات المعمارية ومخططات الورشة (Shop Drawings).")}
     ${block("other","مستندات أخرى","أي مستندات أخرى تخص المشروع: خطابات، تصاريح، مراسلات.")}
@@ -1326,7 +1329,7 @@ const noMeas=`<div class="card empty"><h2>لا توجد مقاسات بعد</h2>
 function tabCalc(c){
   const cfg=S.cfg;const T=takeoff(c,cfg);const alu=c.colors?.alu||{};
   const colorTxt=[alu.color,alu.code].filter(Boolean).join(" · ")||"لم يُحدد اللون";
-  if(!(c.alu||[]).length&&!(c.glass||[]).length)return pendingReadNote(c)||noMeas;
+  if(!(c.alu||[]).length&&!(c.glass||[]).length)return stageBar(c)+(pendingReadNote(c)||noMeas);
   const priced=n=>n?M(n):`<span class="muted small">أدخل السعر</span>`;
   const byCat=k=>T.acc.filter(a=>a.cat===k);
   const head=calcHead(c,T,cfg,`<div class="stats"><div class="stat"><span>الوحدات</span><b class="num">${T.units}</b></div><div class="stat"><span>عيدان الألمنيوم</span><b class="num">${T.bars}</b></div><div class="stat"><span>وزن الألمنيوم</span><b><span class="num">${money(Math.round(T.kg*10)/10)}</span><span class="cur">كجم</span></b></div><div class="stat"><span>مساحة الزجاج</span><b><span class="num">${T.m2.toFixed(2)}</span><span class="cur">م²</span></b></div><div class="stat"><span>تكلفة المواد التقديرية</span><b>${M(T.cost.total)}</b></div></div>`);
@@ -1353,14 +1356,14 @@ function tabCalc(c){
     <dl class="kv"><dt>الألمنيوم</dt><dd>${M(C.alu)}</dd><dt>الدهان</dt><dd>${M(C.paint)}</dd><dt>الإكسسوارات</dt><dd>${M(C.acc)}</dd><dt>المسامير والزوايا</dt><dd>${M(C.screw)}</dd><dt>تيب الحماية</dt><dd>${M(C.tape)}</dd><dt>الزجاج</dt><dd>${M(C.glass)}</dd><dt>الربل</dt><dd>${M(C.rubber)}</dd><dt>إجمالي المواد</dt><dd style="font-size:1.1rem">${M(C.total)}</dd>
     ${net?`<dt>${c.quoteNet?"قيمة العرض قبل الضريبة":"قيمة العقد"}</dt><dd>${M(net)}</dd><dt>الفرق قبل العمالة والتركيب</dt><dd class="${net-C.total>=0?"pos":"neg"}">${M(net-C.total)}</dd>`:""}</dl>
     <p class="small muted" style="margin:0">التكلفة تقديرية من أسعار الإعدادات. الربح الفعلي يُحسب من فواتير المشتريات في تبويب «المشتريات والأرباح».</p></div>`;
-  return head+s1+s2+s3+s4+s5+s6+s7+s8;
+  return stageBar(c)+head+s1+s2+s3+s4+s5+s6+s7+s8;
 }
 
 function pendingReadNote(c){const X=c.measExtract;return X&&X.rows&&X.rows.length&&!X.appliedAt?`<div class="card"><div class="note">قُرئ كشف المقاسات النهائية (<span class="num">${X.rows.length}</span> سطر) لكن النتيجة لم تُضف للمقاسات النهائية بعد، لذلك لا يظهر الحساب.</div><div class="toolbar" style="justify-content:flex-start"><button class="primary" data-act="ex-apply">إضافة النتيجة إلى المقاسات النهائية</button><button data-act="tab" data-tab="meas">مراجعتها أولاً في المقاسات النهائية</button></div></div>`:""}
 function tabCut(c){
   const cfg=S.cfg;const T=takeoff(c,cfg);
-  if(!(c.alu||[]).length)return pendingReadNote(c)||noMeas;
-  return calcHead(c,T,cfg,`<div class="stats"><div class="stat"><span>القطاعات</span><b class="num">${T.profiles.length}</b></div><div class="stat"><span>عدد القطع</span><b class="num">${sum(T.profiles,p=>p.pieces)}</b></div><div class="stat"><span>عدد العيدان</span><b class="num">${T.bars}</b></div><div class="stat"><span>متوسط الهدر</span><b class="num">${T.bars?((1-sum(T.profiles,p=>p.net)/(T.bars*N(cfg.barLen)))*100).toFixed(0):0}%</b></div></div>`)+
+  if(!(c.alu||[]).length)return stageBar(c)+(pendingReadNote(c)||noMeas);
+  return stageBar(c)+calcHead(c,T,cfg,`<div class="stats"><div class="stat"><span>القطاعات</span><b class="num">${T.profiles.length}</b></div><div class="stat"><span>عدد القطع</span><b class="num">${sum(T.profiles,p=>p.pieces)}</b></div><div class="stat"><span>عدد العيدان</span><b class="num">${T.bars}</b></div><div class="stat"><span>متوسط الهدر</span><b class="num">${T.bars?((1-sum(T.profiles,p=>p.net)/(T.bars*N(cfg.barLen)))*100).toFixed(0):0}%</b></div></div>`)+
   cutSheetTable(c)+`<div class="card"><h3>Cutting List · خطة القص على العيدان</h3>
     ${T.profiles.map((p,pi)=>`<details class="cut" ${pi===0?"open":""}><summary><b>${esc(p.name)}</b> <span class="muted small">· <span class="num">${p.nb}</span> عود · <span class="num">${p.pieces}</span> قطعة · هدر <span class="num">${(p.waste*100).toFixed(0)}%</span></span></summary>
       <div class="tablebox"><table><thead><tr><th>العود</th><th>القطع (الطول مم × العدد)</th><th>المستخدم</th><th>المتبقي</th></tr></thead><tbody>
@@ -2905,9 +2908,11 @@ function tabGOrder(c,noBar){
 
 /* ---------- measurement workflow stages: preliminary → quotation → final → aluminium & paint order → glass sizes → glass order ---------- */
 function exKeys(tab){tab=tab||S.tab;return tab==="pre"?{st:"pre",f:"measSheetsPre",e:"measExtractPre",n:"measNotePre"}:tab==="glassm"?{st:"glass",f:"measSheetsGlass",e:"measExtractGlass",n:"measNoteGlass"}:{st:"final",f:"measSheets",e:"measExtract",n:"measNote"}}
-const STAGES=[["pre","المقاسات الأولية"],["docs","عرض السعر"],["contract","العقد والاعتمادات"],["meas","المقاسات النهائية"],["aorder","طلب الألمنيوم والدهان"],["acc","الإكسسوارات"],["glassm","الزجاج"]];
-function stageDone(c,k){return k==="pre"?(c.prelim||[]).length>0:k==="docs"?!!(c.quoteId||c.quoteNo||N(c.quoteValue)||(c.files?.quote||[]).length):k==="meas"?!!c.measFinal:k==="aorder"?!!c.aluOrderedAt:k==="glassm"?!!c.glassOrderedAt:k==="contract"?!!((c.files?.contract||[]).length||c.colors?.alu?.approved):k==="acc"?!!c.accOrderedAt:false}
-function stageBar(c){return `<nav class="stages" aria-label="مراحل المقاسات">${STAGES.map(([k,l],i)=>{const d=stageDone(c,k);return `<button class="stage ${S.tab===k?"on":""} ${d?"done":""}" data-act="tab" data-tab="${k}"><span class="sn">${d?"✓":i+1}</span>${l}</button>`}).join('<span class="sarrow" aria-hidden="true">←</span>')}</nav>`}
+const STAGES=[["pre","المقاسات الأولية"],["docs","عرض السعر والمخططات"],["contract","العقد والاعتمادات"],["meas","المقاسات النهائية"],["calc","حساب الكميات"],["aorder","طلب الألمنيوم والدهان"],["cut","Cutting List"],["acc","الإكسسوارات"],["glassm","مقاسات وطلب الزجاج"]];
+function stageDone(c,k){return k==="pre"?(c.prelim||[]).length>0:k==="docs"?!!(c.quoteId||c.quoteNo||N(c.quoteValue)||(c.files?.quote||[]).length):k==="meas"?!!c.measFinal:k==="aorder"?!!c.aluOrderedAt:k==="glassm"?!!c.glassOrderedAt:k==="contract"?!!((c.files?.contract||[]).length||c.colors?.alu?.approved):k==="acc"?!!c.accOrderedAt:k==="calc"?(c.alu||[]).length>0&&(c.alu||[]).every(r=>recipeById(r.recipe)):k==="cut"?!!c.cutAt:false}
+function stageBar(c){const done=STAGES.filter(([k])=>stageDone(c,k)).length;const cur=STAGES.findIndex(([k])=>k===S.tab);
+  return `<nav class="stages" aria-label="مراحل المقاسات"><div class="st-head"><b>مراحل الملف</b><span class="small muted"><span class="num">${done}</span> من <span class="num">${STAGES.length}</span> مكتملة</span><div class="st-prog" aria-hidden="true"><i style="width:${Math.round(done/STAGES.length*100)}%"></i></div></div>
+  <div class="st-list">${STAGES.map(([k,l],i)=>{const d=stageDone(c,k);return `<button class="stage ${S.tab===k?"on":""} ${d?"done":""}" data-act="tab" data-tab="${k}" ${S.tab===k?'aria-current="step"':""}><span class="sn">${d?"✓":i+1}</span><span class="sl">${l}</span></button>`}).join("")}</div></nav>`}
 const KIND_OPTS=sel=>KIND_LIST.map(([k,v])=>`<option value="${k}" ${k===sel?"selected":""}>${esc(v[0])}</option>`).join("")+`<option value="other" ${sel==="other"?"selected":""}>بند عام / أعمال أخرى</option>`;
 const splitRef=ref=>{const m=/^([BGFSTR])\s*[-–]\s*(.+)$/i.exec(String(ref||"").trim());return m?{floor:m[1].toUpperCase(),ref:m[2]}:{floor:"",ref:String(ref||"").trim()}};
 const recipeForType=t=>{const rid=KINDS[t]&&KINDS[t][2];const rc=recipeById(rid)||S.cfg.recipes[0]||{};return rc};
@@ -2998,7 +3003,7 @@ async function cutSheetPdf(c,mode){if(!(c.alu||[]).length){toast("أدخل ال�
     for(let i=0;i<svgs.length;i++){if(i)pdf.addPage("a4","landscape");pdf.addImage(await svgToJpeg(svgs[i],3.2,842,595),"JPEG",0,0,297,210)}
     const b=pdf.output("blob");const name=`Cutting-List-${c.fileNo||""}-${clientTitle(c)}.pdf`.replace(/[\\/:*?"<>|]/g,"-");
     if(mode==="save"){const r=await S.assets.upload(new File([b],name,{type:"application/pdf"}));await mutateFiles("other",l=>l.concat([{id:r.id,name,type:"application/pdf",size:r.sizeBytes,at:new Date().toISOString()}]));toast("تم حفظ Cutting List في «مستندات أخرى»")}
-    else if(S.downloads)await S.downloads.save({filename:name,data:b});else toast("التنزيل غير متاح هنا")}catch(e){if(!(e&&e.code==="declined"))toast("تعذّر إنشاء ملف PDF")}
+    else if(S.downloads)await S.downloads.save({filename:name,data:b});else toast("التنزيل غير متاح هنا");write(c._id,{cutAt:new Date().toISOString()})}catch(e){if(!(e&&e.code==="declined"))toast("تعذّر إنشاء ملف PDF")}
   S.pdfBusy=false;render()}
 function cutSheetTable(c){const rows=cutRows(c);if(!rows.length)return"";const H=(k)=>{return k};
   const cell=(r,k)=>{const a=r.cells[k];return a?`<span dir="ltr"><b class="num">${cm(a[0].len)}</b><span class="cutn">×${sum(a,e=>e.n)}</span></span>`:""};
@@ -3013,7 +3018,7 @@ function cutSheetTable(c){const rows=cutRows(c);if(!rows.length)return"";const H
 /* ---------- tabs: contract & approvals, accessories order, glass sizes + order ---------- */
 const TAB_ALIAS={colors:"contract",gorder:"glassm"};
 function tabContract(c){
-  return `<div class="card"><h3>العقد ${uploader("contract")}</h3><p class="small muted" style="margin:0">العقد الموقّع وأي ملاحق له (PDF أو صورة).</p>${fileList(c,"contract")}</div>${tabColors(c)}`;
+  return `${stageBar(c)}<div class="card"><h3>العقد ${uploader("contract")}</h3><p class="small muted" style="margin:0">العقد الموقّع وأي ملاحق له (PDF أو صورة).</p>${fileList(c,"contract")}</div>${tabColors(c)}`;
 }
 function tabGlassAll(c){return tabGlassM(c)+`<div class="sec-sep"><span>طلب الزجاج</span></div>`+tabGOrder(c,true)}
 function accOrderRows(c){const T=takeoff(c,S.cfg);const ov=c.accOrder||{};
